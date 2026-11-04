@@ -1,0 +1,24 @@
+{
+  "name": "@fulcra/core",
+  "version": "0.0.0",
+  "private": true,
+  "description": "All business logic (services). Pages, routes, webhooks and agent tools call these.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@fulcra/config": "workspace:*",
+    "@fulcra/db": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "typescript": "~6.0.3",
+    "vitest": "^5.1.0"
+  }
+}

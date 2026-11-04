@@ -1,0 +1,6 @@
+pnpm-lock.yaml
+packages/db/migrations/
+.next/
+dist/
+coverage/
+*.md
