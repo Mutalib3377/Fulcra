@@ -16,9 +16,17 @@
     "@fulcra/core": "workspace:*",
     "@fulcra/db": "workspace:*",
     "@fulcra/ui": "workspace:*",
+    "@hookform/resolvers": "^7.0.2",
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.119.0",
+    "@tanstack/react-query": "^5.105.3",
+    "lucide-react": "^1.68.0",
     "next": "16.4.5",
     "react": "^19.3.1",
-    "react-dom": "^19.3.1"
+    "react-dom": "^19.3.1",
+    "react-hook-form": "^7.91.0",
+    "server-only": "^0.0.1",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.4",

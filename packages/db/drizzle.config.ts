@@ -12,6 +12,8 @@ export default defineConfig({
   schema: './src/schema/index.ts',
   out: './migrations',
   dbCredentials: { url },
+  // The fulcra_app role is created in a custom migration, not managed by drizzle-kit.
+  entities: { roles: { provider: '' } },
   strict: true,
   verbose: true,
 });

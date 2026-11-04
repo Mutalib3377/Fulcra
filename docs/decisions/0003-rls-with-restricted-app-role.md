@@ -18,3 +18,12 @@ Tenant isolation has two guards: tenant-scoped query helpers in `packages/db`, a
 
 - Each request uses a short transaction. This works with Supabase's transaction pooler.
 - Isolation tests in C1 must run as `fulcra_app`, not as the owner.
+
+## Update (C1): switch role per transaction instead of a second login
+
+Implemented slightly differently from "connect as `fulcra_app`", with the same guarantee:
+
+- `fulcra_app` is a role **without login** (migration `0000_app-role.sql`). The app keeps one connection string (the Supabase pooled URL), and `withTenant` runs `SET LOCAL ROLE fulcra_app` together with `set_config('app.business_id', …, true)` at the start of each tenant transaction. Both reset when the transaction ends, which is safe with the transaction pooler.
+- So there is no second password to manage, and RLS still applies to every tenant query.
+- `withSystem` is the only way to query without RLS. It is used by a few named Core services (create business, subdomain check, list my businesses, invite preview/accept).
+- A test (`packages/db/test/tenant.test.ts`) fails if any table with `business_id` lacks RLS or a `fulcra_app` policy. New business-owned tables must use `.enableRLS()` and a tenant policy (see `packages/db/src/schema/members.ts`).

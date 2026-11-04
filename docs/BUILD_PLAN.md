@@ -63,15 +63,15 @@ Goal: an owner can sign up, set up brand and catalog, record orders, and get pai
 
 ### C1 — Accounts and businesses
 
-- [ ] Schema: `businesses`, `members` (owner, staff, rider)
-- [ ] Tenant-scoped query helpers in `packages/db` (every query requires `businessId`)
-- [ ] RLS policies on business-owned tables: app connects as a restricted role and sets `app.business_id` per transaction (`docs/decisions/0003`)
-- [ ] `canUse(businessId, featureKey)` stub in `packages/core/entitlements` (always allows; replaced in B1)
-- [ ] Auth with Supabase (email OTP for development)
-- [ ] Onboarding step 1: business name, category, WhatsApp number, subdomain (live availability check; reserved words: `app`, `www`, `api`, `admin`, `widget`)
-- [ ] Invite staff with a role
-- [ ] Dashboard shell: mobile-first (bottom nav on mobile, sidebar on desktop)
-- [ ] Tests: tenant isolation
+- [x] Schema: `businesses`, `members` (owner, staff, rider)
+- [x] Tenant-scoped query helpers in `packages/db` (every query requires `businessId`)
+- [x] RLS policies on business-owned tables: app connects as a restricted role and sets `app.business_id` per transaction (`docs/decisions/0003`)
+- [x] `canUse(businessId, featureKey)` stub in `packages/core/entitlements` (always allows; replaced in B1)
+- [x] Auth with Supabase (email OTP for development)
+- [x] Onboarding step 1: business name, category, WhatsApp number, subdomain (live availability check; reserved words: `app`, `www`, `api`, `admin`, `widget`)
+- [x] Invite staff with a role (invite link shared by copy or WhatsApp; `member_invites` table)
+- [x] Dashboard shell: mobile-first (bottom nav on mobile, sidebar on desktop)
+- [x] Tests: tenant isolation
 
 **Done when:** two test businesses exist and neither can see the other's data.
 

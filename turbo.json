@@ -3,7 +3,14 @@
   "ui": "stream",
   "globalDependencies": [".env"],
   "globalEnv": ["NODE_ENV", "NEXT_PUBLIC_*"],
-  "globalPassThroughEnv": ["DATABASE_URL", "DATABASE_URL_MIGRATIONS", "ROOT_DOMAIN"],
+  "globalPassThroughEnv": [
+    "DATABASE_URL",
+    "DATABASE_URL_MIGRATIONS",
+    "DATABASE_URL_TEST",
+    "ROOT_DOMAIN",
+    "SUPABASE_URL",
+    "SUPABASE_PUBLISHABLE_KEY"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
