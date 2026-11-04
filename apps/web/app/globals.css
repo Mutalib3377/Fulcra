@@ -1,0 +1,5 @@
+@import 'tailwindcss';
+@import '@fulcra/ui/styles.css';
+
+/* Tailwind does not scan node_modules, so point it at the shared UI source. */
+@source '../../../packages/ui/src';

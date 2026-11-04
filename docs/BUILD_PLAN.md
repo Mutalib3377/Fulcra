@@ -24,7 +24,7 @@ Week 0 → M1 Lean Core + Payments → M2 Store + Website connection → M3 Agen
 
 ### Accounts (owner)
 
-- [ ] GitHub repo
+- [x] GitHub repo
 - [ ] Supabase project (EU region)
 - [ ] Paystack account (test mode)
 - [ ] Ask Paystack to enable **dedicated virtual accounts** and **subaccounts/splits** on our account (needs approval)
@@ -37,21 +37,21 @@ Week 0 → M1 Lean Core + Payments → M2 Store + Website connection → M3 Agen
 
 ### Repo scaffold
 
-- [ ] pnpm workspaces + Turborepo: `apps/web`, `apps/worker`, `packages/{core,agent,channels,integrations,modules,widget,db,ui,config}`
-- [ ] Shared TypeScript (strict), ESLint, Prettier configs in `packages/config`
-- [ ] `apps/web`: Next.js (App Router) + Tailwind + shadcn/ui
-- [ ] `apps/worker`: Node + TypeScript entry that connects to pg-boss and logs "worker ready"
-- [ ] `packages/db`: Drizzle setup, db client, migration scripts
-- [ ] Local Postgres via Supabase CLI (or Docker) with a documented start command
-- [ ] Vitest set up
-- [ ] `.env.example` with every variable documented
-- [ ] Root scripts: `dev`, `build`, `lint`, `typecheck`, `test`, `db:generate`, `db:migrate`
-- [ ] Dockerfiles for `apps/web` and `apps/worker`
-- [ ] Host routing in `apps/web/proxy.ts`: root domain → marketing, `app.` → dashboard, other subdomains → store. Works locally with `*.localhost:3000`
-- [ ] App constants (name, domain) in one config file
-- [ ] Base UI kit in `packages/ui`: colours, typography, button, input, card, table, badge, empty/loading/error states
-- [ ] GitHub Actions: lint, type-check, tests on every pull request
-- [ ] Fill in "Commands" in `CLAUDE.md`
+- [x] pnpm workspaces + Turborepo: `apps/web`, `apps/worker`, `packages/{core,agent,channels,integrations,modules,widget,db,ui,config}`
+- [x] Shared TypeScript (strict), ESLint, Prettier configs in `packages/config`
+- [x] `apps/web`: Next.js (App Router) + Tailwind + shadcn/ui
+- [x] `apps/worker`: Node + TypeScript entry that connects to pg-boss and logs "worker ready"
+- [x] `packages/db`: Drizzle setup, db client, migration scripts
+- [x] Local Postgres via Supabase CLI (or Docker) with a documented start command (Docker: `pnpm db:up`)
+- [x] Vitest set up
+- [x] `.env.example` with every variable documented
+- [x] Root scripts: `dev`, `build`, `lint`, `typecheck`, `test`, `db:generate`, `db:migrate`
+- [x] Dockerfiles for `apps/web` and `apps/worker`
+- [x] Host routing in `apps/web/proxy.ts`: root domain → marketing, `app.` → dashboard, other subdomains → store. Works locally with `*.localhost:3000`
+- [x] App constants (name, domain) in one config file
+- [x] Base UI kit in `packages/ui`: colours, typography, button, input, card, table, badge, empty/loading/error states
+- [x] GitHub Actions: lint, type-check, tests on every pull request
+- [x] Fill in "Commands" in `CLAUDE.md`
 
 **Done when:** `pnpm dev` starts web and worker; `app.localhost:3000` shows a dashboard placeholder; `test.localhost:3000` shows a store placeholder; CI passes.
 

@@ -146,9 +146,21 @@ docs/
 
 ## Commands
 
-> Fill these in after the repo is scaffolded.
+Run from the repo root. First time: `pnpm install`, `cp .env.example .env`, `pnpm db:up`, `pnpm db:migrate`.
 
-- `pnpm dev` — run web and worker locally
+- `pnpm dev` — run web (http://localhost:3000) and worker locally, with hot reload
+  - Marketing: `localhost:3000` · Dashboard: `app.localhost:3000` · Store: `<name>.localhost:3000`
 - `pnpm build` — build everything
-- `pnpm lint` / `pnpm typecheck` / `pnpm test`
-- `pnpm db:generate` / `pnpm db:migrate` — Drizzle migrations
+- `pnpm lint` / `pnpm typecheck` / `pnpm test` — must pass before a task is ticked
+- `pnpm format` / `pnpm format:check` — Prettier (Markdown files are not formatted)
+- `pnpm db:up` / `pnpm db:down` — start/stop local Postgres (Docker, port 54322)
+- `pnpm db:generate` — create a new migration from schema changes in `packages/db/src/schema`
+- `pnpm db:migrate` — apply migrations
+- `pnpm --filter @fulcra/<name> <script>` — run a script in one package (e.g. `pnpm --filter @fulcra/core test`)
+- `docker build -f apps/web/Dockerfile .` / `docker build -f apps/worker/Dockerfile .` — production images
+
+Notes:
+
+- Workspace packages export TypeScript source (no build step). Next.js compiles them via `transpilePackages`; the worker runs with `tsx`.
+- All apps read one `.env` at the repo root. In production, real environment variables are used.
+- The web container must listen on `HOSTNAME=0.0.0.0` (set in the Dockerfile); binding to a specific IP breaks host-based rewrites.

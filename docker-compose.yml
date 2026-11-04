@@ -1,0 +1,22 @@
+# Local development services. Start with `pnpm db:up`, stop with `pnpm db:down`.
+# Port 54322 matches the Supabase CLI default, so switching to it later needs no .env change.
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: fulcra
+    ports:
+      - '54322:5432'
+    volumes:
+      - fulcra-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d fulcra']
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+volumes:
+  fulcra-db:

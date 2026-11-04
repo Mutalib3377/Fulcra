@@ -1,0 +1,28 @@
+{
+  "name": "@fulcra/worker",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Background jobs: agent replies, imports, alerts, briefings.",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --env-file-if-exists=../../.env src/index.ts",
+    "start": "tsx src/index.ts",
+    "build": "tsc --noEmit",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@fulcra/config": "workspace:*",
+    "@fulcra/core": "workspace:*",
+    "@fulcra/db": "workspace:*",
+    "pg-boss": "^12.38.0",
+    "tsx": "^4.23.15",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "typescript": "~6.0.3",
+    "vitest": "^5.1.0"
+  }
+}
