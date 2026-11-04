@@ -25,3 +25,7 @@ export const KOBO_PER_NAIRA = 100;
 
 export const CURRENCY = 'NGN';
 export const LOCALE = 'en-NG';
+
+/** What a business sells. Stored as a Postgres enum (see packages/db). */
+export const BUSINESS_CATEGORIES = ['fashion', 'beauty', 'food', 'gadgets', 'other'] as const;
+export type BusinessCategory = (typeof BUSINESS_CATEGORIES)[number];

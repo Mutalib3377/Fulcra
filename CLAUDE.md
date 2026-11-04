@@ -25,9 +25,9 @@ The product is called **Fulcra**. The domain is not decided yet: use `yourdomain
 
 > Update this section whenever a phase is finished.
 
-- Current milestone: **Week 0 → Milestone 1 (Lean Core + Payments)**
-- Current phase: **Week 0 setup**
-- Completed phases: none
+- Current milestone: **Milestone 1 (Lean Core + Payments)**
+- Current phase: **C2 — Brand kit and catalog** (next)
+- Completed phases: Week 0 setup (the first green CI run is waiting on the GitHub account billing lock), C1 — Accounts and businesses
 
 ## Tech stack (decided — do not change without asking)
 
@@ -96,7 +96,7 @@ docs/
 2. **All business logic lives in `packages/core`.** Pages, API routes, webhooks, integrations and AI agent tools only call service functions such as `createOrder`, `confirmPayment`, `adjustStock`. Never put business logic in a React component or route handler.
 3. **One agent, many channels.** The agent in `packages/agent` never knows which platform it is on. Each channel adapter in `packages/channels` converts platform messages to our standard `InboundMessage` and converts the agent's `OutboundMessage` back to the platform format. Adding a channel = adding an adapter, nothing else.
 4. **Modules and packages do not import sideways.** `agent`, `channels`, `integrations` and `modules/*` import from `core`, `db` and `config` only (the agent may use the `channels` interface types). Packages communicate through Core data and the `events` table.
-5. **Multi-tenancy.** Every business-owned table has `business_id`. Every query is scoped by `business_id` through tenant-scoped helpers in `packages/db`. Postgres row-level security (RLS) is enabled as a second guard: the app connects as a restricted role without `BYPASSRLS` and sets the current business on each transaction (see `docs/decisions/0003`). A business must never see another business's data.
+5. **Multi-tenancy.** Every business-owned table has `business_id`. Every query is scoped by `business_id` through tenant-scoped helpers in `packages/db`. Postgres row-level security (RLS) is enabled as a second guard: every tenant query runs as a restricted role without `BYPASSRLS` with the current business set on the transaction (`withTenant`, see `docs/decisions/0003`). A business must never see another business's data.
 6. **Entitlements.** Before a module or channel action runs, check `canUse(businessId, featureKey)` (a stub that allows everything exists from C1; real plans arrive in B1). Usage-based features (agent conversations, AI calls) also call `recordUsage(...)` and respect plan limits.
 7. **Events.** Important actions write to `events` (e.g. `order.created`, `payment.confirmed`, `stock.low`, `conversation.handoff`). Other parts react through jobs.
 8. **Slow work goes to the queue.** Every webhook handler: verify signature → save raw event to `webhook_events` → enqueue job → return 200 quickly. The worker does the processing.
@@ -146,14 +146,15 @@ docs/
 
 ## Commands
 
-Run from the repo root. First time: `pnpm install`, `cp .env.example .env`, `pnpm db:up`, `pnpm db:migrate`.
+Run from the repo root. First time: `pnpm install`, `cp .env.example .env`, `pnpm db:up`, `pnpm db:migrate`. Needs Docker (for the Supabase CLI).
 
 - `pnpm dev` — run web (http://localhost:3000) and worker locally, with hot reload
   - Marketing: `localhost:3000` · Dashboard: `app.localhost:3000` · Store: `<name>.localhost:3000`
 - `pnpm build` — build everything
 - `pnpm lint` / `pnpm typecheck` / `pnpm test` — must pass before a task is ticked
 - `pnpm format` / `pnpm format:check` — Prettier (Markdown files are not formatted)
-- `pnpm db:up` / `pnpm db:down` — start/stop local Postgres (Docker, port 54322)
+- `pnpm db:up` / `pnpm db:down` — start/stop local Supabase (Postgres on 54322, Auth on 54321, test inbox for sign-in codes on http://127.0.0.1:54324)
+- `pnpm db:status` — local Supabase URLs and keys · `pnpm db:reset` — wipe the local database and re-apply migrations
 - `pnpm db:generate` — create a new migration from schema changes in `packages/db/src/schema`
 - `pnpm db:migrate` — apply migrations
 - `pnpm --filter @fulcra/<name> <script>` — run a script in one package (e.g. `pnpm --filter @fulcra/core test`)
@@ -164,3 +165,7 @@ Notes:
 - Workspace packages export TypeScript source (no build step). Next.js compiles them via `transpilePackages`; the worker runs with `tsx`.
 - All apps read one `.env` at the repo root. In production, real environment variables are used.
 - The web container must listen on `HOSTNAME=0.0.0.0` (set in the Dockerfile); binding to a specific IP breaks host-based rewrites.
+- Database tests use a separate database (`DATABASE_URL_TEST`, name must contain `test`), created and migrated automatically.
+- Server Actions must not call `redirect()`: Next.js renders the target without going through `proxy.ts`, so `/` would show the marketing page. Return `{ redirectTo }` and navigate on the client with `goTo()` (`apps/web/lib/navigation.ts`), or use `ActionButton`.
+- Tenant data: Core services use `withTenant(businessId, …)`. `withSystem` (no RLS) is only for the few cross-business services listed in `docs/decisions/0003`.
+- Client Components import Core rules from `@fulcra/core/rules` (browser-safe), never from `@fulcra/core`.

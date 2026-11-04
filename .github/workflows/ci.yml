@@ -14,6 +14,24 @@ jobs:
     name: Lint, type-check, test, build
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    services:
+      # Plain Postgres for database tests. Migrations must work on standard Postgres
+      # as well as Supabase (rule 13: stay portable).
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+    env:
+      DATABASE_URL_TEST: postgresql://postgres:postgres@localhost:5432/fulcra_test
     steps:
       - uses: actions/checkout@v4
 

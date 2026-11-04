@@ -9,12 +9,12 @@ An AI sales agent for small product sellers in Nigeria. It answers customers, se
 
 ## Getting started
 
-Needs Node 22 (see `.nvmrc`), pnpm 10 (`corepack enable`) and Docker.
+Needs Node 22 (see `.nvmrc`), pnpm 10 (`corepack enable`) and Docker (for local Supabase).
 
 ```bash
 pnpm install
 cp .env.example .env
-pnpm db:up        # start local Postgres (Docker) on port 54322
+pnpm db:up        # start local Supabase: Postgres, Auth and a test inbox (first run downloads images)
 pnpm db:migrate   # apply database migrations
 pnpm dev          # web on http://localhost:3000 + worker
 ```
@@ -24,6 +24,7 @@ Open:
 - http://localhost:3000 — marketing site
 - http://app.localhost:3000 — owner dashboard
 - http://test.localhost:3000 — a store (any name works)
+- http://127.0.0.1:54324 — test inbox: sign-in codes sent locally arrive here
 
 `*.localhost` works out of the box in Chrome, Edge and Firefox. If your browser or OS does not resolve it, add lines like `127.0.0.1 app.localhost` to your hosts file.
 

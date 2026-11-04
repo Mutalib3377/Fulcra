@@ -5,3 +5,4 @@ packages:
 # Packages allowed to run install scripts.
 onlyBuiltDependencies:
   - esbuild
+  - supabase
