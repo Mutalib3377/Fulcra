@@ -18,3 +18,25 @@ export async function newBusiness(label = 'shop') {
   });
   return { business, owner, actor: { businessId: business.id, userId: owner.userId } };
 }
+
+/** Adds a member with the given role to a business (through a real invite). */
+export async function addMember(
+  actor: { businessId: string; userId: string },
+  role: 'staff' | 'rider',
+): Promise<{ businessId: string; userId: string }> {
+  const { createInvite, acceptInvite } = await import('../src/members/invites');
+  const user = newUser(role);
+  const { token } = await createInvite(actor, { email: user.email, role });
+  await acceptInvite({ token, ...user });
+  return { businessId: actor.businessId, userId: user.userId };
+}
+
+/** A minimal valid product input. */
+export function productDraft(overrides: Record<string, unknown> = {}) {
+  return {
+    name: `Ankara dress ${uniq()}`,
+    retailPrice: 1_500_000,
+    options: { kind: 'simple' as const, stock: 5 },
+    ...overrides,
+  };
+}

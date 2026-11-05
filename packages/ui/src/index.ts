@@ -20,3 +20,5 @@ export {
   TableHeader,
   TableRow,
 } from './components/table';
+export { NativeSelect, Textarea } from './components/textarea';
+export { Switch } from './components/switch';

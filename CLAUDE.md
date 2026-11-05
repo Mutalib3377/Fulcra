@@ -26,8 +26,8 @@ The product is called **Fulcra**. The domain is not decided yet: use `yourdomain
 > Update this section whenever a phase is finished.
 
 - Current milestone: **Milestone 1 (Lean Core + Payments)**
-- Current phase: **C2 — Brand kit and catalog** (next)
-- Completed phases: Week 0 setup, C1 — Accounts and businesses
+- Current phase: **C3 — Customers, delivery and orders** (next)
+- Completed phases: Week 0 setup, C1 — Accounts and businesses, C2 — Brand kit and catalog (the "20 products in 30 minutes" check with a real seller's products is the owner's to confirm)
 - Repository: `officialbobo9-netizen/Fulcra-` (moved from `Mutalib3377/Fulcra`; CI runs here)
 
 ## Tech stack (decided — do not change without asking)
@@ -154,7 +154,7 @@ Run from the repo root. First time: `pnpm install`, `cp .env.example .env`, `pnp
 - `pnpm build` — build everything
 - `pnpm lint` / `pnpm typecheck` / `pnpm test` — must pass before a task is ticked
 - `pnpm format` / `pnpm format:check` — Prettier (Markdown files are not formatted)
-- `pnpm db:up` / `pnpm db:down` — start/stop local Supabase (Postgres on 54322, Auth on 54321, test inbox for sign-in codes on http://127.0.0.1:54324)
+- `pnpm db:up` / `pnpm db:down` — start/stop local Supabase (Postgres on 54322, Auth and Storage on 54321, test inbox for sign-in codes on http://127.0.0.1:54324). `db:up` also creates the `fulcra-media` storage bucket.
 - `pnpm db:status` — local Supabase URLs and keys · `pnpm db:reset` — wipe the local database and re-apply migrations
 - `pnpm db:generate` — create a new migration from schema changes in `packages/db/src/schema`
 - `pnpm db:migrate` — apply migrations
@@ -170,3 +170,5 @@ Notes:
 - Server Actions must not call `redirect()`: Next.js renders the target without going through `proxy.ts`, so `/` would show the marketing page. Return `{ redirectTo }` and navigate on the client with `goTo()` (`apps/web/lib/navigation.ts`), or use `ActionButton`.
 - Tenant data: Core services use `withTenant(businessId, …)`. `withSystem` (no RLS) is only for the few cross-business services listed in `docs/decisions/0003`.
 - Client Components import Core rules from `@fulcra/core/rules` (browser-safe), never from `@fulcra/core`.
+- Images: upload through `POST /api/uploads` (Server Actions cap bodies at 1 MB). Store the returned `StoredImage` and build URLs on the server with `imageUrl()` / `withUrls()` (`apps/web/lib/images.ts`); render with a plain `<img>` (sizes are pre-made).
+- Stock only changes through Core (`applyStockChange` inside a transaction, `adjustStock` from the UI). Never update `product_variants.stock` directly (`docs/decisions/0004`).

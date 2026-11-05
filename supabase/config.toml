@@ -114,9 +114,16 @@ port = 54324
 # sender_name = "Admin"
 
 [storage]
-enabled = false
+# Local stand-in for Cloudflare R2 (same S3 API). Production uses R2.
+enabled = true
 # The maximum file size allowed (e.g. "5MB", "500KB").
-file_size_limit = "50MiB"
+file_size_limit = "10MiB"
+
+# Product photos and logos (public: images are shown on stores).
+[storage.buckets.fulcra-media]
+public = true
+file_size_limit = "10MiB"
+allowed_mime_types = ["image/webp", "image/jpeg", "image/png"]
 
 # Uncomment to configure local storage buckets
 # [storage.buckets.images]
