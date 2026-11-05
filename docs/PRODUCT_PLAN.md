@@ -152,7 +152,8 @@ Every business-owned table has `business_id`. Amounts are integers in kobo.
 | members | business_id, user_id, role (owner / staff / rider) |
 | brand_kits | business_id, logo_url, colours, font, voice, description |
 | products | business_id, name, description, category, photos, retail_price, wholesale_price, wholesale_min_qty, min_price, is_active, source (manual / shopify / woocommerce / csv / url), external_id |
-| product_variants | product_id, size, colour, sku, stock, price_override, external_id |
+| product_variants | business_id, product_id, size, colour, sku, stock, price_override, is_default, archived_at, external_id |
+| stock_movements | business_id, variant_id, change, stock_after, reason, note, created_by (history of every stock change) |
 | catalog_sources | business_id, type, credentials (encrypted), last_synced_at, status |
 | customers | business_id, name, phone, tags, marketing_opt_in, notes, paystack_customer_code, dedicated_account (bank, number, name) |
 | customer_identities | customer_id, channel, external_user_id (one customer, many channel identities) |

@@ -9,7 +9,8 @@
     "DATABASE_URL_TEST",
     "ROOT_DOMAIN",
     "SUPABASE_URL",
-    "SUPABASE_PUBLISHABLE_KEY"
+    "SUPABASE_PUBLISHABLE_KEY",
+    "STORAGE_*"
   ],
   "tasks": {
     "build": {

@@ -77,13 +77,14 @@ Goal: an owner can sign up, set up brand and catalog, record orders, and get pai
 
 ### C2 — Brand kit and catalog
 
-- [ ] Schema: `brand_kits`, `products`, `product_variants` (with `source` and `external_id`)
-- [ ] Image upload to R2 with resizing
-- [ ] Brand kit page: logo, colours, font, brand voice, description
-- [ ] Product form: photos, description, category, retail price, wholesale price + min quantity, minimum price
-- [ ] Variants editor (size, colour) with stock per variant
-- [ ] Product list: search, category filter, low-stock badge, active toggle
-- [ ] Core services + tests: create/update product, adjust stock, low-stock detection
+- [x] Schema: `brand_kits`, `products`, `product_variants` (with `source` and `external_id`)
+- [x] Image upload to R2 with resizing (S3 API: Supabase Storage locally, R2 in production via `STORAGE_*`)
+- [x] Brand kit page: logo, colours, font, brand voice, description
+- [x] Product form: photos, description, category, retail price, wholesale price + min quantity, minimum price
+- [x] Variants editor (size, colour) with stock per variant
+- [x] Product list: search, category filter, low-stock badge, active toggle
+- [x] Core services + tests: create/update product, adjust stock, low-stock detection
+- [x] Schema: `stock_movements` (history of every stock change, `docs/decisions/0004`)
 
 **Done when:** a seller can add 20 real products with variants in under 30 minutes.
 

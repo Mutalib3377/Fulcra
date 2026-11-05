@@ -14,8 +14,9 @@ export function toActionError(error: unknown): { ok: false; message: string; fie
   }
   if (error instanceof z.ZodError) {
     const issue = error.issues[0];
-    const field = issue?.path[0];
-    return typeof field === 'string'
+    // Nested fields come back as dotted paths, e.g. "options.variants.2.size".
+    const field = issue?.path.map(String).join('.');
+    return field
       ? { ok: false, message: issue?.message ?? 'Please check this field.', field }
       : { ok: false, message: issue?.message ?? 'Please check the form.' };
   }

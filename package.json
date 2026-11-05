@@ -13,7 +13,7 @@
     "test": "turbo run test",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "db:up": "supabase start",
+    "db:up": "supabase start && supabase seed buckets --local",
     "db:down": "supabase stop",
     "db:generate": "pnpm --filter @fulcra/db db:generate",
     "db:migrate": "pnpm --filter @fulcra/db db:migrate",

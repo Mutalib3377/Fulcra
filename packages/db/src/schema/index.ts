@@ -2,9 +2,11 @@
  * Drizzle schema.
  *
  * Every business-owned table has `business_id`, RLS enabled (`.enableRLS()`) and a
- * policy for the `fulcra_app` role limiting rows to the current business. The RLS
- * coverage test fails if a table is missing either.
+ * `tenantPolicy(...)` for the `fulcra_app` role. The RLS coverage test fails if a
+ * table is missing either.
  */
 export * from './businesses';
 export * from './members';
-export { appRole } from './_shared';
+export * from './brand-kits';
+export * from './catalog';
+export { appRole, type StoredImage } from './_shared';
