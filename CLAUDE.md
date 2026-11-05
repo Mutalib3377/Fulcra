@@ -27,7 +27,8 @@ The product is called **Fulcra**. The domain is not decided yet: use `yourdomain
 
 - Current milestone: **Milestone 1 (Lean Core + Payments)**
 - Current phase: **C2 — Brand kit and catalog** (next)
-- Completed phases: Week 0 setup (the first green CI run is waiting on the GitHub account billing lock), C1 — Accounts and businesses
+- Completed phases: Week 0 setup, C1 — Accounts and businesses
+- Repository: `officialbobo9-netizen/Fulcra-` (moved from `Mutalib3377/Fulcra`; CI runs here)
 
 ## Tech stack (decided — do not change without asking)
 
