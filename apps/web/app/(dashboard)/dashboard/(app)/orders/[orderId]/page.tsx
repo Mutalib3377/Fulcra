@@ -1,9 +1,13 @@
 import { formatNaira } from '@fulcra/config';
 import {
+  getBusiness,
   getOrder,
+  getPayoutSettings,
   isCoreError,
   listEvents,
+  listOrderPayments,
   PAYMENT_METHOD_LABELS,
+  receiptUrl,
   type ManualPaymentMethod,
 } from '@fulcra/core';
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, EmptyState } from '@fulcra/ui';
@@ -20,6 +24,7 @@ import {
   timeAgo,
 } from '@/lib/orders';
 import { OrderActions } from './order-actions';
+import { PaymentCard } from './payment-card';
 
 export const metadata: Metadata = { title: 'Order' };
 
@@ -49,7 +54,12 @@ export default async function OrderPage({ params }: Props) {
     throw error;
   }
   const { order, items, customer } = detail;
-  const events = await listEvents(actor, { orderId, limit: 50 });
+  const [events, payments, payout, business] = await Promise.all([
+    listEvents(actor, { orderId, limit: 50 }),
+    listOrderPayments(actor, orderId),
+    getPayoutSettings(actor),
+    getBusiness(actor),
+  ]);
   const now = new Date();
   const waNumber = customer.phone?.replace(/^\+/, '');
 
@@ -73,6 +83,32 @@ export default async function OrderPage({ params }: Props) {
         total={order.total}
         role={membership.role}
       />
+
+      {order.status !== 'cancelled' && (
+        <PaymentCard
+          orderId={order.id}
+          orderNumber={order.orderNumber}
+          total={order.total}
+          isUnpaid={order.status === 'new' || order.status === 'awaiting_payment'}
+          isPaid={order.amountPaid > 0}
+          canEdit={membership.role !== 'rider'}
+          payoutReady={payout.configured}
+          businessName={business.name}
+          customerName={customer.name}
+          customerPhone={customer.phone}
+          receiptLink={receiptUrl(business.subdomain, order.receiptToken)}
+          payments={payments.map((x) => ({
+            id: x.id,
+            provider: x.provider,
+            status: x.status,
+            amount: x.amount,
+            method: x.method,
+            checkoutUrl: x.checkoutUrl,
+            reviewReason: x.reviewReason,
+            when: formatDateTime(x.paidAt ?? x.createdAt),
+          }))}
+        />
+      )}
 
       <Card>
         <CardHeader className="pb-2">
@@ -137,7 +173,11 @@ export default async function OrderPage({ params }: Props) {
             </div>
             {order.amountPaid > 0 && (
               <Row
-                label={`Paid${order.paymentMethod ? ` (${PAYMENT_METHOD_LABELS[order.paymentMethod as ManualPaymentMethod] ?? order.paymentMethod})` : ''}`}
+                label={
+                  order.paymentMethod === 'paystack'
+                    ? 'Paid online'
+                    : `Paid${order.paymentMethod ? ` (${PAYMENT_METHOD_LABELS[order.paymentMethod as ManualPaymentMethod] ?? order.paymentMethod})` : ''}`
+                }
                 value={formatNaira(order.amountPaid)}
               />
             )}

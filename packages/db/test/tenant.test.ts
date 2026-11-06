@@ -2,7 +2,7 @@ import { eq, sql } from 'drizzle-orm';
 import postgres from 'postgres';
 import { afterAll, describe, expect, it } from 'vitest';
 import { getDb } from '../src/client';
-import { businesses, members } from '../src/schema';
+import { businesses, members, webhookEvents } from '../src/schema';
 import { withSystem, withTenant } from '../src/tenant';
 import { getTestDatabaseUrl } from '../src/testing';
 
@@ -92,6 +92,19 @@ describe('withTenant', () => {
 
   it('rejects a business id that is not a uuid', async () => {
     await expect(withTenant("x' or 1=1 --", async () => 1)).rejects.toThrow();
+  });
+});
+
+describe('webhook_events', () => {
+  it('is invisible to tenant queries (system-only table)', async () => {
+    const a = await makeBusiness('a');
+    await withSystem((tx) =>
+      tx
+        .insert(webhookEvents)
+        .values({ provider: 'test', eventId: `e-${unique()}`, eventType: 'x', payload: {} }),
+    );
+    expect(await withTenant(a.id, (tx) => tx.select().from(webhookEvents))).toEqual([]);
+    expect((await withSystem((tx) => tx.select().from(webhookEvents))).length).toBeGreaterThan(0);
   });
 });
 

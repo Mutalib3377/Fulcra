@@ -26,8 +26,8 @@ The product is called **Fulcra**. The domain is not decided yet: use `yourdomain
 > Update this section whenever a phase is finished.
 
 - Current milestone: **Milestone 1 (Lean Core + Payments)**
-- Current phase: **P1 — Payment links and receipts** (next)
-- Completed phases: Week 0 setup, C1 — Accounts and businesses, C2 — Brand kit and catalog (the "20 products in 30 minutes" check with a real seller's products is the owner's to confirm), C3 — Customers, delivery and orders
+- Current phase: **P2 — Dedicated virtual accounts** (next)
+- Completed phases: Week 0 setup, C1 — Accounts and businesses, C2 — Brand kit and catalog (the "20 products in 30 minutes" check with a real seller's products is the owner's to confirm), C3 — Customers, delivery and orders, P1 — Payment links and receipts (tested with a fake Paystack; a real test-mode payment needs the owner's Paystack test key)
 - Repository: `officialbobo9-netizen/Fulcra-` (moved from `Mutalib3377/Fulcra`; CI runs here)
 
 ## Tech stack (decided — do not change without asking)
@@ -173,3 +173,4 @@ Notes:
 - Images: upload through `POST /api/uploads` (Server Actions cap bodies at 1 MB). Store the returned `StoredImage` and build URLs on the server with `imageUrl()` / `withUrls()` (`apps/web/lib/images.ts`); render with a plain `<img>` (sizes are pre-made).
 - Stock only changes through Core (`applyStockChange` inside a transaction, `adjustStock` from the UI). Never update `product_variants.stock` directly (`docs/decisions/0004`).
 - Orders: create with `createOrderInTx` / `createOrder` (prices and stock from the database), move with `updateOrderStatus`, `markOrderPaid`, `cancelOrder`. Important actions write `events` in the same transaction via `recordEvent` (`docs/decisions/0005`).
+- Payments: links via `createPaymentLink`; Paystack webhooks are saved by `recordPaystackWebhook` and processed in the worker by `processPaystackWebhook`, which verifies with Paystack before confirming (`docs/decisions/0006`). Jobs are defined in `packages/core/src/jobs/queue.ts`. In tests, use `setPaystackClient(new FakePaystack())`; never call the real API.

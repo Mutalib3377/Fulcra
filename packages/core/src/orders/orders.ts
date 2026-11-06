@@ -6,6 +6,7 @@ import { variantLabel } from '../catalog/rules';
 import { findOrCreateCustomerInTx, findOrCreateCustomerInput } from '../customers/customers';
 import { recordEvent, userActor, type EventActorRef } from '../events/events';
 import { requireMember, type ActorContext } from '../members/access';
+import { recordManualPayment } from '../payments/payments';
 import { CoreError, isCoreError } from '../shared/errors';
 import {
   canCancelOrder,
@@ -371,6 +372,15 @@ export async function markOrderPaid(
         paidAt: new Date(),
       })
       .where(eq(schema.orders.id, id));
+    if (order.total > 0) {
+      await recordManualPayment(tx, actor.businessId, {
+        orderId: id,
+        amount: order.total,
+        method: data.method,
+        note: data.note,
+        createdBy: actor.userId,
+      });
+    }
     await recordEvent(tx, actor.businessId, {
       type: 'order.paid',
       actor: userActor(actor),

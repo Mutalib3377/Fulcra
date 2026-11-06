@@ -1,4 +1,6 @@
 import { APP_NAME } from '@fulcra/config';
+import { ensureQueues, JOBS } from '@fulcra/core';
+import { handlePaystackWebhook } from './jobs/paystack-webhook';
 import { loadEnv } from './env';
 import { createQueue } from './queue';
 
@@ -7,7 +9,9 @@ async function main(): Promise<void> {
   const boss = createQueue(env.DATABASE_URL);
 
   await boss.start();
-  // Job handlers are registered here as phases add them (payments, agent replies, imports...).
+  await ensureQueues(boss);
+  // Job handlers, one per queue (more arrive with later phases: agent replies, imports…).
+  await boss.work(JOBS.paystackWebhook.name, { localConcurrency: 2 }, handlePaystackWebhook);
   console.info(`[worker] ${APP_NAME} worker ready`);
 
   let stopping = false;

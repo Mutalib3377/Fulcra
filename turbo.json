@@ -10,7 +10,8 @@
     "ROOT_DOMAIN",
     "SUPABASE_URL",
     "SUPABASE_PUBLISHABLE_KEY",
-    "STORAGE_*"
+    "STORAGE_*",
+    "PAYSTACK_*"
   ],
   "tasks": {
     "build": {

@@ -21,6 +21,11 @@ export const businesses = pgTable(
     websiteUrl: text('website_url'),
     /** Set during payment setup (P1, docs/decisions/0001). */
     paystackSubaccountCode: text('paystack_subaccount_code'),
+    /** Where sellers are paid (shown in Settings; the full account number is kept by Paystack). */
+    payoutBankCode: text('payout_bank_code'),
+    payoutBankName: text('payout_bank_name'),
+    payoutAccountName: text('payout_account_name'),
+    payoutAccountLast4: text('payout_account_last4'),
     /** Last order number used; the next order gets this + 1 (orders start at #1001). */
     lastOrderNumber: integer('last_order_number').notNull().default(1000),
     ...timestamps,

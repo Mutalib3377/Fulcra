@@ -8,7 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@fulcra/ui';
-import { ChevronRight, MapPin, Palette, Plus, Users } from 'lucide-react';
+import { ChevronRight, Landmark, MapPin, Palette, Plus, Users } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ActionButton } from '@/components/action-button';
@@ -66,6 +66,21 @@ export default async function SettingsPage() {
               <div>
                 <CardTitle>Brand kit</CardTitle>
                 <CardDescription>Logo, colours, font and how your assistant talks.</CardDescription>
+              </div>
+            </div>
+            <ChevronRight className="size-5 text-muted-foreground" aria-hidden />
+          </CardHeader>
+        </Card>
+      </Link>
+
+      <Link href="/settings/payments" className="block">
+        <Card className="transition-colors hover:bg-muted/50">
+          <CardHeader className="flex-row items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Landmark className="size-5 text-primary" aria-hidden />
+              <div>
+                <CardTitle>Get paid</CardTitle>
+                <CardDescription>Your bank account for online payments.</CardDescription>
               </div>
             </div>
             <ChevronRight className="size-5 text-muted-foreground" aria-hidden />

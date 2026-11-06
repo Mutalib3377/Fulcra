@@ -46,7 +46,7 @@ export function describeEvent(e: EventLike): { text: string; href: string | null
       };
     case 'order.paid':
       return {
-        text: `${order} paid · ${formatNaira(num(p.amount))}${p.method ? ` (${PAYMENT_METHOD_LABELS[str(p.method) as ManualPaymentMethod] ?? str(p.method)})` : ''}`,
+        text: `${order} marked paid · ${formatNaira(num(p.amount))}${p.method ? ` (${PAYMENT_METHOD_LABELS[str(p.method) as ManualPaymentMethod] ?? str(p.method)})` : ''}`,
         href: orderHref,
       };
     case 'order.cancelled':
@@ -59,6 +59,10 @@ export function describeEvent(e: EventLike): { text: string; href: string | null
         text: `New customer: ${str(p.name) || str(p.phone) || 'no name'}`,
         href: e.customerId ? `/customers/${e.customerId}` : null,
       };
+    case 'payment.confirmed':
+      return { text: `${order} paid online · ${formatNaira(num(p.amount))}`, href: orderHref };
+    case 'payment.needs_review':
+      return { text: `${order}: a payment needs checking`, href: orderHref };
     case 'stock.low': {
       const label = [
         str(p.productName),

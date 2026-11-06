@@ -11,6 +11,8 @@ export const EVENT_TYPES = [
   'order.paid',
   'order.cancelled',
   'stock.low',
+  'payment.confirmed',
+  'payment.needs_review',
 ] as const;
 export type EventType = (typeof EVENT_TYPES)[number];
 

@@ -66,6 +66,11 @@ export const orders = pgTable(
     deliveredAt: timestamp('delivered_at', { withTimezone: true }),
     cancelledAt: timestamp('cancelled_at', { withTimezone: true }),
     createdBy: uuid('created_by'),
+    /** Secret code in the receipt link, so receipts cannot be guessed. */
+    receiptToken: text('receipt_token')
+      .notNull()
+      .unique()
+      .default(sql`replace(gen_random_uuid()::text, '-', '')`),
     ...timestamps,
   },
   (t) => [

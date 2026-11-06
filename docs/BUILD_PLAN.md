@@ -101,14 +101,14 @@ Goal: an owner can sign up, set up brand and catalog, record orders, and get pai
 
 ### P1 — Payment links and receipts
 
-- [ ] Paystack client in `packages/core/payments`
-- [ ] Seller payout setup: bank account → Paystack subaccount per business (`docs/decisions/0001`)
-- [ ] Schema: `payments`, `webhook_events`
-- [ ] Payment link per order (`createPaymentLink(orderId)`), settled to the seller's subaccount
-- [ ] Webhook: verify signature → save to `webhook_events` (unique event id) → enqueue → 200
-- [ ] Worker: confirm payment, mark order paid, write `payment.confirmed` event
-- [ ] Receipt page + PDF
-- [ ] Tests: duplicate webhooks never double-count
+- [x] Paystack client in `packages/core/payments`
+- [x] Seller payout setup: bank account → Paystack subaccount per business (`docs/decisions/0001`)
+- [x] Schema: `payments`, `webhook_events`
+- [x] Payment link per order (`createPaymentLink(orderId)`), settled to the seller's subaccount
+- [x] Webhook: verify signature → save to `webhook_events` (unique event id) → enqueue → 200
+- [x] Worker: confirm payment, mark order paid, write `payment.confirmed` event
+- [x] Receipt page + PDF
+- [x] Tests: duplicate webhooks never double-count
 
 ### P2 — Dedicated virtual accounts
 

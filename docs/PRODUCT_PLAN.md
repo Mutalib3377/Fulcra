@@ -160,13 +160,13 @@ Every business-owned table has `business_id`. Amounts are integers in kobo.
 | delivery_zones | business_id, name, fee, estimated_time |
 | orders | business_id, order_number, customer_id, status, channel, fulfilment (delivery / pickup), subtotal, delivery_fee, discount, total, amount_paid, payment_method, delivery_zone_id + name copy, address, timestamps per status |
 | order_items | order_id, variant_id, product_id, product_name + variant_label copies, quantity, unit_price, is_wholesale, line_total |
-| payments | business_id, order_id, provider, provider_reference (unique), amount, status, method |
+| payments | business_id, order_id, provider (paystack / manual), reference (unique per provider), amount, status (pending / success / failed / needs_review), method, checkout_url, paid_at |
 | channel_connections | business_id, channel, account_id, access_token (encrypted), status, expires_at |
 | conversations | business_id, customer_id, channel, status, handled_by (agent / human), last_customer_message_at |
 | messages | conversation_id, direction, type, body, media_url, sent_by (customer / agent / human), created_at |
 | agent_settings | business_id, tone, hours, away_message, policies, handoff_topics |
 | agent_actions | conversation_id, tool, input, output, created_at (audit trail) |
-| webhook_events | provider, event_id (unique), payload, processed_at |
+| webhook_events | provider, event_id (unique per provider), event_type, payload, processed_at, attempts, last_error (system-only) |
 | plans / entitlements | plan features and limits; per-business switches |
 | usage_records | business_id, kind, quantity, cost_usd, created_at |
 | events | business_id, type, actor (user / system / agent / customer), order_id, customer_id, payload, created_at |

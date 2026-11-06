@@ -3,6 +3,7 @@
 import {
   cancelOrder,
   createOrder,
+  createPaymentLink,
   markOrderPaid,
   updateOrderStatus,
   type CreateOrderInput,
@@ -71,6 +72,20 @@ export async function cancelOrderAction(orderId: string, reason: string): Promis
     await cancelOrder(context.actor, orderId, { reason });
     refresh(orderId);
     return { ok: true, data: undefined };
+  } catch (error) {
+    return toActionError(error);
+  }
+}
+
+export async function createPaymentLinkAction(
+  orderId: string,
+): Promise<ActionResult<{ url: string; reused: boolean }>> {
+  const context = await getActionContext();
+  if (!context) return SESSION_ENDED;
+  try {
+    const { url, reused } = await createPaymentLink(context.actor, orderId);
+    refresh(orderId);
+    return { ok: true, data: { url, reused } };
   } catch (error) {
     return toActionError(error);
   }

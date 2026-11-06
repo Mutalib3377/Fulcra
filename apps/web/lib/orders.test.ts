@@ -29,7 +29,7 @@ describe('describeEvent', () => {
         customerId: null,
         payload: { orderNumber: 1001, amount: 150000, method: 'cash' },
       }).text,
-    ).toBe('Order #1001 paid · ₦1,500.00 (Cash)');
+    ).toBe('Order #1001 marked paid · ₦1,500.00 (Cash)');
     expect(
       describeEvent({
         type: 'stock.low',

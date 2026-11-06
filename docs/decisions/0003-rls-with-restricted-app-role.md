@@ -25,5 +25,5 @@ Implemented slightly differently from "connect as `fulcra_app`", with the same g
 
 - `fulcra_app` is a role **without login** (migration `0000_app-role.sql`). The app keeps one connection string (the Supabase pooled URL), and `withTenant` runs `SET LOCAL ROLE fulcra_app` together with `set_config('app.business_id', …, true)` at the start of each tenant transaction. Both reset when the transaction ends, which is safe with the transaction pooler.
 - So there is no second password to manage, and RLS still applies to every tenant query.
-- `withSystem` is the only way to query without RLS. It is used by a few named Core services (create business, subdomain check, list my businesses, invite preview/accept).
+- `withSystem` is the only way to query without RLS. It is used by a few named Core services (create business, subdomain check, list my businesses, invite preview/accept; from P1: saving and processing payment webhooks, and public receipts looked up by store address + secret token).
 - A test (`packages/db/test/tenant.test.ts`) fails if any table with `business_id` lacks RLS or a `fulcra_app` policy. New business-owned tables must use `.enableRLS()` and a tenant policy (see `packages/db/src/schema/members.ts`).
