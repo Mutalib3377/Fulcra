@@ -538,3 +538,63 @@ export async function listCategories(actor: ActorContext): Promise<string[]> {
     return rows.map((r) => r.category!).filter(Boolean);
   });
 }
+
+export type OrderableProduct = {
+  id: string;
+  name: string;
+  isActive: boolean;
+  photo: schema.StoredImage | null;
+  retailPrice: number;
+  wholesalePrice: number | null;
+  wholesaleMinQty: number | null;
+  variants: {
+    id: string;
+    size: string | null;
+    colour: string | null;
+    isDefault: boolean;
+    stock: number;
+    priceOverride: number | null;
+  }[];
+};
+
+/** Products and their options for the order form (archived ones excluded), A–Z. */
+export async function listOrderableProducts(actor: ActorContext): Promise<OrderableProduct[]> {
+  return withTenant(actor.businessId, async (tx) => {
+    await requireMember(tx, actor);
+    const p = schema.products;
+    const v = schema.productVariants;
+    const rows = await tx
+      .select({ product: p, variant: v })
+      .from(p)
+      .innerJoin(v, and(eq(v.productId, p.id), isNull(v.archivedAt)))
+      .where(isNull(p.archivedAt))
+      .orderBy(asc(p.name), asc(v.position))
+      .limit(2000);
+    const byProduct = new Map<string, OrderableProduct>();
+    for (const { product, variant } of rows) {
+      let entry = byProduct.get(product.id);
+      if (!entry) {
+        entry = {
+          id: product.id,
+          name: product.name,
+          isActive: product.isActive,
+          photo: product.photos[0] ?? null,
+          retailPrice: product.retailPrice,
+          wholesalePrice: product.wholesalePrice,
+          wholesaleMinQty: product.wholesaleMinQty,
+          variants: [],
+        };
+        byProduct.set(product.id, entry);
+      }
+      entry.variants.push({
+        id: variant.id,
+        size: variant.size,
+        colour: variant.colour,
+        isDefault: variant.isDefault,
+        stock: variant.stock,
+        priceOverride: variant.priceOverride,
+      });
+    }
+    return [...byProduct.values()];
+  });
+}

@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from '@fulcra/ui';
-import { House, MessageCircle, Package, Settings, ShoppingBag } from 'lucide-react';
+import { House, MessageCircle, Package, Settings, ShoppingBag, Users } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -11,6 +11,13 @@ const items = [
   { href: '/orders', label: 'Orders', icon: ShoppingBag },
   { href: '/catalog', label: 'Catalog', icon: Package },
   { href: '/settings', label: 'Settings', icon: Settings },
+] as const;
+
+/** The desktop sidebar also lists Customers (on phones it is a tab inside Orders). */
+const sideItems = [
+  ...items.slice(0, 3),
+  { href: '/customers', label: 'Customers', icon: Users },
+  ...items.slice(3),
 ] as const;
 
 function useActive() {
@@ -30,7 +37,7 @@ export function BottomNav() {
     >
       <ul className="grid grid-cols-5">
         {items.map(({ href, label, icon: Icon }) => {
-          const active = isActive(href);
+          const active = isActive(href) || (href === '/orders' && isActive('/customers'));
           return (
             <li key={href}>
               <Link
@@ -57,7 +64,7 @@ export function SideNav() {
   const isActive = useActive();
   return (
     <nav aria-label="Main" className="flex flex-col gap-1 p-3">
-      {items.map(({ href, label, icon: Icon }) => {
+      {sideItems.map(({ href, label, icon: Icon }) => {
         const active = isActive(href);
         return (
           <Link

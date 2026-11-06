@@ -36,3 +36,8 @@ function findPgError(error: unknown): PgError | undefined {
   }
   return undefined;
 }
+
+/** True when a Postgres error is a foreign-key violation (a referenced row is missing). */
+export function isForeignKeyViolation(error: unknown): boolean {
+  return findPgError(error)?.code === '23503';
+}

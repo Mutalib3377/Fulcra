@@ -1,0 +1,77 @@
+'use server';
+
+import {
+  cancelOrder,
+  createOrder,
+  markOrderPaid,
+  updateOrderStatus,
+  type CreateOrderInput,
+  type ManualPaymentMethod,
+} from '@fulcra/core';
+import { revalidatePath } from 'next/cache';
+import { toActionError, type ActionResult } from '@/lib/action-result';
+import { getActionContext, SESSION_ENDED } from '@/lib/auth';
+
+function refresh(orderId?: string) {
+  revalidatePath('/dashboard/orders');
+  if (orderId) revalidatePath(`/dashboard/orders/${orderId}`);
+  revalidatePath('/dashboard');
+  revalidatePath('/dashboard/catalog');
+}
+
+export async function createOrderAction(
+  input: CreateOrderInput,
+): Promise<ActionResult<{ redirectTo: string }>> {
+  const context = await getActionContext();
+  if (!context) return SESSION_ENDED;
+  try {
+    const { order } = await createOrder(context.actor, input);
+    refresh();
+    return { ok: true, data: { redirectTo: `/orders/${order.id}` } };
+  } catch (error) {
+    return toActionError(error);
+  }
+}
+
+export async function moveOrderAction(
+  orderId: string,
+  to: 'awaiting_payment' | 'dispatched' | 'delivered',
+): Promise<ActionResult> {
+  const context = await getActionContext();
+  if (!context) return SESSION_ENDED;
+  try {
+    await updateOrderStatus(context.actor, orderId, to);
+    refresh(orderId);
+    return { ok: true, data: undefined };
+  } catch (error) {
+    return toActionError(error);
+  }
+}
+
+export async function markPaidAction(
+  orderId: string,
+  method: ManualPaymentMethod,
+  note: string,
+): Promise<ActionResult> {
+  const context = await getActionContext();
+  if (!context) return SESSION_ENDED;
+  try {
+    await markOrderPaid(context.actor, orderId, { method, note });
+    refresh(orderId);
+    return { ok: true, data: undefined };
+  } catch (error) {
+    return toActionError(error);
+  }
+}
+
+export async function cancelOrderAction(orderId: string, reason: string): Promise<ActionResult> {
+  const context = await getActionContext();
+  if (!context) return SESSION_ENDED;
+  try {
+    await cancelOrder(context.actor, orderId, { reason });
+    refresh(orderId);
+    return { ok: true, data: undefined };
+  } catch (error) {
+    return toActionError(error);
+  }
+}

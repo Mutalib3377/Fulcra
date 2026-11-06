@@ -29,3 +29,9 @@ export {
   type StoredImage,
 } from './media/images';
 export { uploadImage } from './media/upload';
+
+export * from './events/events';
+export * from './delivery/zones';
+export * from './customers/customers';
+export * from './orders/rules';
+export * from './orders/orders';

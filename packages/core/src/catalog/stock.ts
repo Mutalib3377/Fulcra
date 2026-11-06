@@ -2,7 +2,9 @@ import { schema, withTenant, type Tx } from '@fulcra/db';
 import { and, asc, eq, isNull, lte, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { requireMember, type ActorContext } from '../members/access';
+import { recordEvent } from '../events/events';
 import { CoreError } from '../shared/errors';
+import { variantLabel } from './rules';
 
 export type StockChange = {
   variantId: string;
@@ -27,15 +29,24 @@ export async function applyStockChange(
     throw new CoreError('validation', 'Enter a whole number that is not zero.', 'change');
   }
   const [variant] = await tx
-    .select({ stock: schema.productVariants.stock })
+    .select({
+      stock: schema.productVariants.stock,
+      size: schema.productVariants.size,
+      colour: schema.productVariants.colour,
+      productId: schema.products.id,
+      productName: schema.products.name,
+      threshold: schema.products.lowStockThreshold,
+      isActive: schema.products.isActive,
+    })
     .from(schema.productVariants)
+    .innerJoin(schema.products, eq(schema.products.id, schema.productVariants.productId))
     .where(
       and(
         eq(schema.productVariants.id, input.variantId),
         isNull(schema.productVariants.archivedAt),
       ),
     )
-    .for('update')
+    .for('update', { of: schema.productVariants })
     .limit(1);
   if (!variant) throw new CoreError('not_found', 'This product option no longer exists.');
 
@@ -61,6 +72,22 @@ export async function applyStockChange(
     note: input.note?.trim().slice(0, 200) ?? '',
     createdBy,
   });
+
+  // Crossing the low-stock level (not every change while already low) raises one event.
+  if (variant.isActive && variant.stock > variant.threshold && stock <= variant.threshold) {
+    await recordEvent(tx, businessId, {
+      type: 'stock.low',
+      actor: createdBy ? { type: 'user', id: createdBy } : { type: 'system' },
+      payload: {
+        productId: variant.productId,
+        productName: variant.productName,
+        variantId: input.variantId,
+        variantLabel: variantLabel(variant),
+        stock,
+        threshold: variant.threshold,
+      },
+    });
+  }
   return { stock };
 }
 
