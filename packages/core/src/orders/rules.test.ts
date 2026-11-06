@@ -45,3 +45,15 @@ describe('unitPriceFor', () => {
     ).toBe(false);
   });
 });
+
+describe('paymentMethodLabel', () => {
+  it('names every way an order can be paid', async () => {
+    const { paymentMethodLabel } = await import('./rules');
+    expect(paymentMethodLabel('paystack')).toBe('Paid online');
+    expect(paymentMethodLabel('bank_transfer')).toBe('Bank transfer');
+    expect(paymentMethodLabel('pos')).toBe('POS');
+    expect(paymentMethodLabel('dedicated_nuban')).toBe('Bank transfer');
+    expect(paymentMethodLabel('card')).toBe('Card');
+    expect(paymentMethodLabel(null)).toBe('');
+  });
+});

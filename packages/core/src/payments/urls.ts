@@ -31,3 +31,16 @@ export function paymentEmailFor(
   const local = customer.phone ? customer.phone.replace(/\D/g, '') : `order-${fallbackId}`;
   return `${local}@customers.${domain}`;
 }
+
+/**
+ * Email for the Paystack customer behind a dedicated account. One per business-customer pair,
+ * so the same person buying from two businesses gets two separate Paystack customers.
+ */
+export function dedicatedAccountEmail(
+  customerId: string,
+  env: NodeJS.ProcessEnv = process.env,
+): string {
+  const root = rootDomain(env).replace(/:\d+$/, '');
+  const domain = root.includes('.') && !root.endsWith('localhost') ? root : DEFAULT_ROOT_DOMAIN;
+  return `dva-${customerId}@customers.${domain}`;
+}

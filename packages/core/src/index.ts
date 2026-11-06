@@ -40,5 +40,7 @@ export * from './payments/paystack';
 export * from './payments/payout';
 export * from './payments/payments';
 export * from './payments/receipts';
+export * from './payments/dedicated-accounts';
+export * from './payments/transfers';
 export { receiptUrl } from './payments/urls';
 export * from './jobs/queue';

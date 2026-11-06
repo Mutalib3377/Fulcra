@@ -1,17 +1,18 @@
 'use client';
 
 import { formatNaira } from '@fulcra/config';
+import { paymentMethodLabel } from '@fulcra/core/rules';
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, FieldMessage } from '@fulcra/ui';
-import { Check, Copy, ExternalLink, Link2, MessageCircle, Receipt } from 'lucide-react';
+import { Check, Copy, ExternalLink, Landmark, Link2, MessageCircle, Receipt } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
-import { createPaymentLinkAction } from '../actions';
+import { createPaymentLinkAction, prepareAccountDetailsAction } from '../actions';
 
 type PaymentRow = {
   id: string;
   provider: 'paystack' | 'manual';
-  status: 'pending' | 'success' | 'failed' | 'needs_review';
+  status: 'pending' | 'success' | 'failed' | 'needs_review' | 'unmatched' | 'dismissed';
   amount: number;
   method: string | null;
   checkoutUrl: string | null;
@@ -35,12 +36,16 @@ type Props = {
 };
 
 const statusTone = {
+  unmatched: 'warning',
+  dismissed: 'neutral',
   pending: 'warning',
   success: 'success',
   failed: 'neutral',
   needs_review: 'danger',
 } as const;
 const statusLabel = {
+  unmatched: 'To match',
+  dismissed: 'Not for an order',
   pending: 'Waiting',
   success: 'Received',
   failed: 'Failed',
@@ -62,6 +67,22 @@ export function PaymentCard(p: Props) {
       ?.checkoutUrl ?? null;
   const [link, setLink] = useState<string | null>(latestLink);
   const firstName = p.customerName.split(' ')[0] || 'there';
+  const [transfer, setTransfer] = useState<{
+    message: string;
+    accountNumber: string;
+    bankName: string;
+    accountName: string;
+  } | null>(null);
+
+  const showTransfer = () =>
+    startTransition(async () => {
+      setError(null);
+      const result = await prepareAccountDetailsAction(p.orderId);
+      if (result.ok) {
+        setTransfer(result.data);
+        router.refresh();
+      } else setError(result.message);
+    });
 
   const create = () =>
     startTransition(async () => {
@@ -139,6 +160,51 @@ export function PaymentCard(p: Props) {
             </Button>
           ))}
 
+        {p.isUnpaid &&
+          p.canEdit &&
+          p.payoutReady &&
+          (transfer ? (
+            <div className="flex flex-col gap-2 rounded-md border p-3">
+              <p className="text-sm font-medium">Bank transfer details for {firstName}</p>
+              <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
+                <dt className="text-muted-foreground">Bank</dt>
+                <dd>{transfer.bankName}</dd>
+                <dt className="text-muted-foreground">Account</dt>
+                <dd className="font-mono font-semibold">{transfer.accountNumber}</dd>
+                <dt className="text-muted-foreground">Name</dt>
+                <dd>{transfer.accountName}</dd>
+              </dl>
+              <div className="flex flex-wrap gap-2">
+                <Button asChild size="sm">
+                  <a
+                    href={waLink(p.customerPhone, transfer.message)}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <MessageCircle aria-hidden /> Send on WhatsApp
+                  </a>
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => copy(transfer.message, 'transfer')}
+                >
+                  {copied === 'transfer' ? <Check aria-hidden /> : <Copy aria-hidden />}{' '}
+                  {copied === 'transfer' ? 'Copied' : 'Copy details'}
+                </Button>
+              </div>
+              <FieldMessage>
+                This account is just for this customer. A transfer of exactly {formatNaira(p.total)}{' '}
+                marks this order paid by itself.
+              </FieldMessage>
+            </div>
+          ) : (
+            <Button type="button" variant="outline" loading={pending} onClick={showTransfer}>
+              <Landmark aria-hidden /> Bank transfer details
+            </Button>
+          ))}
+
         {p.isPaid && (
           <div className="flex flex-wrap gap-2">
             <Button asChild size="sm">
@@ -169,7 +235,7 @@ export function PaymentCard(p: Props) {
               <li key={x.id} className="flex items-center justify-between gap-3 py-2">
                 <span>
                   {x.provider === 'paystack' ? 'Paystack' : 'Recorded by you'}
-                  {x.method ? ` · ${x.method.replace('_', ' ')}` : ''}
+                  {x.method ? ` · ${paymentMethodLabel(x.method)}` : ''}
                   <span className="block text-xs text-muted-foreground">{x.when}</span>
                 </span>
                 <span className="flex items-center gap-2">

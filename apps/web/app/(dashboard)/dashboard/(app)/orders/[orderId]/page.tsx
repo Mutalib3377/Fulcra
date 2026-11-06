@@ -6,9 +6,8 @@ import {
   isCoreError,
   listEvents,
   listOrderPayments,
-  PAYMENT_METHOD_LABELS,
+  paymentMethodLabel,
   receiptUrl,
-  type ManualPaymentMethod,
 } from '@fulcra/core';
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, EmptyState } from '@fulcra/ui';
 import { MessageCircle, Phone } from 'lucide-react';
@@ -173,11 +172,7 @@ export default async function OrderPage({ params }: Props) {
             </div>
             {order.amountPaid > 0 && (
               <Row
-                label={
-                  order.paymentMethod === 'paystack'
-                    ? 'Paid online'
-                    : `Paid${order.paymentMethod ? ` (${PAYMENT_METHOD_LABELS[order.paymentMethod as ManualPaymentMethod] ?? order.paymentMethod})` : ''}`
-                }
+                label={`Paid${order.paymentMethod ? ` (${paymentMethodLabel(order.paymentMethod)})` : ''}`}
                 value={formatNaira(order.amountPaid)}
               />
             )}

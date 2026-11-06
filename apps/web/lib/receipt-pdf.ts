@@ -1,5 +1,5 @@
 import 'server-only';
-import { PAYMENT_METHOD_LABELS, type ManualPaymentMethod, type Receipt } from '@fulcra/core';
+import { paymentMethodLabel, type Receipt } from '@fulcra/core';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 
 // The built-in PDF fonts have no ₦ sign, so amounts show as "NGN 15,000.00".
@@ -70,12 +70,7 @@ export async function receiptPdf(receipt: Receipt): Promise<Uint8Array> {
   const method = receipt.order.paymentMethod;
   row('Customer', safe(receipt.customerName || '-'));
   row('Date paid', date(receipt.order.paidAt));
-  row(
-    'Payment',
-    method === 'paystack'
-      ? 'Paid online'
-      : (PAYMENT_METHOD_LABELS[method as ManualPaymentMethod] ?? method ?? '-'),
-  );
+  row('Payment', paymentMethodLabel(method) || '-');
   y -= 6;
   page.drawLine({ start: { x: left, y }, end: { x: right, y }, thickness: 0.5, color: grey });
   y -= 18;

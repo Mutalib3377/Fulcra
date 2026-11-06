@@ -14,12 +14,22 @@ import {
 } from 'drizzle-orm/pg-core';
 import { id, tenantPolicy, timestamps } from './_shared';
 import { businesses } from './businesses';
+import { customers } from './customers';
 import { orders } from './orders';
 
 export const paymentProviders = ['paystack', 'manual'] as const;
 export const paymentProvider = pgEnum('payment_provider', paymentProviders);
 
-export const paymentStatuses = ['pending', 'success', 'failed', 'needs_review'] as const;
+export const paymentStatuses = [
+  'pending',
+  'success',
+  'failed',
+  'needs_review',
+  /** A transfer we could not match to an order (P2). */
+  'unmatched',
+  /** The owner said this money is not for an order. */
+  'dismissed',
+] as const;
 export const paymentStatus = pgEnum('payment_status', paymentStatuses);
 
 /**
@@ -33,7 +43,10 @@ export const payments = pgTable(
     businessId: uuid('business_id')
       .notNull()
       .references(() => businesses.id, { onDelete: 'cascade' }),
-    orderId: uuid('order_id').notNull(),
+    /** Null for a transfer not (yet) matched to an order. */
+    orderId: uuid('order_id'),
+    /** Who paid, when known (always for dedicated-account transfers). */
+    customerId: uuid('customer_id'),
     provider: paymentProvider('provider').notNull(),
     reference: text('reference').notNull(),
     amount: integer('amount').notNull(),
@@ -58,7 +71,13 @@ export const payments = pgTable(
       columns: [t.orderId, t.businessId],
       foreignColumns: [orders.id, orders.businessId],
     }),
+    foreignKey({
+      name: 'payments_customer_fk',
+      columns: [t.customerId, t.businessId],
+      foreignColumns: [customers.id, customers.businessId],
+    }),
     index('payments_order_idx').on(t.orderId),
+    index('payments_customer_idx').on(t.customerId),
     index('payments_business_status_idx').on(t.businessId, t.status),
     check('payments_amount_positive', sql`${t.amount} > 0`),
     tenantPolicy('payments', t.businessId),
@@ -91,3 +110,43 @@ export type Payment = typeof payments.$inferSelect;
 export type PaymentStatus = (typeof paymentStatuses)[number];
 export type PaymentProvider = (typeof paymentProviders)[number];
 export type WebhookEvent = typeof webhookEvents.$inferSelect;
+
+export const dedicatedAccountStatuses = ['pending', 'active', 'failed'] as const;
+export const dedicatedAccountStatus = pgEnum('dedicated_account_status', dedicatedAccountStatuses);
+
+/**
+ * A bank account number just for one customer of one business (docs/decisions/0002).
+ * Transfers into it settle to the business's subaccount and tell us exactly who paid.
+ */
+export const dedicatedAccounts = pgTable(
+  'dedicated_accounts',
+  {
+    id: id(),
+    businessId: uuid('business_id')
+      .notNull()
+      .references(() => businesses.id, { onDelete: 'cascade' }),
+    customerId: uuid('customer_id').notNull(),
+    provider: paymentProvider('provider').notNull().default('paystack'),
+    /** Paystack customer created for this business-customer pair. */
+    providerCustomerCode: text('provider_customer_code'),
+    accountNumber: text('account_number'),
+    accountName: text('account_name'),
+    bankName: text('bank_name'),
+    status: dedicatedAccountStatus('status').notNull().default('pending'),
+    failureReason: text('failure_reason'),
+    ...timestamps,
+  },
+  (t) => [
+    foreignKey({
+      name: 'dedicated_accounts_customer_fk',
+      columns: [t.customerId, t.businessId],
+      foreignColumns: [customers.id, customers.businessId],
+    }).onDelete('cascade'),
+    unique('dedicated_accounts_customer_unique').on(t.businessId, t.customerId),
+    unique('dedicated_accounts_provider_customer_unique').on(t.provider, t.providerCustomerCode),
+    unique('dedicated_accounts_account_number_unique').on(t.provider, t.accountNumber),
+    tenantPolicy('dedicated_accounts', t.businessId),
+  ],
+).enableRLS();
+
+export type DedicatedAccount = typeof dedicatedAccounts.$inferSelect;

@@ -11,6 +11,7 @@ import {
   verifyPaystackSignature,
   type PaystackVerifiedTransaction,
 } from './paystack';
+import { recordDedicatedTransfer } from './transfers';
 import { paymentEmailFor, receiptUrl } from './urls';
 
 const EDITORS = ['owner', 'staff'] as const;
@@ -194,6 +195,7 @@ const webhookBody = z.looseObject({
   data: z.looseObject({
     id: z.union([z.number(), z.string()]).optional(),
     reference: z.string().optional(),
+    customer: z.looseObject({ customer_code: z.string().nullish() }).nullish(),
   }),
 });
 
@@ -258,7 +260,11 @@ export type ProcessWebhookResult =
   | 'unknown_reference'
   | 'confirmed'
   | 'already_confirmed'
-  | 'needs_review';
+  | 'needs_review'
+  /** A transfer into a dedicated account, matched to an order. */
+  | 'matched'
+  /** A transfer into a dedicated account that needs the owner to assign it. */
+  | 'unmatched';
 
 /**
  * Step 2 (worker): for charge.success, ask Paystack directly whether the payment succeeded,
@@ -304,24 +310,61 @@ export async function processPaystackWebhook(
           .limit(1),
       )
     : [];
-  if (!payment || !reference) {
-    await finish('Unknown payment reference');
+  const verify = async (ref: string): Promise<PaystackVerifiedTransaction> => {
+    try {
+      return await getPaystackClient().verifyTransaction(ref);
+    } catch (error) {
+      await withSystem((tx) =>
+        tx
+          .update(schema.webhookEvents)
+          .set({ lastError: String(error).slice(0, 500) })
+          .where(eq(schema.webhookEvents.id, id)),
+      );
+      throw error; // the job retries
+    }
+  };
+
+  if (!reference) {
+    await finish('No payment reference');
     return 'unknown_reference';
   }
 
-  let verified: PaystackVerifiedTransaction;
-  try {
-    verified = await getPaystackClient().verifyTransaction(reference);
-  } catch (error) {
-    await withSystem((tx) =>
-      tx
-        .update(schema.webhookEvents)
-        .set({ lastError: String(error).slice(0, 500) })
-        .where(eq(schema.webhookEvents.id, id)),
-    );
-    throw error; // the job retries
+  if (!payment) {
+    // Not one of our payment links: maybe a transfer into a customer's dedicated account.
+    const customerCode = webhookBody.parse(event.payload).data.customer?.customer_code;
+    const [account] = customerCode
+      ? await withSystem((tx) =>
+          tx
+            .select({
+              businessId: schema.dedicatedAccounts.businessId,
+              customerId: schema.dedicatedAccounts.customerId,
+              customerCode: schema.dedicatedAccounts.providerCustomerCode,
+            })
+            .from(schema.dedicatedAccounts)
+            .where(
+              and(
+                eq(schema.dedicatedAccounts.provider, 'paystack'),
+                eq(schema.dedicatedAccounts.providerCustomerCode, customerCode),
+              ),
+            )
+            .limit(1),
+        )
+      : [];
+    if (!account) {
+      await finish('Unknown payment reference');
+      return 'unknown_reference';
+    }
+    const verified = await verify(reference);
+    if (verified.customerCode !== account.customerCode) {
+      await finish('Paystack reports a different customer for this transfer');
+      return 'unknown_reference';
+    }
+    const result = await recordDedicatedTransfer(account, verified);
+    await finish();
+    return result;
   }
 
+  const verified = await verify(reference);
   const result = await confirmPaystackPayment(payment.businessId, payment.id, verified);
   await finish();
   return result;
@@ -356,7 +399,7 @@ async function confirmPaystackPayment(
     const [order] = await tx
       .select()
       .from(schema.orders)
-      .where(eq(schema.orders.id, payment.orderId))
+      .where(eq(schema.orders.id, payment.orderId!))
       .for('update')
       .limit(1);
     const providerData = {

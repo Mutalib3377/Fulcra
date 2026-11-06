@@ -1,4 +1,10 @@
-import { countOrdersByStatus, listEvents, listLowStock, variantLabel } from '@fulcra/core';
+import {
+  countOrdersByStatus,
+  countPaymentsNeedingAttention,
+  listEvents,
+  listLowStock,
+  variantLabel,
+} from '@fulcra/core';
 import {
   Badge,
   Button,
@@ -20,10 +26,12 @@ export const metadata: Metadata = { title: 'Home' };
 
 export default async function DashboardHome() {
   const { actor, membership } = await getDashboardContext();
-  const [counts, events, lowStock] = await Promise.all([
+  const isEditor = membership.role !== 'rider';
+  const [counts, events, lowStock, attention] = await Promise.all([
     countOrdersByStatus(actor),
     listEvents(actor, { limit: 15 }),
     listLowStock(actor),
+    isEditor ? countPaymentsNeedingAttention(actor) : Promise.resolve({ unmatched: 0, review: 0 }),
   ]);
   const now = new Date();
   const tiles = [
@@ -63,6 +71,25 @@ export default async function DashboardHome() {
           </Link>
         ))}
       </div>
+
+      {attention.unmatched + attention.review > 0 && (
+        <Link
+          href={attention.unmatched ? '/payments?show=unmatched' : '/payments?show=review'}
+          className="rounded-md border border-warning bg-warning-soft px-3 py-2 text-sm text-warning"
+        >
+          {[
+            attention.unmatched
+              ? `${attention.unmatched} transfer${attention.unmatched === 1 ? '' : 's'} to match`
+              : '',
+            attention.review
+              ? `${attention.review} payment${attention.review === 1 ? '' : 's'} to check`
+              : '',
+          ]
+            .filter(Boolean)
+            .join(' · ')}{' '}
+          →
+        </Link>
+      )}
 
       {lowStock.length > 0 && (
         <Card>

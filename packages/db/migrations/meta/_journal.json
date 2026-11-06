@@ -36,6 +36,13 @@
       "when": 1793985645562,
       "tag": "0004_payments",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793997873496,
+      "tag": "0005_dedicated-accounts",
+      "breakpoints": true
     }
   ]
 }

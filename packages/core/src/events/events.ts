@@ -13,6 +13,7 @@ export const EVENT_TYPES = [
   'stock.low',
   'payment.confirmed',
   'payment.needs_review',
+  'payment.unmatched',
 ] as const;
 export type EventType = (typeof EVENT_TYPES)[number];
 

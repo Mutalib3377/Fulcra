@@ -74,3 +74,19 @@ export const PAYMENT_METHOD_LABELS: Record<ManualPaymentMethod, string> = {
   pos: 'POS',
   other: 'Other',
 };
+
+/** Plain-language name for how an order was paid (manual methods, payment link, transfer). */
+export function paymentMethodLabel(method: string | null | undefined): string {
+  if (!method) return '';
+  if (method === 'paystack') return 'Paid online';
+  if (method === 'bank_transfer' || method === 'dedicated_nuban') return 'Bank transfer';
+  const paystackChannels: Record<string, string> = {
+    card: 'Card',
+    ussd: 'USSD',
+    bank: 'Bank',
+    qr: 'QR code',
+    mobile_money: 'Mobile money',
+  };
+  if (paystackChannels[method]) return paystackChannels[method];
+  return PAYMENT_METHOD_LABELS[method as ManualPaymentMethod] ?? method.replace(/_/g, ' ');
+}
