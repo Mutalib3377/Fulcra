@@ -40,3 +40,25 @@ export function productDraft(overrides: Record<string, unknown> = {}) {
     ...overrides,
   };
 }
+
+/** A business with one delivery zone and one product (stock 5 by default). */
+export async function shopWithStock(stock = 5, overrides: Record<string, unknown> = {}) {
+  const { createProduct } = await import('../src/catalog/products');
+  const { createDeliveryZone } = await import('../src/delivery/zones');
+  const shop = await newBusiness('shop');
+  const zone = await createDeliveryZone(shop.actor, {
+    name: 'Lekki',
+    fee: 200_000,
+    estimatedTime: 'Same day',
+  });
+  const { product, variants } = await createProduct(
+    shop.actor,
+    productDraft({
+      name: 'Ankara dress',
+      retailPrice: 1_500_000,
+      options: { kind: 'simple', stock },
+      ...overrides,
+    }),
+  );
+  return { ...shop, zone, product, variant: variants[0]! };
+}

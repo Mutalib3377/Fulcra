@@ -364,3 +364,35 @@ describe('permissions', () => {
     expect((await listProducts(rider)).map((p) => p.id)).toContain(product.id);
   });
 });
+
+describe('listOrderableProducts', () => {
+  it('groups options under products and skips archived ones', async () => {
+    const { listOrderableProducts } = await import('../src/catalog/products');
+    const { actor } = await newBusiness();
+    await createProduct(
+      actor,
+      productDraft({
+        name: 'B shirt',
+        options: {
+          kind: 'variants',
+          variants: [
+            { size: 'S', stock: 1 },
+            { size: 'M', stock: 2 },
+          ],
+        },
+      }),
+    );
+    await createProduct(actor, productDraft({ name: 'A cap', isActive: false }));
+    const gone = await createProduct(actor, productDraft({ name: 'C gone' }));
+    await archiveProduct(actor, gone.product.id);
+    const list = await listOrderableProducts(actor);
+    expect(list.map((p) => [p.name, p.isActive, p.variants.length])).toEqual([
+      ['A cap', false, 1],
+      ['B shirt', true, 2],
+    ]);
+    expect(list[1]!.variants.map((v) => [v.size, v.stock])).toEqual([
+      ['S', 1],
+      ['M', 2],
+    ]);
+  });
+});

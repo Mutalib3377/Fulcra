@@ -90,12 +90,12 @@ Goal: an owner can sign up, set up brand and catalog, record orders, and get pai
 
 ### C3 — Customers, delivery and orders
 
-- [ ] Schema: `customers`, `customer_identities`, `delivery_zones`, `orders`, `order_items`, `events`
-- [ ] Customers list and profile (contacts, history, tags, notes)
-- [ ] Delivery zones page
-- [ ] Core services + tests: `createOrder` (reserves stock), `updateOrderStatus`, `cancelOrder` (returns stock), `findOrCreateCustomer` (by phone or channel identity)
-- [ ] Manual order form; orders list (filter by status); order detail page
-- [ ] Events written for important actions; activity feed
+- [x] Schema: `customers`, `customer_identities`, `delivery_zones`, `orders`, `order_items`, `events`
+- [x] Customers list and profile (contacts, history, tags, notes)
+- [x] Delivery zones page
+- [x] Core services + tests: `createOrder` (reserves stock), `updateOrderStatus`, `cancelOrder` (returns stock), `findOrCreateCustomer` (by phone or channel identity)
+- [x] Manual order form; orders list (filter by status); order detail page
+- [x] Events written for important actions; activity feed
 
 **Done when:** an owner records a full order from new to delivered; stock and history update correctly.
 

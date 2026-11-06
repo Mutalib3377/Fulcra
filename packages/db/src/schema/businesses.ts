@@ -1,6 +1,6 @@
 import { BUSINESS_CATEGORIES } from '@fulcra/config';
 import { sql } from 'drizzle-orm';
-import { boolean, check, pgEnum, pgPolicy, pgTable, text } from 'drizzle-orm/pg-core';
+import { boolean, check, integer, pgEnum, pgPolicy, pgTable, text } from 'drizzle-orm/pg-core';
 import { appRole, currentBusinessId, id, timestamps } from './_shared';
 
 export const businessCategories = BUSINESS_CATEGORIES;
@@ -21,6 +21,8 @@ export const businesses = pgTable(
     websiteUrl: text('website_url'),
     /** Set during payment setup (P1, docs/decisions/0001). */
     paystackSubaccountCode: text('paystack_subaccount_code'),
+    /** Last order number used; the next order gets this + 1 (orders start at #1001). */
+    lastOrderNumber: integer('last_order_number').notNull().default(1000),
     ...timestamps,
   },
   (t) => [
