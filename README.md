@@ -28,6 +28,14 @@ Open:
 
 `*.localhost` works out of the box in Chrome, Edge and Firefox. If your browser or OS does not resolve it, add lines like `127.0.0.1 app.localhost` to your hosts file.
 
+## Checks before pushing
+
+```bash
+pnpm check   # format check, lint, type-check, tests and build: the same as CI
+```
+
+`pnpm install` sets up a git pre-push hook that runs `pnpm check` before every push and stops the push if anything fails. Tests need the local database, so run `pnpm db:up` first. Skip the hook with `git push --no-verify` only in an emergency.
+
 ## Repo layout
 
 ```

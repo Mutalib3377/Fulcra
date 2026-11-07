@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Runs the same checks as CI before every push, so nothing broken leaves this computer.
+# Installed automatically by `pnpm install` (sets git's core.hooksPath to .githooks).
+# Emergency only: skip with `git push --no-verify`.
+set -euo pipefail
+
+echo "▶ Running checks before push (format, lint, type-check, tests, build)…"
+echo "  Tests need the local database: run \`pnpm db:up\` first if it is not running."
+
+if ! pnpm check; then
+  echo ""
+  echo "✖ Checks failed, so the push was stopped. Fix the problems above and push again."
+  exit 1
+fi
+echo "✔ All checks passed."

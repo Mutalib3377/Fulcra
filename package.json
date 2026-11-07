@@ -18,7 +18,9 @@
     "db:generate": "pnpm --filter @fulcra/db db:generate",
     "db:migrate": "pnpm --filter @fulcra/db db:migrate",
     "db:status": "supabase status",
-    "db:reset": "supabase db reset && pnpm db:migrate"
+    "db:reset": "supabase db reset && pnpm db:migrate",
+    "check": "pnpm format:check && turbo run lint typecheck test build",
+    "prepare": "node -e \"try{require('child_process').execSync('git rev-parse --is-inside-work-tree && git config core.hooksPath .githooks',{stdio:'ignore'})}catch{}\""
   },
   "devDependencies": {
     "@types/node": "^22.20.5",
