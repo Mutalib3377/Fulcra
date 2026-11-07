@@ -1,5 +1,5 @@
 import { formatNaira } from '@fulcra/config';
-import { getReceipt, PAYMENT_METHOD_LABELS, type ManualPaymentMethod } from '@fulcra/core';
+import { getReceipt, paymentMethodLabel } from '@fulcra/core';
 import { Button, EmptyState } from '@fulcra/ui';
 import { CheckCircle2, Download, Loader2 } from 'lucide-react';
 import type { Metadata } from 'next';
@@ -10,12 +10,6 @@ import { AutoRefresh } from './auto-refresh';
 type Props = { params: Promise<{ subdomain: string; token: string }> };
 
 export const metadata: Metadata = { title: 'Receipt', robots: { index: false } };
-
-function paymentLabel(method: string | null): string {
-  if (!method) return '';
-  if (method === 'paystack') return 'Paid online';
-  return PAYMENT_METHOD_LABELS[method as ManualPaymentMethod] ?? method;
-}
 
 /** Customer-facing receipt, on the business's own store address. */
 export default async function ReceiptPage({ params }: Props) {
@@ -75,7 +69,7 @@ export default async function ReceiptPage({ params }: Props) {
             <dt className="text-muted-foreground">Date paid</dt>
             <dd className="text-right">{order.paidAt ? formatDateTime(order.paidAt) : '—'}</dd>
             <dt className="text-muted-foreground">Payment</dt>
-            <dd className="text-right">{paymentLabel(order.paymentMethod)}</dd>
+            <dd className="text-right">{paymentMethodLabel(order.paymentMethod)}</dd>
           </dl>
           <ul className="flex flex-col divide-y border-y text-sm">
             {receipt.items.map((item, i) => (

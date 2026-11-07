@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from '@fulcra/ui';
-import { House, MessageCircle, Package, Settings, ShoppingBag, Users } from 'lucide-react';
+import { House, MessageCircle, Package, Settings, ShoppingBag, Users, Wallet } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -17,6 +17,7 @@ const items = [
 const sideItems = [
   ...items.slice(0, 3),
   { href: '/customers', label: 'Customers', icon: Users },
+  { href: '/payments', label: 'Payments', icon: Wallet },
   ...items.slice(3),
 ] as const;
 
@@ -37,7 +38,9 @@ export function BottomNav() {
     >
       <ul className="grid grid-cols-5">
         {items.map(({ href, label, icon: Icon }) => {
-          const active = isActive(href) || (href === '/orders' && isActive('/customers'));
+          const active =
+            isActive(href) ||
+            (href === '/orders' && (isActive('/customers') || isActive('/payments')));
           return (
             <li key={href}>
               <Link

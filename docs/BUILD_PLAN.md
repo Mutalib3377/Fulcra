@@ -112,11 +112,11 @@ Goal: an owner can sign up, set up brand and catalog, record orders, and get pai
 
 ### P2 — Dedicated virtual accounts
 
-- [ ] Dedicated virtual account per **customer of a business** (Paystack DVA linked to the seller's subaccount), created on first order (`docs/decisions/0002`)
-- [ ] Incoming transfers matched to that customer's open orders (exact amount first, then oldest unpaid); anything else goes to unmatched
-- [ ] Fallback when DVA is not available: bank transfer through the payment link
-- [ ] "Unmatched payments" list with manual assignment
-- [ ] `payment.unmatched` event
+- [x] Dedicated virtual account per **customer of a business** (Paystack DVA linked to the seller's subaccount), created on first order (`docs/decisions/0002`)
+- [x] Incoming transfers matched to that customer's open orders (exact amount first, then oldest unpaid); anything else goes to unmatched
+- [x] Fallback when DVA is not available: bank transfer through the payment link
+- [x] "Unmatched payments" list with manual assignment
+- [x] `payment.unmatched` event
 
 **Done when:** test payments by link and by transfer both mark the right order paid and produce a receipt.
 

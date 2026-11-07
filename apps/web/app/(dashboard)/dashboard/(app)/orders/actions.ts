@@ -5,6 +5,7 @@ import {
   createOrder,
   createPaymentLink,
   markOrderPaid,
+  prepareAccountDetails,
   updateOrderStatus,
   type CreateOrderInput,
   type ManualPaymentMethod,
@@ -86,6 +87,22 @@ export async function createPaymentLinkAction(
     const { url, reused } = await createPaymentLink(context.actor, orderId);
     refresh(orderId);
     return { ok: true, data: { url, reused } };
+  } catch (error) {
+    return toActionError(error);
+  }
+}
+
+export async function prepareAccountDetailsAction(
+  orderId: string,
+): Promise<
+  ActionResult<{ message: string; accountNumber: string; bankName: string; accountName: string }>
+> {
+  const context = await getActionContext();
+  if (!context) return SESSION_ENDED;
+  try {
+    const { account, message } = await prepareAccountDetails(context.actor, orderId);
+    refresh(orderId);
+    return { ok: true, data: { message, ...account } };
   } catch (error) {
     return toActionError(error);
   }

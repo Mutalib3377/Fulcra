@@ -16,7 +16,15 @@ export type PaystackVerifiedTransaction = {
   currency: string;
   channel: string | null; // card, bank_transfer, ussd, …
   paidAt: string | null;
+  /** Paystack customer who paid (identifies the dedicated account owner). */
+  customerCode: string | null;
   raw: Record<string, unknown>;
+};
+
+export type PaystackDedicatedAccount = {
+  accountNumber: string;
+  accountName: string;
+  bankName: string;
 };
 
 export interface PaystackClient {
@@ -43,6 +51,23 @@ export interface PaystackClient {
     metadata: Record<string, unknown>;
   }): Promise<{ authorizationUrl: string; reference: string }>;
   verifyTransaction(reference: string): Promise<PaystackVerifiedTransaction>;
+  createCustomer(input: {
+    email: string;
+    firstName: string;
+    lastName: string;
+    phone: string;
+  }): Promise<{ customerCode: string }>;
+  createDedicatedAccount(input: {
+    customerCode: string;
+    preferredBank: string;
+    subaccount: string;
+  }): Promise<PaystackDedicatedAccount>;
+}
+
+/** Bank for dedicated accounts: Paystack's test bank in test mode, Wema Bank in live mode. */
+export function dedicatedAccountBank(env: NodeJS.ProcessEnv = process.env): string {
+  if (env.PAYSTACK_DVA_BANK) return env.PAYSTACK_DVA_BANK;
+  return env.PAYSTACK_SECRET_KEY?.startsWith('sk_live_') ? 'wema-bank' : 'test-bank';
 }
 
 const envSchema = z.object({
@@ -189,6 +214,52 @@ class HttpPaystackClient implements PaystackClient {
     return { authorizationUrl: data.authorization_url, reference: data.reference };
   }
 
+  async createCustomer(input: {
+    email: string;
+    firstName: string;
+    lastName: string;
+    phone: string;
+  }) {
+    const data = await this.call(
+      'POST',
+      '/customer',
+      z.looseObject({ customer_code: z.string() }),
+      {
+        email: input.email,
+        first_name: input.firstName,
+        last_name: input.lastName,
+        phone: input.phone,
+      },
+    );
+    return { customerCode: data.customer_code };
+  }
+
+  async createDedicatedAccount(input: {
+    customerCode: string;
+    preferredBank: string;
+    subaccount: string;
+  }) {
+    const data = await this.call(
+      'POST',
+      '/dedicated_account',
+      z.looseObject({
+        account_number: z.string(),
+        account_name: z.string(),
+        bank: z.looseObject({ name: z.string() }),
+      }),
+      {
+        customer: input.customerCode,
+        preferred_bank: input.preferredBank,
+        subaccount: input.subaccount,
+      },
+    );
+    return {
+      accountNumber: data.account_number,
+      accountName: data.account_name,
+      bankName: data.bank.name,
+    };
+  }
+
   async verifyTransaction(reference: string) {
     const data = await this.call(
       'GET',
@@ -201,6 +272,7 @@ class HttpPaystackClient implements PaystackClient {
         currency: z.string(),
         channel: z.string().nullish(),
         paid_at: z.string().nullish(),
+        customer: z.looseObject({ customer_code: z.string().nullish() }).nullish(),
       }),
     );
     return {
@@ -211,6 +283,7 @@ class HttpPaystackClient implements PaystackClient {
       currency: data.currency,
       channel: data.channel ?? null,
       paidAt: data.paid_at ?? null,
+      customerCode: data.customer?.customer_code ?? null,
       raw: data as Record<string, unknown>,
     };
   }

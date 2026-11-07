@@ -1,5 +1,11 @@
 import { formatNaira } from '@fulcra/config';
-import { getCustomer, isCoreError, listDeliveryZones, listEvents } from '@fulcra/core';
+import {
+  getCustomer,
+  getCustomerDedicatedAccount,
+  isCoreError,
+  listDeliveryZones,
+  listEvents,
+} from '@fulcra/core';
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, EmptyState } from '@fulcra/ui';
 import { MessageCircle, Phone, Plus } from 'lucide-react';
 import type { Metadata } from 'next';
@@ -40,9 +46,10 @@ export default async function CustomerPage({ params }: Props) {
     if (isCoreError(error) && error.code === 'not_found') return notFound;
     throw error;
   }
-  const [zones, events] = await Promise.all([
+  const [zones, events, dedicated] = await Promise.all([
     listDeliveryZones(actor),
     listEvents(actor, { customerId, limit: 20 }),
+    getCustomerDedicatedAccount(actor, customerId),
   ]);
   const { customer, orders, identities } = detail;
   const canEdit = membership.role !== 'rider';
@@ -160,6 +167,24 @@ export default async function CustomerPage({ params }: Props) {
           marketingOptIn: customer.marketingOptIn,
         }}
       />
+
+      {dedicated && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Their account for paying you</CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm">
+            <p>
+              {dedicated.bankName} ·{' '}
+              <span className="font-mono font-semibold">{dedicated.accountNumber}</span>
+            </p>
+            <p className="text-muted-foreground">{dedicated.accountName}</p>
+            <p className="mt-2 text-muted-foreground">
+              Transfers into this account are matched to this customer’s orders automatically.
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {identities.length > 0 && (
         <Card>

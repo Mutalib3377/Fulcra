@@ -60,7 +60,15 @@ export function describeEvent(e: EventLike): { text: string; href: string | null
         href: e.customerId ? `/customers/${e.customerId}` : null,
       };
     case 'payment.confirmed':
-      return { text: `${order} paid online · ${formatNaira(num(p.amount))}`, href: orderHref };
+      return {
+        text: `${order} paid ${str(p.method) === 'bank_transfer' ? 'by transfer' : 'online'} · ${formatNaira(num(p.amount))}`,
+        href: orderHref,
+      };
+    case 'payment.unmatched':
+      return {
+        text: `Transfer of ${formatNaira(num(p.amount))} needs matching to an order`,
+        href: '/payments?show=unmatched',
+      };
     case 'payment.needs_review':
       return { text: `${order}: a payment needs checking`, href: orderHref };
     case 'stock.low': {
