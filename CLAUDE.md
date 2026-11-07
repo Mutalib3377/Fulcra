@@ -153,6 +153,7 @@ Run from the repo root. First time: `pnpm install`, `cp .env.example .env`, `pnp
   - Marketing: `localhost:3000` · Dashboard: `app.localhost:3000` · Store: `<name>.localhost:3000`
 - `pnpm build` — build everything
 - `pnpm lint` / `pnpm typecheck` / `pnpm test` — must pass before a task is ticked
+- `pnpm check` — everything CI runs (format check, lint, type-check, tests, build). Needs the local database up (`pnpm db:up`). A git pre-push hook (`.githooks/pre-push`, installed by `pnpm install`) runs it before every push; GitHub Actions CI is paused while the GitHub account has a billing lock, so this hook is the gate for now. `git push --no-verify` skips it — emergencies only
 - `pnpm format` / `pnpm format:check` — Prettier (Markdown files are not formatted)
 - `pnpm db:up` / `pnpm db:down` — start/stop local Supabase (Postgres on 54322, Auth and Storage on 54321, test inbox for sign-in codes on http://127.0.0.1:54324). `db:up` also creates the `fulcra-media` storage bucket.
 - `pnpm db:status` — local Supabase URLs and keys · `pnpm db:reset` — wipe the local database and re-apply migrations
