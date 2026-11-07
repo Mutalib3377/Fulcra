@@ -28,7 +28,7 @@ The product is called **Fulcra**. The domain is not decided yet: use `yourdomain
 - Current milestone: **Milestone 1 (Lean Core + Payments)**
 - Current phase: **Gate to Milestone 2** — all M1 phases are built; the gate (core + payments end to end with one real seller's product data) is the owner's to confirm. Next: **S1 — Simple storefront**
 - Completed phases: Week 0 setup, C1 — Accounts and businesses, C2 — Brand kit and catalog (the "20 products in 30 minutes" check with a real seller's products is the owner's to confirm), C3 — Customers, delivery and orders, P1 — Payment links and receipts, P2 — Dedicated virtual accounts (P1 and P2 tested end to end with a fake Paystack; real test-mode payments need the owner's Paystack test key, and dedicated accounts need Paystack to enable them)
-- Repository: `officialbobo9-netizen/Fulcra-` (moved from `Mutalib3377/Fulcra`; CI runs here)
+- Repository: `Mutalib3377/Fulcra` (back on the original repo; `officialbobo9-netizen/Fulcra-` is no longer used)
 
 ## Tech stack (decided — do not change without asking)
 
