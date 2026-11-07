@@ -132,13 +132,13 @@ Goal: design partners can share a store link or connect their existing website, 
 
 ### S1 — Simple storefront
 
-- [ ] Store resolves business from subdomain; friendly 404
-- [ ] Theme from brand kit
-- [ ] Home: hero, featured products, categories
-- [ ] Product page: photos, variants, price, stock status
-- [ ] "Order on WhatsApp" button (pre-filled message with product name and variant) and "Chat to buy" (opens widget later)
-- [ ] Open Graph previews for shared links
-- [ ] Caching per business, revalidated on product changes
+- [x] Store resolves business from subdomain; friendly 404
+- [x] Theme from brand kit
+- [x] Home: hero, featured products, categories
+- [x] Product page: photos, variants, price, stock status
+- [x] "Order on WhatsApp" button (pre-filled message with product name and variant) and "Chat to buy" (opens widget later — the button is added in W1, so customers never see a button that does nothing)
+- [x] Open Graph previews for shared links
+- [x] Caching per business, revalidated on product changes
 
 ### I1 — Catalog import
 

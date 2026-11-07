@@ -21,6 +21,7 @@ import Link from 'next/link';
 import { getDashboardContext } from '@/lib/auth';
 import { describeEvent, timeAgo } from '@/lib/orders';
 import { storeHost, storeUrl } from '@/lib/urls';
+import { CopyStoreLink } from './copy-store-link';
 
 export const metadata: Metadata = { title: 'Home' };
 
@@ -163,9 +164,12 @@ export default async function DashboardHome() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Your store link</CardTitle>
-          <CardDescription>Share this with customers once your store is ready.</CardDescription>
+          <CardDescription>
+            Customers can see your products here and order on WhatsApp. Share it in your status, bio
+            and chats.
+          </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex flex-col gap-3">
           <a
             href={storeUrl(membership.subdomain)}
             target="_blank"
@@ -175,6 +179,10 @@ export default async function DashboardHome() {
             {storeHost(membership.subdomain)}
             <ExternalLink className="size-4 shrink-0" aria-hidden />
           </a>
+          <CopyStoreLink
+            url={storeUrl(membership.subdomain)}
+            businessName={membership.businessName}
+          />
         </CardContent>
       </Card>
     </div>

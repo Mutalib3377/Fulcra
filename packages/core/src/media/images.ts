@@ -101,3 +101,21 @@ export async function deleteImages(images: Pick<StoredImage, 'path'>[]): Promise
 export function isOwnImagePath(businessId: string, path: string): boolean {
   return new RegExp(`^${businessId}/[0-9a-f-]{36}$`).test(path);
 }
+
+const STORED_PATH = /^[0-9a-f-]{36}\/[0-9a-f-]{36}$/;
+
+/**
+ * A JPEG copy of a stored image for link previews (WhatsApp and others do not always show
+ * WebP). Returns null when the path is not one of our image paths or the file is missing.
+ */
+export async function shareImageJpeg(path: string): Promise<Uint8Array | null> {
+  if (!STORED_PATH.test(path)) return null;
+  const response = await fetch(imageUrl({ path }, 'lg'));
+  if (!response.ok) return null;
+  const input = new Uint8Array(await response.arrayBuffer());
+  const output = await sharp(input, { limitInputPixels: 50_000_000 })
+    .flatten({ background: '#ffffff' })
+    .jpeg({ quality: 80, mozjpeg: true })
+    .toBuffer();
+  return new Uint8Array(output);
+}

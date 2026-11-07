@@ -2,7 +2,7 @@ import type { BrandFont } from '@fulcra/core/rules';
 
 /**
  * Brand font choices. Previews use fonts already on the phone (no download);
- * the storefront phase (S1) decides the exact web fonts.
+ * the storefront uses the same stacks, so cheap phones download no font files.
  */
 export const brandFontOptions: Record<BrandFont, { label: string; stack: string }> = {
   clean: { label: 'Clean', stack: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif' },

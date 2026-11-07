@@ -53,6 +53,7 @@ const formSchema = z
     minPrice: money(false),
     lowStockThreshold: wholeNumber(),
     isActive: z.boolean(),
+    isFeatured: z.boolean(),
     hasOptions: z.boolean(),
     stock: wholeNumber('Enter how many you have, e.g. 10.'),
     sku: z.string().max(60),
@@ -117,6 +118,7 @@ function toInput(v: ProductFormValues): ProductInput {
     minPrice: toKobo(v.minPrice),
     lowStockThreshold: v.lowStockThreshold === '' ? 3 : Number(v.lowStockThreshold),
     isActive: v.isActive,
+    isFeatured: v.isFeatured,
     options: v.hasOptions
       ? {
           kind: 'variants',
@@ -363,7 +365,10 @@ export function ProductForm({ mode, productId, initial, categories }: Props) {
 
       <Card>
         <CardContent className="pt-4 sm:pt-6">
-          <ToggleRow control={control} name="isActive" label="Show this product to customers" />
+          <div className="flex flex-col gap-4">
+            <ToggleRow control={control} name="isActive" label="Show this product to customers" />
+            <ToggleRow control={control} name="isFeatured" label="Show on my store's home page" />
+          </div>
         </CardContent>
       </Card>
 
@@ -490,7 +495,7 @@ function ToggleRow({
   label,
 }: {
   control: ReturnType<typeof useForm<ProductFormValues>>['control'];
-  name: 'wholesaleEnabled' | 'hasOptions' | 'isActive';
+  name: 'wholesaleEnabled' | 'hasOptions' | 'isActive' | 'isFeatured';
   label: string;
 }) {
   return (
