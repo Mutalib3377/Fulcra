@@ -25,6 +25,7 @@ export {
   IMAGE_SIZES,
   MAX_IMAGE_BYTES,
   imageUrl,
+  shareImageJpeg,
   type ImageSize,
   type StoredImage,
 } from './media/images';
@@ -42,5 +43,8 @@ export * from './payments/payments';
 export * from './payments/receipts';
 export * from './payments/dedicated-accounts';
 export * from './payments/transfers';
-export { receiptUrl } from './payments/urls';
+export { receiptUrl, storeUrl } from './payments/urls';
+
+export * from './storefront/rules';
+export * from './storefront/store';
 export * from './jobs/queue';

@@ -17,7 +17,7 @@ import { CheckCircle2, ImagePlus, Loader2, X } from 'lucide-react';
 import { useRef, useState, useTransition, type ReactNode } from 'react';
 import { uploadImage, type UploadedImage } from '@/components/upload-image';
 import { saveBrandKitAction } from './actions';
-import { brandFontOptions } from './fonts';
+import { brandFontOptions } from '@/lib/brand-fonts';
 
 type Values = {
   logo: UploadedImage | null;

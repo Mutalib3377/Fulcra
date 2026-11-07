@@ -13,6 +13,7 @@ export type ProductFormValues = {
   minPrice: string;
   lowStockThreshold: string;
   isActive: boolean;
+  isFeatured: boolean;
   hasOptions: boolean;
   /** Used when the product has no sizes or colours. */
   stock: string;
@@ -42,6 +43,7 @@ export function emptyProductForm(category = ''): ProductFormValues {
     minPrice: '',
     lowStockThreshold: '3',
     isActive: true,
+    isFeatured: false,
     hasOptions: false,
     stock: '',
     sku: '',

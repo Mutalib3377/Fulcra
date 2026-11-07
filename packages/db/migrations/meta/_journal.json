@@ -43,6 +43,13 @@
       "when": 1793997873496,
       "tag": "0005_dedicated-accounts",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794093970575,
+      "tag": "0006_store-featured",
+      "breakpoints": true
     }
   ]
 }

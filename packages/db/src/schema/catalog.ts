@@ -41,6 +41,8 @@ export const products = pgTable(
     /** A variant is "low stock" when its stock is at or below this. */
     lowStockThreshold: integer('low_stock_threshold').notNull().default(3),
     isActive: boolean('is_active').notNull().default(true),
+    /** Shown in the "Featured" section of the store home page. */
+    isFeatured: boolean('is_featured').notNull().default(false),
     /** Products are archived, never deleted, so old orders keep working. */
     archivedAt: timestamp('archived_at', { withTimezone: true }),
     source: productSource('source').notNull().default('manual'),

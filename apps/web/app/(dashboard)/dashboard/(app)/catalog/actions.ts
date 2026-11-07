@@ -11,6 +11,7 @@ import {
 import { revalidatePath } from 'next/cache';
 import { toActionError, type ActionResult } from '@/lib/action-result';
 import { getActionContext, SESSION_ENDED } from '@/lib/auth';
+import { refreshStore } from '@/lib/store';
 import { toFormValues } from './form-data';
 import type { ProductFormValues } from './form-types';
 
@@ -24,6 +25,7 @@ export async function createProductAction(
   try {
     const { product } = await createProduct(context.actor, input);
     revalidatePath(CATALOG_PATH);
+    await refreshStore(context.actor);
     return { ok: true, data: { productId: product.id } };
   } catch (error) {
     return toActionError(error);
@@ -40,6 +42,7 @@ export async function updateProductAction(
   try {
     const saved = await updateProduct(context.actor, productId, input);
     revalidatePath(CATALOG_PATH);
+    await refreshStore(context.actor);
     return { ok: true, data: { values: toFormValues(saved) } };
   } catch (error) {
     return toActionError(error);
@@ -55,6 +58,7 @@ export async function setProductActiveAction(
   try {
     await setProductActive(context.actor, productId, isActive);
     revalidatePath(CATALOG_PATH);
+    await refreshStore(context.actor);
     return { ok: true, data: undefined };
   } catch (error) {
     return toActionError(error);
@@ -69,6 +73,7 @@ export async function archiveProductAction(
   try {
     await archiveProduct(context.actor, productId);
     revalidatePath(CATALOG_PATH);
+    await refreshStore(context.actor);
     return { ok: true, data: { redirectTo: '/catalog' } };
   } catch (error) {
     return toActionError(error);
@@ -83,6 +88,7 @@ export async function duplicateProductAction(
   try {
     const { product } = await duplicateProduct(context.actor, productId);
     revalidatePath(CATALOG_PATH);
+    await refreshStore(context.actor);
     return { ok: true, data: { redirectTo: `/catalog/${product.id}` } };
   } catch (error) {
     return toActionError(error);

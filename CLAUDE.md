@@ -25,9 +25,9 @@ The product is called **Fulcra**. The domain is not decided yet: use `yourdomain
 
 > Update this section whenever a phase is finished.
 
-- Current milestone: **Milestone 1 (Lean Core + Payments)**
-- Current phase: **Gate to Milestone 2** — all M1 phases are built; the gate (core + payments end to end with one real seller's product data) is the owner's to confirm. Next: **S1 — Simple storefront**
-- Completed phases: Week 0 setup, C1 — Accounts and businesses, C2 — Brand kit and catalog (the "20 products in 30 minutes" check with a real seller's products is the owner's to confirm), C3 — Customers, delivery and orders, P1 — Payment links and receipts, P2 — Dedicated virtual accounts (P1 and P2 tested end to end with a fake Paystack; real test-mode payments need the owner's Paystack test key, and dedicated accounts need Paystack to enable them)
+- Current milestone: **Milestone 2 (Simple store + website connection)** — the Milestone 1 gate (core + payments end to end with one real seller's product data) is still the owner's to confirm
+- Current phase: **I1 — Catalog import** (next)
+- Completed phases: Week 0 setup, C1 — Accounts and businesses, C2 — Brand kit and catalog (the "20 products in 30 minutes" check with a real seller's products is the owner's to confirm), C3 — Customers, delivery and orders, P1 — Payment links and receipts, P2 — Dedicated virtual accounts, S1 — Simple storefront (P1 and P2 tested end to end with a fake Paystack; real test-mode payments need the owner's Paystack test key, and dedicated accounts need Paystack to enable them)
 - Repository: `Mutalib3377/Fulcra` (back on the original repo; `officialbobo9-netizen/Fulcra-` is no longer used)
 
 ## Tech stack (decided — do not change without asking)
@@ -174,4 +174,5 @@ Notes:
 - Images: upload through `POST /api/uploads` (Server Actions cap bodies at 1 MB). Store the returned `StoredImage` and build URLs on the server with `imageUrl()` / `withUrls()` (`apps/web/lib/images.ts`); render with a plain `<img>` (sizes are pre-made).
 - Stock only changes through Core (`applyStockChange` inside a transaction, `adjustStock` from the UI). Never update `product_variants.stock` directly (`docs/decisions/0004`).
 - Orders: create with `createOrderInTx` / `createOrder` (prices and stock from the database), move with `updateOrderStatus`, `markOrderPaid`, `cancelOrder`. Important actions write `events` in the same transaction via `recordEvent` (`docs/decisions/0005`).
+- Storefront: pages live in `app/(store)/store/[subdomain]/(shop)` and read through the cached loaders in `apps/web/lib/store.ts` (Core: `getStoreBySubdomain`, `getStoreHome`, `listStoreProducts`, `getStoreProduct`). Server Actions that change what a store shows (products, brand kit, orders) call `refreshStore(actor)`; the cache also expires after 60 seconds for stock changed by the worker. Store pages use plain `<a>` links (no prefetching on slow data) and work without JavaScript. Link previews use JPEG copies from `/api/share-image`.
 - Payments: links via `createPaymentLink`; Paystack webhooks are saved by `recordPaystackWebhook` and processed in the worker by `processPaystackWebhook`, which verifies with Paystack before confirming (`docs/decisions/0006`). Transfers into customers' dedicated accounts are matched to orders by `recordDedicatedTransfer`; owners resolve the rest with `assignPayment` / `dismissPayment` (`docs/decisions/0007`). Jobs are defined in `packages/core/src/jobs/queue.ts`. In tests, use `setPaystackClient(new FakePaystack())`; never call the real API.

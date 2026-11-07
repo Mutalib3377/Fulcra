@@ -86,6 +86,7 @@ export const productInput = z
     minPrice: kobo.nullish().transform((v) => v ?? null),
     lowStockThreshold: z.number().int().min(0).max(100_000).default(DEFAULT_LOW_STOCK_THRESHOLD),
     isActive: z.boolean().default(true),
+    isFeatured: z.boolean().default(false),
     options,
   })
   .superRefine((p, ctx) => {
@@ -190,6 +191,7 @@ function productFields(data: ParsedProduct) {
     minPrice: data.minPrice,
     lowStockThreshold: data.lowStockThreshold,
     isActive: data.isActive,
+    isFeatured: data.isFeatured,
   };
 }
 

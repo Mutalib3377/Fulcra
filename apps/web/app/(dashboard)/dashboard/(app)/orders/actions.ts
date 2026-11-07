@@ -13,6 +13,7 @@ import {
 import { revalidatePath } from 'next/cache';
 import { toActionError, type ActionResult } from '@/lib/action-result';
 import { getActionContext, SESSION_ENDED } from '@/lib/auth';
+import { refreshStore } from '@/lib/store';
 
 function refresh(orderId?: string) {
   revalidatePath('/dashboard/orders');
@@ -28,6 +29,8 @@ export async function createOrderAction(
   if (!context) return SESSION_ENDED;
   try {
     const { order } = await createOrder(context.actor, input);
+    // Stock went down: keep "Only N left" / "Sold out" on the store up to date.
+    await refreshStore(context.actor);
     refresh();
     return { ok: true, data: { redirectTo: `/orders/${order.id}` } };
   } catch (error) {
@@ -71,6 +74,7 @@ export async function cancelOrderAction(orderId: string, reason: string): Promis
   if (!context) return SESSION_ENDED;
   try {
     await cancelOrder(context.actor, orderId, { reason });
+    await refreshStore(context.actor);
     refresh(orderId);
     return { ok: true, data: undefined };
   } catch (error) {

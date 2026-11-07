@@ -19,6 +19,7 @@ export function toFormValues({ product, variants }: ProductWithVariants): Produc
     minPrice: koboToNairaInput(product.minPrice),
     lowStockThreshold: String(product.lowStockThreshold),
     isActive: product.isActive,
+    isFeatured: product.isFeatured,
     hasOptions: !simple,
     stock: defaultVariant ? String(defaultVariant.stock) : '',
     sku: defaultVariant?.sku ?? '',
