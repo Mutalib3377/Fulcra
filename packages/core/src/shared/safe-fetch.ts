@@ -14,10 +14,20 @@ export type SafeFetchOptions = {
   maxBytes: number;
   timeoutMs?: number;
   accept?: string;
+  /** Extra request headers (e.g. Authorization for a seller's own shop). */
+  headers?: Record<string, string>;
+  /** Return error responses (4xx/5xx) instead of throwing, so the caller can explain them. */
+  allowErrorStatus?: boolean;
   env?: NodeJS.ProcessEnv;
 };
 
-export type SafeFetchResult = { url: string; contentType: string; body: Uint8Array };
+export type SafeFetchResult = {
+  url: string;
+  status: number;
+  contentType: string;
+  headers: Headers;
+  body: Uint8Array;
+};
 
 const MAX_REDIRECTS = 3;
 
@@ -118,8 +128,10 @@ export async function safeFetch(raw: string, options: SafeFetchOptions): Promise
   const env = options.env ?? process.env;
   const signal = AbortSignal.timeout(options.timeoutMs ?? 15_000);
   let current = raw;
+  let origin: string | null = null;
   for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
     const url = await checkUrl(current, env);
+    origin ??= url.origin;
     let response: Response;
     try {
       response = await fetch(url, {
@@ -128,6 +140,8 @@ export async function safeFetch(raw: string, options: SafeFetchOptions): Promise
         headers: {
           'user-agent': 'FulcraBot/1.0 (+catalog import)',
           accept: options.accept ?? '*/*',
+          // Never send the seller's keys to another site after a redirect.
+          ...(url.origin === origin ? options.headers : {}),
         },
       });
     } catch {
@@ -140,11 +154,13 @@ export async function safeFetch(raw: string, options: SafeFetchOptions): Promise
       current = new URL(response.headers.get('location')!, url).href;
       continue;
     }
-    if (!response.ok) {
+    if (!response.ok && !options.allowErrorStatus) {
       throw new CoreError('validation', `The link returned an error (${response.status}).`);
     }
     return {
       url: url.href,
+      status: response.status,
+      headers: response.headers,
       contentType: response.headers.get('content-type') ?? '',
       body: await readLimited(response, options.maxBytes),
     };

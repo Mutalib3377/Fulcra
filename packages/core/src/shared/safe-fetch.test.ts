@@ -90,3 +90,39 @@ describe('safeFetch', () => {
     );
   });
 });
+
+describe('safeFetch headers', () => {
+  it('sends headers to the same site only, and can return error statuses', async () => {
+    const seen: (string | undefined)[] = [];
+    const other = createServer((req, res) => {
+      seen.push(req.headers.authorization);
+      res.end('other');
+    });
+    await new Promise<void>((r) => other.listen(0, '127.0.0.1', r));
+    const otherBase = `http://localhost:${(other.address() as AddressInfo).port}`;
+    const same = createServer((req, res) => {
+      seen.push(req.headers.authorization);
+      if (req.url === '/away') {
+        res.writeHead(302, { location: `${otherBase}/x` });
+        return res.end();
+      }
+      res.writeHead(req.url === '/denied' ? 401 : 200);
+      res.end('ok');
+    });
+    await new Promise<void>((r) => same.listen(0, '127.0.0.1', r));
+    const sameBase = `http://127.0.0.1:${(same.address() as AddressInfo).port}`;
+    const headers = { authorization: 'Basic secret' };
+
+    await safeFetch(`${sameBase}/away`, { maxBytes: 100, headers, env: dev });
+    expect(seen).toEqual(['Basic secret', undefined]);
+    const denied = await safeFetch(`${sameBase}/denied`, {
+      maxBytes: 100,
+      headers,
+      allowErrorStatus: true,
+      env: dev,
+    });
+    expect(denied.status).toBe(401);
+    other.close();
+    same.close();
+  });
+});

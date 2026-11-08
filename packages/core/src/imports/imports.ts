@@ -1,5 +1,5 @@
 import { schema, withTenant, type Tx } from '@fulcra/db';
-import { and, asc, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNull, ne, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { saveImportedProductInTx } from '../catalog/products';
 import { canUse } from '../entitlements/can-use';
@@ -299,6 +299,18 @@ export async function processCatalogImport(
       .set({ status: 'done', finishedAt: new Date() })
       .where(and(eq(t.id, importId), eq(t.status, 'saving')))
       .returning();
+    if (row?.sourceId) {
+      // A shop that failed before works again (unless it was disconnected meanwhile).
+      await tx
+        .update(schema.catalogSources)
+        .set({ status: 'connected', lastSyncedAt: new Date(), lastError: null })
+        .where(
+          and(
+            eq(schema.catalogSources.id, row.sourceId),
+            ne(schema.catalogSources.status, 'disconnected'),
+          ),
+        );
+    }
     if (row) {
       await recordEvent(tx, businessId, {
         type: 'catalog.imported',

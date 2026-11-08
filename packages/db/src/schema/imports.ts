@@ -15,6 +15,7 @@ import {
 import { id, tenantPolicy, timestamps } from './_shared';
 import { businesses } from './businesses';
 import { products } from './catalog';
+import { catalogSources } from './sources';
 
 /** Where an import's products come from. */
 export const catalogImportKinds = ['csv', 'shopify', 'woocommerce', 'url'] as const;
@@ -44,6 +45,8 @@ export const catalogImports = pgTable(
       .notNull()
       .references(() => businesses.id, { onDelete: 'cascade' }),
     kind: catalogImportKind('kind').notNull(),
+    /** The shop connection imported from (Shopify, WooCommerce); null for files and links. */
+    sourceId: uuid('source_id'),
     status: catalogImportStatus('status').notNull().default('queued'),
     /** What the seller imported from: a file name, shop address or website link. */
     label: text('label').notNull().default(''),
@@ -63,6 +66,11 @@ export const catalogImports = pgTable(
   },
   (t) => [
     unique('catalog_imports_id_business_unique').on(t.id, t.businessId),
+    foreignKey({
+      name: 'catalog_imports_source_fk',
+      columns: [t.sourceId, t.businessId],
+      foreignColumns: [catalogSources.id, catalogSources.businessId],
+    }),
     index('catalog_imports_business_created_idx').on(t.businessId, t.createdAt),
     check(
       'catalog_imports_counts_valid',

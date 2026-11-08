@@ -14,7 +14,13 @@ const nextConfig: NextConfig = {
   output: 'standalone',
   outputFileTracingRoot: path.join(import.meta.dirname, '../../'),
   // Workspace packages ship TypeScript source; Next compiles them.
-  transpilePackages: ['@fulcra/config', '@fulcra/core', '@fulcra/db', '@fulcra/ui'],
+  transpilePackages: [
+    '@fulcra/config',
+    '@fulcra/core',
+    '@fulcra/db',
+    '@fulcra/integrations',
+    '@fulcra/ui',
+  ],
   // Dev only: let app.localhost and <store>.localhost load dev scripts and hot reload.
   allowedDevOrigins: ['*.localhost'],
   poweredByHeader: false,
