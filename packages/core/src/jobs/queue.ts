@@ -12,6 +12,11 @@ export const JOBS = {
     name: 'paystack-webhook',
     data: z.object({ webhookEventId: z.uuid() }),
   },
+  /** Act on a saved Shopify app webhook (app removed, privacy requests). */
+  shopifyWebhook: {
+    name: 'shopify-webhook',
+    data: z.object({ webhookEventId: z.uuid() }),
+  },
   /** Save the approved products of a catalog import (photos, products, stock). */
   catalogImport: {
     name: 'catalog-import',
@@ -72,4 +77,10 @@ export async function enqueueCatalogImport(businessId: string, importId: string)
     retryBackoff: true,
     singletonKey: importId,
   });
+}
+
+export async function enqueueShopifyWebhook(webhookEventId: string): Promise<void> {
+  const data = JOBS.shopifyWebhook.data.parse({ webhookEventId });
+  const boss = await getSender();
+  await boss.send(JOBS.shopifyWebhook.name, data, { ...RETRY, singletonKey: webhookEventId });
 }

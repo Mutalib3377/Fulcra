@@ -21,4 +21,6 @@ export type {
   ImportedProduct,
   ImportedVariant,
   ImportProblem,
+  CatalogSourceKind,
+  CatalogSourceStatus,
 } from '@fulcra/db/schema';

@@ -15,6 +15,7 @@
     "@fulcra/config": "workspace:*",
     "@fulcra/core": "workspace:*",
     "@fulcra/db": "workspace:*",
+    "@fulcra/integrations": "workspace:*",
     "@fulcra/ui": "workspace:*",
     "@hookform/resolvers": "^7.0.2",
     "@supabase/ssr": "^0.12.7",

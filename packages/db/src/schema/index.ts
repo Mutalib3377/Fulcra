@@ -13,4 +13,5 @@ export { appRole, type StoredImage } from './_shared';
 export * from './customers';
 export * from './orders';
 export * from './payments';
+export * from './sources';
 export * from './imports';

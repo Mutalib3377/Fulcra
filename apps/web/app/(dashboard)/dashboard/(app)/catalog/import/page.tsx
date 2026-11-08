@@ -1,22 +1,68 @@
-import { listImports } from '@fulcra/core';
-import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle } from '@fulcra/ui';
-import { ChevronRight, Download, FileSpreadsheet } from 'lucide-react';
+import { getBusiness, listCatalogSources, listImports, type SourceView } from '@fulcra/core';
+import type { CatalogSourceKind } from '@fulcra/core/rules';
+import { getShopifyAppConfig } from '@fulcra/integrations';
+import {
+  Badge,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Input,
+  Label,
+  Button,
+} from '@fulcra/ui';
+import {
+  AlertCircle,
+  CheckCircle2,
+  ChevronRight,
+  Download,
+  FileSpreadsheet,
+  Store,
+} from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getDashboardContext } from '@/lib/auth';
 import { timeAgo } from '@/lib/orders';
 import { CsvUpload } from './csv-upload';
+import { ShopButtons, WooConnectForm } from './shop-actions';
 import { IMPORT_KIND_LABEL, IMPORT_STATUS } from './status';
 
 export const metadata: Metadata = { title: 'Import products' };
 
-export default async function ImportPage() {
+const MESSAGES: Record<string, string> = {
+  shopify_not_set_up:
+    'Shopify connections are not switched on yet. Use a CSV export from Shopify for now.',
+  shopify_bad_shop: 'Enter your Shopify shop address, like mystore.myshopify.com.',
+  shopify_cancelled: 'Shopify was not connected.',
+  shopify_failed: 'We could not connect your Shopify store. Please try again.',
+  not_allowed: 'Only the owner and staff can connect a shop.',
+};
+
+type Props = { searchParams: Promise<{ connected?: string; error?: string }> };
+
+export default async function ImportPage({ searchParams }: Props) {
   const { actor, membership } = await getDashboardContext();
   if (membership.role === 'rider') {
     return <p className="text-muted-foreground">Only the owner and staff can import products.</p>;
   }
-  const imports = await listImports(actor);
+  const [imports, sources, business, params] = await Promise.all([
+    listImports(actor),
+    listCatalogSources(actor),
+    getBusiness(actor),
+    searchParams,
+  ]);
   const now = new Date();
+  const source = (kind: CatalogSourceKind) =>
+    sources.find((s) => s.kind === kind && s.status !== 'disconnected') ?? null;
+  const shopify = source('shopify');
+  const woo = source('woocommerce');
+  const shopifyReady = getShopifyAppConfig() !== null;
+  const notice =
+    params.connected === 'shopify'
+      ? 'Shopify is connected. You can import your products now.'
+      : null;
+  const problem = params.error ? (MESSAGES[params.error] ?? MESSAGES.shopify_failed) : null;
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
@@ -29,6 +75,128 @@ export default async function ImportPage() {
           Bring in the products you already have, instead of adding them one by one.
         </p>
       </div>
+
+      {notice && (
+        <p
+          role="status"
+          className="flex items-center gap-2 rounded-md bg-success-soft px-3 py-2 text-sm text-success"
+        >
+          <CheckCircle2 className="size-4 shrink-0" aria-hidden /> {notice}
+        </p>
+      )}
+      {problem && (
+        <p
+          role="alert"
+          className="flex items-center gap-2 rounded-md bg-danger-soft px-3 py-2 text-sm text-danger"
+        >
+          <AlertCircle className="size-4 shrink-0" aria-hidden /> {problem}
+        </p>
+      )}
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <Store className="size-5 text-primary" aria-hidden />
+            <CardTitle>From Shopify</CardTitle>
+          </div>
+          <CardDescription>
+            Brings in your products, options, prices, stock and photos.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          {shopify && shopify.status !== 'error' ? (
+            <>
+              <ShopStatus source={shopify} now={now} />
+              <ShopButtons kind="shopify" />
+            </>
+          ) : shopifyReady ? (
+            <>
+              {shopify && (
+                <>
+                  <ShopStatus source={shopify} now={now} />
+                  <ShopButtons kind="shopify" />
+                </>
+              )}
+              {/* A plain GET form: works even before the page's scripts load. */}
+              <form
+                action="/api/integrations/shopify/start"
+                method="get"
+                className="flex flex-col gap-3"
+              >
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="shop">Your Shopify shop address</Label>
+                  <Input
+                    id="shop"
+                    name="shop"
+                    placeholder="mystore.myshopify.com"
+                    defaultValue={shopify?.shopUrl ?? ''}
+                    autoCapitalize="none"
+                    required
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Shopify will ask you to approve Fulcra. We can only read your products and
+                    stock.
+                  </p>
+                </div>
+                <Button type="submit" className="self-start">
+                  Connect Shopify
+                </Button>
+              </form>
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Connecting Shopify is not switched on yet. Meanwhile, export your products from
+              Shopify (Products → Export → CSV) and upload the file below.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <Store className="size-5 text-primary" aria-hidden />
+            <CardTitle>From WooCommerce</CardTitle>
+          </div>
+          <CardDescription>For WordPress websites with WooCommerce.</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          {woo && woo.status !== 'error' ? (
+            <>
+              <ShopStatus source={woo} now={now} />
+              <ShopButtons kind="woocommerce" />
+            </>
+          ) : (
+            <>
+              {woo && (
+                <>
+                  <ShopStatus source={woo} now={now} />
+                  <ShopButtons kind="woocommerce" />
+                </>
+              )}
+              <details className="rounded-md bg-muted/60 px-3 py-2 text-sm">
+                <summary className="cursor-pointer font-medium">
+                  How to get your keys (2 minutes)
+                </summary>
+                <ol className="mt-2 flex list-decimal flex-col gap-1 pl-5">
+                  <li>
+                    In your WordPress admin, go to WooCommerce → Settings → Advanced → REST API.
+                  </li>
+                  <li>
+                    Click &quot;Add key&quot;. Description: Fulcra. Permissions:{' '}
+                    <strong>Read</strong>.
+                  </li>
+                  <li>
+                    Click &quot;Generate API key&quot; and copy the consumer key and consumer secret
+                    here.
+                  </li>
+                </ol>
+              </details>
+              <WooConnectForm defaultUrl={woo?.shopUrl ?? business.websiteUrl ?? ''} />
+            </>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -96,5 +264,31 @@ export default async function ImportPage() {
         </Card>
       )}
     </div>
+  );
+}
+
+function ShopStatus({ source, now }: { source: SourceView; now: Date }) {
+  const address = source.shopUrl.replace(/^https?:\/\//, '');
+  if (source.status === 'error') {
+    return (
+      <p className="flex gap-2 text-sm text-danger">
+        <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden />
+        <span>
+          {address}: {source.lastError ?? 'the last import could not read your shop.'} Connect again
+          below.
+        </span>
+      </p>
+    );
+  }
+  return (
+    <p className="text-sm">
+      <span className="font-medium">Connected to {address}</span>
+      <span className="text-muted-foreground">
+        {' · '}
+        {source.lastSyncedAt
+          ? `last imported ${timeAgo(source.lastSyncedAt, now)}`
+          : 'not imported yet'}
+      </span>
+    </p>
   );
 }

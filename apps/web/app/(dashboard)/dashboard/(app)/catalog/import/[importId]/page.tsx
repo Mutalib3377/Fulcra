@@ -149,7 +149,15 @@ function ImportSummary({
   items: ImportItemView[];
 }) {
   const failed = items.filter((i) => i.result === 'failed');
-  const notes = items.filter((i) => i.result !== 'failed' && i.resultMessage);
+  const warningsOf = (item: ImportItemView) =>
+    item.problems.filter((p) => p.level === 'warning').map((p) => p.message);
+  // Notes worth a look: photos that failed, stock that was not tracked in the shop, …
+  const notes = items.filter(
+    (i) =>
+      i.result !== 'failed' &&
+      i.decision === 'approved' &&
+      (i.resultMessage || (i.result && warningsOf(i).length > 0)),
+  );
   return (
     <>
       <Card>
@@ -203,7 +211,9 @@ function ImportSummary({
                     <span className="font-normal text-muted-foreground">({item.sourceRef})</span>
                   </span>
                   <span className={item.result === 'failed' ? 'text-danger' : 'text-warning'}>
-                    {item.resultMessage}
+                    {[item.resultMessage, ...(item.result === 'failed' ? [] : warningsOf(item))]
+                      .filter(Boolean)
+                      .join(' ')}
                   </span>
                 </li>
               ))}
