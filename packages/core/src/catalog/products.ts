@@ -161,6 +161,7 @@ type DesiredVariant = {
   stock: number;
   priceOverride: number | null;
   isDefault: boolean;
+  externalId?: string | null;
 };
 
 function desiredVariants(data: ParsedProduct): DesiredVariant[] {
@@ -220,6 +221,7 @@ async function insertVariants(
   actor: ActorContext,
   productId: string,
   variants: (DesiredVariant & { position: number })[],
+  reason: 'initial' | 'import' = 'initial',
 ) {
   if (variants.length === 0) return;
   const rows = await tx
@@ -235,6 +237,7 @@ async function insertVariants(
         priceOverride: v.priceOverride,
         isDefault: v.isDefault,
         position: v.position,
+        externalId: v.externalId ?? null,
       })),
     )
     .returning({ id: schema.productVariants.id, stock: schema.productVariants.stock });
@@ -246,7 +249,7 @@ async function insertVariants(
         variantId: r.id,
         change: r.stock,
         stockAfter: r.stock,
-        reason: 'initial' as const,
+        reason,
         createdBy: actor.userId,
       })),
     );
@@ -599,4 +602,190 @@ export async function listOrderableProducts(actor: ActorContext): Promise<Ordera
     }
     return [...byProduct.values()];
   });
+}
+
+export type ImportSaveResult = { productId: string; result: 'created' | 'updated' };
+
+const optionKey = (v: { size: string | null; colour: string | null }) =>
+  `${v.size?.toLowerCase() ?? ''}|${v.colour?.toLowerCase() ?? ''}`;
+
+/**
+ * Saves one imported product inside a tenant transaction, with the same rules as the
+ * product form. A product already imported from the same source (same `externalId`) is
+ * updated instead of duplicated: options are matched by their own external id, else by
+ * size and colour; stock differences are recorded as "import" movements; options no
+ * longer in the source are archived. The owner's own choices (shown/hidden, featured)
+ * and existing photos (when the source gives none) are kept.
+ */
+export async function saveImportedProductInTx(
+  tx: Tx,
+  actor: ActorContext,
+  source: Exclude<schema.ProductSource, 'manual'>,
+  data: schema.ImportedProduct,
+  photos: schema.StoredImage[],
+): Promise<ImportSaveResult> {
+  try {
+    return await saveImported(tx, actor, source, data, photos);
+  } catch (error) {
+    rethrowUnique(error);
+  }
+}
+
+async function saveImported(
+  tx: Tx,
+  actor: ActorContext,
+  source: Exclude<schema.ProductSource, 'manual'>,
+  data: schema.ImportedProduct,
+  photos: schema.StoredImage[],
+): Promise<ImportSaveResult> {
+  const [existing] = data.externalId
+    ? await tx
+        .select({ id: schema.products.id, photos: schema.products.photos })
+        .from(schema.products)
+        .where(
+          and(
+            eq(schema.products.source, source),
+            eq(schema.products.externalId, data.externalId),
+            isNull(schema.products.archivedAt),
+          ),
+        )
+        .limit(1)
+    : [];
+
+  if (!existing) {
+    const parsed = productInput.parse(toImportInput(data, photos));
+    checkPhotos(actor.businessId, parsed);
+    const [product] = await tx
+      .insert(schema.products)
+      .values({
+        businessId: actor.businessId,
+        ...productFields(parsed),
+        source,
+        externalId: data.externalId,
+      })
+      .returning({ id: schema.products.id });
+    if (!product) throw new Error('Product insert returned no row');
+    await insertVariants(
+      tx,
+      actor,
+      product.id,
+      desiredVariants(parsed).map((v, position) => ({
+        ...v,
+        position,
+        externalId: data.variants[position]?.externalId ?? null,
+      })),
+      'import',
+    );
+    return { productId: product.id, result: 'created' };
+  }
+
+  const current = await tx
+    .select()
+    .from(schema.productVariants)
+    .where(
+      and(
+        eq(schema.productVariants.productId, existing.id),
+        isNull(schema.productVariants.archivedAt),
+      ),
+    );
+  const byExternal = new Map(current.filter((v) => v.externalId).map((v) => [v.externalId!, v]));
+  const byOptions = new Map(current.map((v) => [optionKey(v), v]));
+  const used = new Set<string>();
+  const matches = data.variants.map((v) => {
+    const match =
+      (v.externalId ? byExternal.get(v.externalId) : undefined) ?? byOptions.get(optionKey(v));
+    if (!match || used.has(match.id)) return undefined;
+    used.add(match.id);
+    return match;
+  });
+
+  const keptPhotos = photos.length > 0 ? photos : existing.photos;
+  // Unknown stock (null) keeps what the option has now.
+  const withStock: schema.ImportedProduct = {
+    ...data,
+    variants: data.variants.map((v, i) => ({ ...v, stock: v.stock ?? matches[i]?.stock ?? 0 })),
+  };
+  const parsed = productInput.parse(toImportInput(withStock, keptPhotos));
+  checkPhotos(actor.businessId, parsed);
+  const { isActive: _isActive, isFeatured: _isFeatured, ...fields } = productFields(parsed);
+  await tx.update(schema.products).set(fields).where(eq(schema.products.id, existing.id));
+
+  const desired = desiredVariants(parsed);
+  const removed = current.filter((v) => !used.has(v.id));
+  if (removed.length > 0) {
+    await tx
+      .update(schema.productVariants)
+      .set({ archivedAt: new Date() })
+      .where(
+        inArray(
+          schema.productVariants.id,
+          removed.map((v) => v.id),
+        ),
+      );
+  }
+  const added: (DesiredVariant & { position: number })[] = [];
+  for (const [position, v] of desired.entries()) {
+    const match = matches[position];
+    const externalId = data.variants[position]?.externalId ?? null;
+    if (!match) {
+      added.push({ ...v, position, externalId });
+      continue;
+    }
+    await tx
+      .update(schema.productVariants)
+      .set({
+        size: v.size,
+        colour: v.colour,
+        sku: v.sku,
+        priceOverride: v.priceOverride,
+        isDefault: v.isDefault,
+        position,
+        externalId: externalId ?? match.externalId,
+      })
+      .where(eq(schema.productVariants.id, match.id));
+    if (v.stock !== match.stock) {
+      await applyStockChange(
+        tx,
+        actor.businessId,
+        {
+          variantId: match.id,
+          change: v.stock - match.stock,
+          reason: 'import',
+          note: 'Updated by import',
+        },
+        actor.userId,
+      );
+    }
+  }
+  await insertVariants(tx, actor, existing.id, added, 'import');
+  return { productId: existing.id, result: 'updated' };
+}
+
+/** The product form input for an imported product (same rules as adding one by hand). */
+export function toImportInput(
+  data: schema.ImportedProduct,
+  photos: schema.StoredImage[],
+): ProductInput {
+  const simple = data.variants.length === 1 && !data.variants[0]!.size && !data.variants[0]!.colour;
+  return {
+    name: data.name,
+    description: data.description,
+    category: data.category,
+    photos,
+    retailPrice: data.retailPrice,
+    wholesalePrice: data.wholesalePrice,
+    wholesaleMinQty: data.wholesaleMinQty,
+    options: simple
+      ? { kind: 'simple', stock: data.variants[0]!.stock ?? 0, sku: data.variants[0]!.sku }
+      : {
+          kind: 'variants',
+          variants: data.variants.map((v) => ({
+            size: v.size,
+            colour: v.colour,
+            sku: v.sku,
+            stock: v.stock ?? 0,
+            priceOverride: v.priceOverride,
+          })),
+        },
+  };
 }

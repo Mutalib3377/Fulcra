@@ -142,14 +142,14 @@ Goal: design partners can share a store link or connect their existing website, 
 
 ### I1 — Catalog import
 
-- [ ] Schema: `catalog_sources`
-- [ ] Onboarding choice: "Use our store" or "Connect my website"
-- [ ] CSV import with a template file and a review screen
+- [ ] Schema: `catalog_sources` (I1b; I1a added `catalog_imports` and `catalog_import_items`)
+- [x] Onboarding choice: "Use our store" or "Connect my website"
+- [x] CSV import with a template file and a review screen
 - [ ] Shopify import (Admin API): products, variants, prices, stock, images
 - [ ] WooCommerce import (REST API keys): products, variations, prices, stock, images
 - [ ] URL import: fetch the seller's site, AI extracts products → **seller reviews and approves before saving**
-- [ ] Import runs as a background job with progress shown in the dashboard
-- [ ] Re-import updates existing products by `external_id` (no duplicates)
+- [x] Import runs as a background job with progress shown in the dashboard
+- [ ] Re-import updates existing products by `external_id` (no duplicates) — done for CSV ("product code" column) in I1a; Shopify and WooCommerce in I1b
 
 ### I2 — WhatsApp buttons for existing websites
 

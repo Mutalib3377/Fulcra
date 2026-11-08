@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
-/** Re-checks the page every few seconds (for "confirming your payment"). */
+/** Re-checks the page every few seconds ("confirming your payment", import progress). */
 export function AutoRefresh({ seconds }: { seconds: number }) {
   const router = useRouter();
   useEffect(() => {

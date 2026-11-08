@@ -14,6 +14,7 @@ export const EVENT_TYPES = [
   'payment.confirmed',
   'payment.needs_review',
   'payment.unmatched',
+  'catalog.imported',
 ] as const;
 export type EventType = (typeof EVENT_TYPES)[number];
 
