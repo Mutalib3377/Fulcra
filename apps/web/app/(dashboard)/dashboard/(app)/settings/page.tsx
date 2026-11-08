@@ -8,7 +8,16 @@ import {
   CardHeader,
   CardTitle,
 } from '@fulcra/ui';
-import { ChevronRight, Globe, Landmark, MapPin, Palette, Plus, Users } from 'lucide-react';
+import {
+  ChevronRight,
+  Globe,
+  Landmark,
+  MapPin,
+  MessageCircle,
+  Palette,
+  Plus,
+  Users,
+} from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ActionButton } from '@/components/action-button';
@@ -69,6 +78,23 @@ export default async function SettingsPage() {
                   {business.hasExternalWebsite && business.websiteUrl
                     ? `Your website: ${business.websiteUrl.replace(/^https?:\/\//, '')}`
                     : 'Customers shop on your Fulcra store.'}
+                </CardDescription>
+              </div>
+            </div>
+            <ChevronRight className="size-5 text-muted-foreground" aria-hidden />
+          </CardHeader>
+        </Card>
+      </Link>
+
+      <Link href="/settings/whatsapp-buttons" className="block">
+        <Card className="transition-colors hover:bg-muted/50">
+          <CardHeader className="flex-row items-center justify-between">
+            <div className="flex items-center gap-3">
+              <MessageCircle className="size-5 text-primary" aria-hidden />
+              <div>
+                <CardTitle>WhatsApp buttons</CardTitle>
+                <CardDescription>
+                  Links and buttons for your website, Instagram bio and flyers.
                 </CardDescription>
               </div>
             </div>

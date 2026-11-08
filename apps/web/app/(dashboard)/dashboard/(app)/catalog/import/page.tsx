@@ -247,6 +247,17 @@ export default async function ImportPage({ searchParams }: Props) {
         </CardContent>
       </Card>
 
+      <p className="text-sm text-muted-foreground">
+        Keeping your own website?{' '}
+        <Link
+          href="/settings/whatsapp-buttons"
+          className="font-medium text-primary underline-offset-4 hover:underline"
+        >
+          Add WhatsApp buttons to it
+        </Link>{' '}
+        so customers can order in one tap.
+      </p>
+
       {imports.length > 0 && (
         <Card>
           <CardHeader>
