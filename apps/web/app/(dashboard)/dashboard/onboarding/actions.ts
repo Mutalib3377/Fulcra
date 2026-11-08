@@ -17,5 +17,6 @@ export async function createBusinessAction(
     return toActionError(error);
   }
   await setActiveBusiness(businessId);
-  return { ok: true, data: { redirectTo: '/' } };
+  // Next: "Use our store" or "Connect my website".
+  return { ok: true, data: { redirectTo: '/settings/store?welcome=1' } };
 }

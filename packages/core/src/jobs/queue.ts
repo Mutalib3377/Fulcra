@@ -12,6 +12,11 @@ export const JOBS = {
     name: 'paystack-webhook',
     data: z.object({ webhookEventId: z.uuid() }),
   },
+  /** Save the approved products of a catalog import (photos, products, stock). */
+  catalogImport: {
+    name: 'catalog-import',
+    data: z.object({ businessId: z.uuid(), importId: z.uuid() }),
+  },
 } as const;
 
 export type JobName = (typeof JOBS)[keyof typeof JOBS]['name'];
@@ -55,4 +60,16 @@ export async function enqueuePaystackWebhook(webhookEventId: string): Promise<vo
   const boss = await getSender();
   // singletonKey: the same webhook is never queued twice at once.
   await boss.send(JOBS.paystackWebhook.name, data, { ...RETRY, singletonKey: webhookEventId });
+}
+
+export async function enqueueCatalogImport(businessId: string, importId: string): Promise<void> {
+  const data = JOBS.catalogImport.data.parse({ businessId, importId });
+  const boss = await getSender();
+  // A retry continues where the last run stopped (saved products are not saved again).
+  await boss.send(JOBS.catalogImport.name, data, {
+    retryLimit: 5,
+    retryDelay: 30,
+    retryBackoff: true,
+    singletonKey: importId,
+  });
 }

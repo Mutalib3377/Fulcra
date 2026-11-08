@@ -1,7 +1,7 @@
 import { formatNaira } from '@fulcra/config';
 import { listCategories, listProducts, productListFilter } from '@fulcra/core';
 import { Badge, Button, Card, EmptyState, Input, NativeSelect, cn } from '@fulcra/ui';
-import { ImageIcon, Plus, Search } from 'lucide-react';
+import { ImageIcon, Plus, Search, Upload } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getDashboardContext } from '@/lib/auth';
@@ -45,11 +45,18 @@ export default async function CatalogPage({ searchParams }: Props) {
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-2xl font-bold">Catalog</h1>
         {canEdit && (
-          <Button asChild>
-            <Link href="/catalog/new">
-              <Plus aria-hidden /> Add product
-            </Link>
-          </Button>
+          <div className="flex gap-2">
+            <Button asChild variant="outline">
+              <Link href="/catalog/import">
+                <Upload aria-hidden /> Import
+              </Link>
+            </Button>
+            <Button asChild>
+              <Link href="/catalog/new">
+                <Plus aria-hidden /> Add product
+              </Link>
+            </Button>
+          </div>
         )}
       </div>
 
@@ -121,11 +128,18 @@ export default async function CatalogPage({ searchParams }: Props) {
             description="Add your products so customers and the assistant can see prices and stock."
             action={
               canEdit ? (
-                <Button asChild>
-                  <Link href="/catalog/new">
-                    <Plus aria-hidden /> Add your first product
-                  </Link>
-                </Button>
+                <div className="flex flex-wrap justify-center gap-2">
+                  <Button asChild>
+                    <Link href="/catalog/new">
+                      <Plus aria-hidden /> Add your first product
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline">
+                    <Link href="/catalog/import">
+                      <Upload aria-hidden /> Import from a spreadsheet
+                    </Link>
+                  </Button>
+                </div>
               ) : undefined
             }
           />

@@ -8,7 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@fulcra/ui';
-import { ChevronRight, Landmark, MapPin, Palette, Plus, Users } from 'lucide-react';
+import { ChevronRight, Globe, Landmark, MapPin, Palette, Plus, Users } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ActionButton } from '@/components/action-button';
@@ -57,6 +57,25 @@ export default async function SettingsPage() {
           </dl>
         </CardContent>
       </Card>
+
+      <Link href="/settings/store" className="block">
+        <Card className="transition-colors hover:bg-muted/50">
+          <CardHeader className="flex-row items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Globe className="size-5 text-primary" aria-hidden />
+              <div>
+                <CardTitle>Store or website</CardTitle>
+                <CardDescription>
+                  {business.hasExternalWebsite && business.websiteUrl
+                    ? `Your website: ${business.websiteUrl.replace(/^https?:\/\//, '')}`
+                    : 'Customers shop on your Fulcra store.'}
+                </CardDescription>
+              </div>
+            </div>
+            <ChevronRight className="size-5 text-muted-foreground" aria-hidden />
+          </CardHeader>
+        </Card>
+      </Link>
 
       <Link href="/settings/brand" className="block">
         <Card className="transition-colors hover:bg-muted/50">

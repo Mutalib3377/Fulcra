@@ -1,5 +1,6 @@
 import { APP_NAME } from '@fulcra/config';
 import { ensureQueues, JOBS } from '@fulcra/core';
+import { handleCatalogImport } from './jobs/catalog-import';
 import { handlePaystackWebhook } from './jobs/paystack-webhook';
 import { loadEnv } from './env';
 import { createQueue } from './queue';
@@ -12,6 +13,8 @@ async function main(): Promise<void> {
   await ensureQueues(boss);
   // Job handlers, one per queue (more arrive with later phases: agent replies, imports…).
   await boss.work(JOBS.paystackWebhook.name, { localConcurrency: 2 }, handlePaystackWebhook);
+  // Imports download photos one by one; one at a time keeps memory low on a small server.
+  await boss.work(JOBS.catalogImport.name, { localConcurrency: 1 }, handleCatalogImport);
   console.info(`[worker] ${APP_NAME} worker ready`);
 
   let stopping = false;

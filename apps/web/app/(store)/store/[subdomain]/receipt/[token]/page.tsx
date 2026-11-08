@@ -5,7 +5,7 @@ import { CheckCircle2, Download, Loader2 } from 'lucide-react';
 import type { Metadata } from 'next';
 import { imageUrls } from '@/lib/images';
 import { formatDateTime } from '@/lib/orders';
-import { AutoRefresh } from './auto-refresh';
+import { AutoRefresh } from '@/components/auto-refresh';
 
 type Props = { params: Promise<{ subdomain: string; token: string }> };
 
