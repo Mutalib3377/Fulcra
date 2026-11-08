@@ -173,7 +173,8 @@ export async function startSourceImport(
 
 export type FetchTarget =
   | { kind: 'shopify'; shopUrl: string; credentials: ShopifyCredentials }
-  | { kind: 'woocommerce'; shopUrl: string; credentials: WooCredentials };
+  | { kind: 'woocommerce'; shopUrl: string; credentials: WooCredentials }
+  | { kind: 'url'; url: string };
 
 /**
  * Worker: claims a queued shop import for fetching and returns the shop and its keys.
@@ -185,14 +186,26 @@ export async function claimImportFetch(
 ): Promise<FetchTarget | null> {
   return withTenant(businessId, async (tx) => {
     const [row] = await tx
-      .select({ status: t.status, kind: s.kind, shopUrl: s.shopUrl, credentials: s.credentials })
+      .select({
+        status: t.status,
+        importKind: t.kind,
+        label: t.label,
+        kind: s.kind,
+        shopUrl: s.shopUrl,
+        credentials: s.credentials,
+      })
       .from(t)
-      .innerJoin(s, eq(s.id, t.sourceId))
+      .leftJoin(s, eq(s.id, t.sourceId))
       .where(eq(t.id, importId))
       .for('update', { of: t })
       .limit(1);
     if (!row || (row.status !== 'queued' && row.status !== 'fetching')) return null;
-    if (!row.credentials) {
+    if (row.importKind === 'url') {
+      await tx.update(t).set({ status: 'fetching' }).where(eq(t.id, importId));
+      return { kind: 'url', url: row.label };
+    }
+    if (row.importKind === 'csv') return null;
+    if (!row.credentials || !row.kind || !row.shopUrl) {
       await tx
         .update(t)
         .set({ status: 'failed', error: 'The shop was disconnected.', finishedAt: new Date() })
@@ -216,15 +229,17 @@ export async function claimImportFetch(
 }
 
 /**
- * Worker: stores the products read from a shop and moves the import on to saving.
- * Shop data is structured, so there is no review step; products that break our rules
- * (e.g. more than 100 options) are left out and listed in the summary.
+ * Worker: stores the products read from a shop or website.
+ * Shop data is structured, so it moves straight on to saving; products that break our
+ * rules (e.g. more than 100 options) are left out and listed in the summary.
+ * Website imports (`review: true`) wait for the seller to check them first.
  */
 export async function saveFetchedProducts(
   businessId: string,
   importId: string,
   products: schema.ImportedProduct[],
-  notes: { position: number; message: string }[] = [],
+  notes: { position: number; message: string; level?: 'warning' | 'error' }[] = [],
+  options: { review?: boolean; sourceRefs?: string[] } = {},
 ): Promise<void> {
   await withTenant(businessId, async (tx) => {
     const [row] = await tx
@@ -238,20 +253,25 @@ export async function saveFetchedProducts(
       const problems: schema.ImportProblem[] = [
         ...notes
           .filter((n) => n.position === position)
-          .map((n) => ({ level: 'warning' as const, message: n.message })),
-        ...checkImportedProduct(data),
+          .map((n) => ({ level: n.level ?? ('warning' as const), message: n.message })),
       ];
+      // Our own clearer message replaces the generic form-rule one (e.g. a missing price).
+      if (!problems.some((p) => p.level === 'error')) problems.push(...checkImportedProduct(data));
       const blocked = problems.some((p) => p.level === 'error');
       return {
         businessId,
         importId,
         position,
-        sourceRef: data.externalId ? `#${data.externalId}` : `Product ${position + 1}`,
+        sourceRef:
+          options.sourceRefs?.[position] ??
+          (data.externalId ? `#${data.externalId}` : `Product ${position + 1}`),
         data,
         problems,
         decision: blocked ? ('skipped' as const) : ('approved' as const),
-        result: blocked ? ('failed' as const) : null,
-        resultMessage: blocked ? problems.find((p) => p.level === 'error')!.message : null,
+        // In review, a blocked product is simply unticked; without review it is reported as failed.
+        result: blocked && !options.review ? ('failed' as const) : null,
+        resultMessage:
+          blocked && !options.review ? problems.find((p) => p.level === 'error')!.message : null,
       };
     });
     for (let i = 0; i < items.length; i += 500) {
@@ -260,12 +280,16 @@ export async function saveFetchedProducts(
     const approved = items.filter((i) => i.decision === 'approved').length;
     await tx
       .update(t)
-      .set({
-        status: 'saving',
-        totalItems: approved,
-        processedItems: 0,
-        failedCount: items.length - approved,
-      })
+      .set(
+        options.review
+          ? { status: 'review', totalItems: items.length, processedItems: 0 }
+          : {
+              status: 'saving',
+              totalItems: approved,
+              processedItems: 0,
+              failedCount: items.length - approved,
+            },
+      )
       .where(eq(t.id, importId));
   });
 }
@@ -286,4 +310,78 @@ export async function failImportFetch(
       await tx.update(s).set({ status: 'error', lastError: message }).where(eq(s.id, row.sourceId));
     }
   });
+}
+
+export const urlImportInput = z.object({
+  url: z
+    .string()
+    .trim()
+    .min(4, 'Enter your website address.')
+    .max(500)
+    .transform((u) => (/^https?:\/\//i.test(u) ? u : `https://${u}`))
+    .pipe(
+      z
+        .url({ message: 'Enter a website address like mystore.com.' })
+        .refine(
+          (u) => /^https?:\/\/[^/]+\.[^/]+/.test(u),
+          'Enter a website address like mystore.com.',
+        ),
+    ),
+});
+
+/**
+ * Starts reading products from a website link (in the background). The products found
+ * wait on the review screen; nothing is saved until the seller confirms.
+ */
+export async function startUrlImport(
+  actor: ActorContext,
+  input: z.input<typeof urlImportInput>,
+): Promise<schema.CatalogImport> {
+  const { url } = urlImportInput.parse(input);
+  const created = await withTenant(actor.businessId, async (tx) => {
+    await requireMember(tx, actor, EDITORS);
+    if (!(await canUse(actor.businessId, 'catalog_import'))) {
+      throw new CoreError('forbidden', 'Importing products is not part of your plan.');
+    }
+    const [running] = await tx
+      .select({ id: t.id })
+      .from(t)
+      .where(and(eq(t.kind, 'url'), inArray(t.status, ['queued', 'fetching'])))
+      .limit(1);
+    if (running) {
+      throw new CoreError(
+        'conflict',
+        'We are already reading a website for you. Wait for it to finish.',
+      );
+    }
+    const [row] = await tx
+      .insert(t)
+      .values({
+        businessId: actor.businessId,
+        kind: 'url',
+        status: 'queued',
+        label: url,
+        createdBy: actor.userId,
+        startedAt: new Date(),
+      })
+      .returning();
+    return row!;
+  });
+  try {
+    await enqueueCatalogImport(actor.businessId, created.id);
+  } catch (error) {
+    console.error('[imports] could not queue website import', error);
+    await withTenant(actor.businessId, (tx) =>
+      tx
+        .update(t)
+        .set({
+          status: 'failed',
+          error: 'We could not start reading your website. Please try again.',
+          finishedAt: new Date(),
+        })
+        .where(eq(t.id, created.id)),
+    );
+    throw new CoreError('conflict', 'We could not start reading your website. Please try again.');
+  }
+  return created;
 }

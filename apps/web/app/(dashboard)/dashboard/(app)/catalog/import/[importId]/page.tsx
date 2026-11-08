@@ -84,8 +84,18 @@ export default async function ImportDetailPage({ params }: Props) {
         <p className="text-muted-foreground">{IMPORT_KIND_LABEL[run.kind]}</p>
       </div>
 
+      {run.status === 'review' && run.kind === 'url' && (
+        <p className="rounded-md bg-info-soft px-3 py-2 text-sm text-info">
+          We read these from your website, partly with AI. Check each name, price and option before
+          importing. Stock starts at 0; update it after importing.
+        </p>
+      )}
       {run.status === 'review' && (
-        <ImportReview importId={run.id} items={items.map(toReviewItem)} />
+        <ImportReview
+          importId={run.id}
+          items={items.map(toReviewItem)}
+          fromFile={run.kind === 'csv'}
+        />
       )}
 
       {(run.status === 'saving' || run.status === 'queued' || run.status === 'fetching') && (
@@ -95,7 +105,9 @@ export default async function ImportDetailPage({ params }: Props) {
             <p className="font-semibold">
               {run.status === 'saving'
                 ? `Bringing in ${run.processedItems} of ${run.totalItems} products…`
-                : 'Getting your products…'}
+                : run.kind === 'url'
+                  ? 'Reading your website…'
+                  : 'Getting your products from your shop…'}
             </p>
             <div
               className="h-3 overflow-hidden rounded-full bg-muted"

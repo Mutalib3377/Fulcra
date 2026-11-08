@@ -7,6 +7,7 @@ import {
   disconnectCatalogSource,
   setImportItemsDecision,
   startSourceImport,
+  startUrlImport,
 } from '@fulcra/core';
 import type { CatalogSourceKind } from '@fulcra/core/rules';
 import { ImportFetchError, verifyWooConnection } from '@fulcra/integrations';
@@ -107,6 +108,19 @@ export async function disconnectShopAction(kind: CatalogSourceKind): Promise<Act
     await disconnectCatalogSource(context.actor, kind);
     revalidatePath('/dashboard/catalog/import');
     return { ok: true, data: undefined };
+  } catch (error) {
+    return toActionError(error);
+  }
+}
+
+export async function startUrlImportAction(
+  url: string,
+): Promise<ActionResult<{ redirectTo: string }>> {
+  const context = await getActionContext();
+  if (!context) return SESSION_ENDED;
+  try {
+    const run = await startUrlImport(context.actor, { url });
+    return { ok: true, data: { redirectTo: `/catalog/import/${run.id}` } };
   } catch (error) {
     return toActionError(error);
   }
