@@ -20,7 +20,16 @@ export type ReviewItem = {
 type Update = { ids: string[] | 'all'; approved: boolean };
 
 /** Tick the products to bring in. Products with errors cannot be ticked until the file is fixed. */
-export function ImportReview({ importId, items }: { importId: string; items: ReviewItem[] }) {
+export function ImportReview({
+  importId,
+  items,
+  fromFile,
+}: {
+  importId: string;
+  items: ReviewItem[];
+  /** CSV files can be fixed and uploaded again; website products are fixed on the website. */
+  fromFile: boolean;
+}) {
   const [state, setState] = useState(items);
   const [optimistic, apply] = useOptimistic(state, (current, update: Update) =>
     current.map((item) =>
@@ -72,7 +81,8 @@ export function ImportReview({ importId, items }: { importId: string; items: Rev
           <li>{items.length - withErrors} ready to import</li>
           {withErrors > 0 && (
             <li className="text-danger">
-              {withErrors} need fixing in your file first (they are left out)
+              {withErrors} {fromFile ? 'need fixing in your file first' : 'could not be read fully'}{' '}
+              (they are left out)
             </li>
           )}
           {withWarnings > 0 && <li className="text-warning">{withWarnings} with notes to check</li>}
@@ -153,7 +163,7 @@ export function ImportReview({ importId, items }: { importId: string; items: Rev
                 </div>
                 {blocked && (
                   <Badge tone="danger" className="h-fit">
-                    Fix in file
+                    {fromFile ? 'Fix in file' : 'Left out'}
                   </Badge>
                 )}
               </label>

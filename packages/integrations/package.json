@@ -13,6 +13,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^1.6.0",
     "@fulcra/config": "workspace:*",
     "@fulcra/core": "workspace:*",
     "@fulcra/db": "workspace:*",

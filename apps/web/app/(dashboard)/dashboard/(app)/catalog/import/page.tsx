@@ -18,6 +18,7 @@ import {
   ChevronRight,
   Download,
   FileSpreadsheet,
+  Globe,
   Store,
 } from 'lucide-react';
 import type { Metadata } from 'next';
@@ -25,7 +26,7 @@ import Link from 'next/link';
 import { getDashboardContext } from '@/lib/auth';
 import { timeAgo } from '@/lib/orders';
 import { CsvUpload } from './csv-upload';
-import { ShopButtons, WooConnectForm } from './shop-actions';
+import { ShopButtons, UrlImportForm, WooConnectForm } from './shop-actions';
 import { IMPORT_KIND_LABEL, IMPORT_STATUS } from './status';
 
 export const metadata: Metadata = { title: 'Import products' };
@@ -195,6 +196,22 @@ export default async function ImportPage({ searchParams }: Props) {
               <WooConnectForm defaultUrl={woo?.shopUrl ?? business.websiteUrl ?? ''} />
             </>
           )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <Globe className="size-5 text-primary" aria-hidden />
+            <CardTitle>From your website</CardTitle>
+          </div>
+          <CardDescription>
+            For any other website. We read your product pages and show you what we found. Nothing is
+            added until you check it.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <UrlImportForm defaultUrl={business.websiteUrl ?? ''} />
         </CardContent>
       </Card>
 

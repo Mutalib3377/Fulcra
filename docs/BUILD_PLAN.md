@@ -147,7 +147,7 @@ Goal: design partners can share a store link or connect their existing website, 
 - [x] CSV import with a template file and a review screen
 - [x] Shopify import (Admin API): products, variants, prices, stock, images
 - [x] WooCommerce import (REST API keys): products, variations, prices, stock, images
-- [ ] URL import: fetch the seller's site, AI extracts products → **seller reviews and approves before saving**
+- [x] URL import: fetch the seller's site, AI extracts products → **seller reviews and approves before saving**
 - [x] Import runs as a background job with progress shown in the dashboard
 - [x] Re-import updates existing products by `external_id` (no duplicates): CSV "product code" (I1a), Shopify and WooCommerce product ids (I1b)
 
@@ -190,7 +190,7 @@ Goal: the agent sells on WhatsApp end to end, the owner can watch and take over,
 - [ ] Never states a price, stock level or payment status that did not come from a tool
 - [ ] Handoff when unsure, customer upset, asks for a human, or topic is in `handoff_topics`
 - [ ] Away message outside business hours (agent still takes orders if owner allows)
-- [ ] Schema: `usage_records` (created here, used again in B1)
+- [x] Schema: `usage_records` (created early in I1c for website-import AI calls; used again in B1)
 - [ ] Every tool call logged to `agent_actions`; every model call logged to `usage_records` with cost
 - [ ] Model choice per task (cheaper model for simple replies)
 - [ ] Scenario tests: price question, screenshot, variant out of stock, wholesale quantity, full order + payment, "I've sent it" with no payment, handoff

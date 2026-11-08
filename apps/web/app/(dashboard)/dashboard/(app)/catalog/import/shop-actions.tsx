@@ -4,7 +4,12 @@ import type { CatalogSourceKind } from '@fulcra/core/rules';
 import { Button, FieldMessage, Input, Label } from '@fulcra/ui';
 import { useState, useTransition } from 'react';
 import { goTo } from '@/lib/navigation';
-import { connectWooAction, disconnectShopAction, startShopImportAction } from './actions';
+import {
+  connectWooAction,
+  disconnectShopAction,
+  startShopImportAction,
+  startUrlImportAction,
+} from './actions';
 
 /** "Import products now" and "Disconnect" for a connected shop. */
 export function ShopButtons({ kind }: { kind: CatalogSourceKind }) {
@@ -113,6 +118,43 @@ export function WooConnectForm({ defaultUrl }: { defaultUrl: string }) {
       {error && <FieldMessage role="alert">{error}</FieldMessage>}
       <Button type="submit" loading={pending} className="self-start">
         Connect WooCommerce
+      </Button>
+    </form>
+  );
+}
+
+/** Website link: we read the products and show them for review. */
+export function UrlImportForm({ defaultUrl }: { defaultUrl: string }) {
+  const [url, setUrl] = useState(defaultUrl);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+  return (
+    <form
+      className="flex flex-col gap-3"
+      onSubmit={(e) => {
+        e.preventDefault();
+        startTransition(async () => {
+          setError(null);
+          const result = await startUrlImportAction(url);
+          if (result.ok) goTo(result.data.redirectTo);
+          else setError(result.message);
+        });
+      }}
+    >
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="siteUrl">Link to the page that lists your products</Label>
+        <Input
+          id="siteUrl"
+          inputMode="url"
+          placeholder="mystore.com/shop"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          required
+        />
+      </div>
+      {error && <FieldMessage role="alert">{error}</FieldMessage>}
+      <Button type="submit" loading={pending} className="self-start">
+        Read my website
       </Button>
     </form>
   );

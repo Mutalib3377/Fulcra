@@ -51,6 +51,7 @@ export * from './jobs/queue';
 
 export * from './imports/imports';
 export * from './imports/sources';
+export * from './usage/usage';
 export * from './imports/shopify-webhooks';
 export { safeFetch, type SafeFetchOptions, type SafeFetchResult } from './shared/safe-fetch';
 export { csvTemplate, CSV_TEMPLATE_COLUMNS, MAX_CSV_BYTES } from './imports/csv';

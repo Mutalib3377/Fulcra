@@ -171,7 +171,7 @@ Every business-owned table has `business_id`. Amounts are integers in kobo.
 | agent_actions | conversation_id, tool, input, output, created_at (audit trail) |
 | webhook_events | provider, event_id (unique per provider), event_type, payload, processed_at, attempts, last_error (system-only) |
 | plans / entitlements | plan features and limits; per-business switches |
-| usage_records | business_id, kind, quantity, cost_usd, created_at |
+| usage_records | business_id, kind (ai_call; later whatsapp_conversation), feature, model, input_tokens, output_tokens, quantity, cost_usd, created_at |
 | events | business_id, type, actor (user / system / agent / customer), order_id, customer_id, payload, created_at |
 
 Order statuses: `new → awaiting_payment → paid → dispatched → delivered`, plus `cancelled`.

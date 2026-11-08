@@ -14,10 +14,18 @@ export { fetchWooCatalog, mapWooProduct, verifyWooConnection } from './woocommer
 
 /** Reads all products from a connected shop. Throws ImportFetchError with a plain message. */
 export function fetchShopCatalog(
-  target: FetchTarget,
+  target: Exclude<FetchTarget, { kind: 'url' }>,
   env?: NodeJS.ProcessEnv,
 ): Promise<FetchedCatalog> {
   return target.kind === 'shopify'
     ? fetchShopifyCatalog(target.shopUrl, target.credentials, env)
     : fetchWooCatalog({ shopUrl: target.shopUrl, credentials: target.credentials }, env);
 }
+
+export {
+  extractWebsiteCatalog,
+  websiteReaderFromEnv,
+  URL_EXTRACT_MODEL,
+  type AiCallUsage,
+  type WebsiteCatalog,
+} from './url-extract/extract';

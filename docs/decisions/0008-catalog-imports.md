@@ -28,3 +28,12 @@ Sellers who already sell elsewhere should not retype their catalog. Imports can 
 - **WooCommerce** uses read-only REST keys the seller creates. The website must use https. Requests go through `safeFetch` (the address comes from the seller); the keys are only sent to the same site, never after a redirect elsewhere. Some hosts strip the Authorization header, so on 401 the keys are retried in the query string.
 - Only shops that sell in Naira are imported. Options map to size and colour (other options are added to the size). The lowest option price becomes the product price; other prices become option prices. Stock that the shop does not track is left at 0 (new products) or unchanged, with a note to the seller.
 - Shop imports skip the review step (the data is structured); products that break our rules are left out and listed. The worker reads the shop, then saves products as for CSV. Reading the shop lives in `@fulcra/integrations`; Core only stores and saves (rule 4).
+
+## Update (I1c): website link
+
+- The seller gives a link (usually their shop page). We read that page and up to 24 same-site product pages it links to, through `safeFetch`.
+- Pages with schema.org Product data (JSON-LD, which most shop software adds for Google) are read directly, with no AI. Other pages are sent to Claude as plain text (scripts and menus removed, images kept as markers), in at most 3 calls per import, with a structured-output schema. The prompt treats page content as data, not instructions. Photo links the model returns are kept only if they appear on that page, so it cannot invent them.
+- Prices must be in Naira. A product without a clear Naira price is shown on the review screen but cannot be ticked. Stock always starts at 0 (websites rarely show it).
+- Website imports always go through the review screen, with a note that AI read them. Re-importing the same page updates products by their page address (`external_id`).
+- Without `ANTHROPIC_API_KEY`, only pages with JSON-LD can be read; otherwise the seller is told to use a CSV.
+- A retried job reads the website again (and may call the AI again); retries are limited to 5.
