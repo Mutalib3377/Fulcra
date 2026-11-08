@@ -153,7 +153,7 @@ Goal: design partners can share a store link or connect their existing website, 
 
 ### I2 — WhatsApp buttons for existing websites
 
-- [ ] Page in dashboard that generates "Chat on WhatsApp" buttons/links (per product and general) with copy-paste code
+- [x] Page in dashboard that generates "Chat on WhatsApp" buttons/links (per product and general) with copy-paste code
 
 **Done when:** one design partner uses our store and one imports from their own website.
 

@@ -46,6 +46,7 @@ export * from './payments/transfers';
 export { receiptUrl, storeUrl } from './payments/urls';
 
 export * from './storefront/rules';
+export * from './storefront/whatsapp-buttons';
 export * from './storefront/store';
 export * from './jobs/queue';
 
