@@ -107,7 +107,13 @@ export function ChatView({ conversationId }: { conversationId: string }) {
         </Button>
         {!data.agentEnabled && (
           <p className="w-full text-xs text-muted-foreground">
-            Your assistant is off for now, so customers’ messages wait for your team.
+            Your assistant is off for now, so customers’ messages wait for your team.{' '}
+            <Link
+              href="/settings/assistant"
+              className="text-primary underline-offset-4 hover:underline"
+            >
+              Assistant settings
+            </Link>
           </p>
         )}
       </div>

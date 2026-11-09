@@ -1,5 +1,13 @@
 /**
- * @fulcra/agent — the AI sales agent. Never knows which channel it is on.
- * Tools call @fulcra/core services with Zod-validated input. Built in Milestone 3.
+ * @fulcra/agent — the AI sales assistant: instructions, tools and the reply loop.
+ * Channel-agnostic (rule 3); every fact and action goes through Core (rule 10).
  */
-export {};
+export {
+  AGENT_MODEL,
+  agentClientFromEnv,
+  historyToMessages,
+  runAgentTurn,
+  type TurnResult,
+} from './run';
+export { buildSystemPrompt, turnNote } from './prompt';
+export { TOOLS } from './tools';

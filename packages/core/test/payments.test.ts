@@ -16,7 +16,7 @@ import {
   recordPaystackWebhook,
 } from '../src/payments/payments';
 import { getReceipt } from '../src/payments/receipts';
-import { FakePaystack, signedWebhook, TEST_SECRET } from './fake-paystack';
+import { FakePaystack, signedWebhook, TEST_SECRET } from '../src/testing/fake-paystack';
 import { addMember, shopWithStock } from './helpers';
 
 let paystack: FakePaystack;

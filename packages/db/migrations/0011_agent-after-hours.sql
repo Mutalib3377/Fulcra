@@ -1,0 +1,1 @@
+ALTER TABLE "agent_settings" ADD COLUMN "after_hours_orders" boolean DEFAULT true NOT NULL;

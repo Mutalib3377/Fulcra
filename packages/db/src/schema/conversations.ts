@@ -204,6 +204,8 @@ export const agentSettings = pgTable(
     awayMessage: text('away_message').notNull().default(''),
     /** Null: the assistant answers at any time. */
     businessHours: jsonb('business_hours').$type<BusinessHours>(),
+    /** Outside opening hours: keep selling and taking orders (true), or only send the away message. */
+    afterHoursOrders: boolean('after_hours_orders').notNull().default(true),
     /** Returns, delivery, payment rules… in the owner's own words. */
     policies: text('policies').notNull().default(''),
     /** Topics the assistant always hands to a person ("discounts", "custom orders"…). */

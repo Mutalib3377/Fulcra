@@ -1,5 +1,6 @@
 import {
   claimOutboundMessage,
+  enqueueAgentReply,
   JOBS,
   markMessageFailed,
   markMessageSent,
@@ -9,7 +10,7 @@ import {
 import { adapterFor, ChannelSendError } from '@fulcra/channels';
 import type { Job } from 'pg-boss';
 
-/** Stores an incoming message and routes it (the assistant answers from A2). */
+/** Stores an incoming message and routes it: to the assistant (queued reply) or the team. */
 export async function handleInboundMessage(jobs: Job<unknown>[]): Promise<void> {
   for (const job of jobs) {
     const { businessId, connectionId, message } = JOBS.inboundMessage.data.parse(job.data);
@@ -18,6 +19,10 @@ export async function handleInboundMessage(jobs: Job<unknown>[]): Promise<void> 
       connectionId,
       message as InboundMessageInput,
     );
+    // The assistant answers after a short wait (quick messages get one reply).
+    if (result.status === 'saved' && result.route === 'agent') {
+      await enqueueAgentReply(businessId, result.conversationId, result.messageId);
+    }
     console.info(
       `[worker] inbound message: ${result.status}${result.status === 'saved' ? ` → ${result.route}` : ''}`,
     );
