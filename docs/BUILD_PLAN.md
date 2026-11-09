@@ -197,11 +197,11 @@ Goal: the agent sells on WhatsApp end to end, the owner can watch and take over,
 
 ### A3 — WhatsApp adapter
 
-- [ ] Connect a business's number (Cloud API embedded signup)
-- [ ] Webhook handler + signature check
-- [ ] Send text, images, interactive buttons/lists
+- [ ] Connect a business's number (Cloud API embedded signup) (A3a: connect with Meta details, checked with Meta, works with the test number; the Embedded Signup button comes in A3b)
+- [x] Webhook handler + signature check
+- [x] Send text, images, interactive buttons/lists (plus customer photos downloaded, delivery/read ticks, "typing…" while the assistant works)
 - [ ] Message templates for receipts, order updates, alerts and briefings (submitted to Meta)
-- [ ] Conversation usage metered per business
+- [x] Conversation usage metered per business (Meta now charges per delivered message: each charged message is costed once from its delivery update)
 
 ### A4 — Owner alerts and daily briefing
 

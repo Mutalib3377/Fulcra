@@ -36,6 +36,8 @@ export const channelConnections = pgTable(
     mode: connectionMode('mode').notNull().default('live'),
     /** The platform's id for the account (WhatsApp phone number id, Instagram account id…). */
     externalAccountId: text('external_account_id').notNull(),
+    /** The platform's business account (WhatsApp Business Account id; not secret). */
+    externalBusinessId: text('external_business_id'),
     /** Shown to the owner, e.g. "+234 803 123 4567" or "@adastyles". */
     displayName: text('display_name').notNull().default(''),
     /** Access token and other secrets, encrypted with ENCRYPTION_KEY. */

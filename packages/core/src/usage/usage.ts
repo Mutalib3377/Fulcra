@@ -72,3 +72,58 @@ export async function recordAiUsage(
     return row!;
   });
 }
+
+/**
+ * What Meta charges per delivered WhatsApp message, in US dollars, by pricing category, for
+ * messages to Nigerian numbers (where our sellers' customers are). Since October 2026 replies
+ * inside the 24-hour window ("service") are charged like utility messages. Figures from
+ * published rate summaries; check Meta's rate card and update here when it changes.
+ * Unknown categories are costed at the highest rate so we never under-count.
+ */
+export const WHATSAPP_PRICES_USD: Record<string, number> = {
+  service: 0.0101,
+  utility: 0.0101,
+  authentication: 0.0101,
+  authentication_international: 0.0101,
+  marketing: 0.062,
+  marketing_lite: 0.062,
+};
+const HIGHEST_WHATSAPP_PRICE = Math.max(...Object.values(WHATSAPP_PRICES_USD));
+
+export function whatsAppMessageCostUsd(category: string): number {
+  return WHATSAPP_PRICES_USD[category] ?? HIGHEST_WHATSAPP_PRICE;
+}
+
+const whatsAppUsageInput = z.object({
+  /** The WhatsApp message id: each message is charged once, however often Meta reports it. */
+  reference: z.string().min(1).max(200),
+  /** Meta's pricing category from the delivery update (service, utility, marketing…). */
+  category: z.string().min(1).max(60),
+});
+
+/**
+ * Logs a WhatsApp message Meta charges for, against the business (rule 12). Idempotent by
+ * message id (rule 9). Returns false when it was already logged.
+ */
+export async function recordWhatsAppUsage(
+  businessId: string,
+  input: z.input<typeof whatsAppUsageInput>,
+): Promise<boolean> {
+  const id = z.uuid().parse(businessId);
+  const data = whatsAppUsageInput.parse(input);
+  return withTenant(id, async (tx) => {
+    const rows = await tx
+      .insert(schema.usageRecords)
+      .values({
+        businessId: id,
+        kind: 'whatsapp_message',
+        feature: `whatsapp.${data.category}`,
+        reference: data.reference,
+        quantity: 1,
+        costUsd: whatsAppMessageCostUsd(data.category),
+      })
+      .onConflictDoNothing()
+      .returning({ id: schema.usageRecords.id });
+    return rows.length > 0;
+  });
+}

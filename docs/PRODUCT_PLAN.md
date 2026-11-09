@@ -164,14 +164,14 @@ Every business-owned table has `business_id`. Amounts are integers in kobo.
 | order_items | order_id, variant_id, product_id, product_name + variant_label copies, quantity, unit_price, is_wholesale, line_total |
 | payments | business_id, order_id (optional), customer_id, provider (paystack / manual), reference (unique per provider), amount, status (pending / success / failed / needs_review / unmatched / dismissed), method, checkout_url, paid_at |
 | dedicated_accounts | business_id, customer_id (unique per business), provider customer code, account_number, account_name, bank_name, status |
-| channel_connections | business_id, channel, mode (live / test), external_account_id, display_name, credentials (encrypted), status, expires_at |
+| channel_connections | business_id, channel, mode (live / test), external_account_id, external_business_id (WhatsApp Business Account), display_name, credentials (encrypted), status, expires_at |
 | conversations | business_id, customer_id, connection_id, channel, status, handled_by (agent / human), needs_attention, attention_reason, last_customer_message_at, last_message_at, last_message_preview, unread_count |
 | messages | conversation_id, direction, sender (customer / agent / human / system), sent_by_user_id, type, text, media, payload, external_id (unique), status (received / queued / sent / delivered / read / failed), created_at |
 | agent_settings | business_id, enabled, greeting, away_message, business_hours, after_hours_orders, policies, handoff_topics (tone comes from the brand kit) |
 | agent_actions | conversation_id, message_id, tool, input, output, ok, created_at (audit trail) |
 | webhook_events | provider, event_id (unique per provider), event_type, payload, processed_at, attempts, last_error (system-only) |
 | plans / entitlements | plan features and limits; per-business switches |
-| usage_records | business_id, kind (ai_call; later whatsapp_conversation), feature, model, input_tokens, output_tokens, quantity, cost_usd, created_at |
+| usage_records | business_id, kind (ai_call, whatsapp_message), feature, model, input_tokens, output_tokens, quantity, reference (provider id, unique per kind), cost_usd, created_at |
 | events | business_id, type, actor (user / system / agent / customer), order_id, customer_id, payload, created_at |
 
 Order statuses: `new → awaiting_payment → paid → dispatched → delivered`, plus `cancelled`.

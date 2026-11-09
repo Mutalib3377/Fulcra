@@ -254,6 +254,7 @@ export type OutboundDelivery = {
   message: schema.Message;
   channel: schema.Channel;
   mode: 'live' | 'test';
+  connectionId: string;
   /** The platform account sending it and its decrypted secrets (live only). */
   externalAccountId: string;
   credentials: string | null;
@@ -290,6 +291,7 @@ export async function claimOutboundMessage(
       message: row.message,
       channel: row.connection.channel,
       mode: row.connection.mode,
+      connectionId: row.connection.id,
       externalAccountId: row.connection.externalAccountId,
       credentials: row.connection.credentials ? decryptSecret(row.connection.credentials) : null,
       to: identity?.externalUserId ?? null,

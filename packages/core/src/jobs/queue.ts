@@ -17,6 +17,19 @@ export const JOBS = {
     name: 'shopify-webhook',
     data: z.object({ webhookEventId: z.uuid() }),
   },
+  /** Read a saved channel webhook (WhatsApp…): queue its messages and delivery updates. */
+  channelWebhook: {
+    name: 'channel-webhook',
+    data: z.object({ webhookEventId: z.uuid() }),
+  },
+  /** Apply a delivery update (sent, delivered, read, failed) and meter what the platform charges. */
+  messageStatus: {
+    name: 'message-status',
+    data: z.object({
+      businessId: z.uuid(),
+      update: z.record(z.string(), z.unknown()),
+    }),
+  },
   /** Store an incoming message (find the customer and chat, route to the assistant or the team). */
   inboundMessage: {
     name: 'inbound-message',
@@ -145,5 +158,28 @@ export async function enqueueAgentReply(
     singletonKey: messageId,
     retryLimit: 2,
     retryDelay: 10,
+  });
+}
+
+export async function enqueueChannelWebhook(webhookEventId: string): Promise<void> {
+  const data = JOBS.channelWebhook.data.parse({ webhookEventId });
+  const boss = await getSender();
+  await boss.send(JOBS.channelWebhook.name, data, { ...RETRY, singletonKey: webhookEventId });
+}
+
+/**
+ * Queues a delivery update. Retried a few times: "sent" can arrive a moment before we have
+ * saved the platform's id for the message we just sent.
+ */
+export async function enqueueMessageStatus(
+  businessId: string,
+  update: Record<string, unknown>,
+): Promise<void> {
+  const data = JOBS.messageStatus.data.parse({ businessId, update });
+  const boss = await getSender();
+  await boss.send(JOBS.messageStatus.name, data, {
+    retryLimit: 6,
+    retryDelay: 5,
+    retryBackoff: true,
   });
 }

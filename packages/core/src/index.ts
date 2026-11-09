@@ -26,6 +26,7 @@ export {
   MAX_IMAGE_BYTES,
   imageUrl,
   shareImageJpeg,
+  storeImage,
   type ImageSize,
   type StoredImage,
 } from './media/images';
@@ -61,6 +62,7 @@ export * from './businesses/website';
 export * from './conversations/message-types';
 export * from './conversations/rules';
 export * from './conversations/conversations';
+export * from './conversations/channels';
 
 export * from './agent/rules';
 export * from './agent/settings';

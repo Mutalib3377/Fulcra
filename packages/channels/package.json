@@ -15,7 +15,8 @@
   "dependencies": {
     "@fulcra/config": "workspace:*",
     "@fulcra/core": "workspace:*",
-    "@fulcra/db": "workspace:*"
+    "@fulcra/db": "workspace:*",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/node": "^22",
