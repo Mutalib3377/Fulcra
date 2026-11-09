@@ -1,6 +1,7 @@
 'use client';
 
 import { cn } from '@fulcra/ui';
+import { useQuery } from '@tanstack/react-query';
 import { House, MessageCircle, Package, Settings, ShoppingBag, Users, Wallet } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -21,6 +22,30 @@ const sideItems = [
   ...items.slice(3),
 ] as const;
 
+/** Chats waiting for the team, checked every 30 seconds. Riders have no inbox: no badge. */
+function useAttentionCount(): number {
+  const { data } = useQuery({
+    queryKey: ['inbox', 'attention'],
+    queryFn: async () => {
+      const response = await fetch('/api/inbox/attention');
+      if (!response.ok) return { count: 0 };
+      return (await response.json()) as { count: number };
+    },
+    refetchInterval: 30_000,
+  });
+  return data?.count ?? 0;
+}
+
+function InboxBadge({ count }: { count: number }) {
+  if (count === 0) return null;
+  return (
+    <span className="absolute -top-1.5 -right-2.5 min-w-4.5 rounded-full bg-danger px-1 text-center text-[10px] leading-4.5 font-bold text-white">
+      {count > 99 ? '99+' : count}
+      <span className="sr-only"> waiting</span>
+    </span>
+  );
+}
+
 function useActive() {
   // The browser shows /orders while the app renders /dashboard/orders; accept both.
   const pathname = usePathname().replace(/^\/dashboard(?=\/|$)/, '') || '/';
@@ -31,6 +56,7 @@ function useActive() {
 /** Bottom navigation on phones. */
 export function BottomNav() {
   const isActive = useActive();
+  const attention = useAttentionCount();
   return (
     <nav
       aria-label="Main"
@@ -51,7 +77,10 @@ export function BottomNav() {
                   active ? 'font-semibold text-primary' : 'text-muted-foreground',
                 )}
               >
-                <Icon className="size-5" aria-hidden />
+                <span className="relative">
+                  <Icon className="size-5" aria-hidden />
+                  {href === '/inbox' && <InboxBadge count={attention} />}
+                </span>
                 {label}
               </Link>
             </li>
@@ -65,6 +94,7 @@ export function BottomNav() {
 /** Sidebar navigation on larger screens. */
 export function SideNav() {
   const isActive = useActive();
+  const attention = useAttentionCount();
   return (
     <nav aria-label="Main" className="flex flex-col gap-1 p-3">
       {sideItems.map(({ href, label, icon: Icon }) => {
@@ -81,6 +111,11 @@ export function SideNav() {
           >
             <Icon className="size-4" aria-hidden />
             {label}
+            {href === '/inbox' && attention > 0 && (
+              <span className="ml-auto rounded-full bg-danger px-1.5 text-xs font-bold text-white">
+                {attention}
+              </span>
+            )}
           </Link>
         );
       })}

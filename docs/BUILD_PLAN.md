@@ -169,12 +169,12 @@ Goal: the agent sells on WhatsApp end to end, the owner can watch and take over,
 
 ### A1 — Conversation foundation
 
-- [ ] Standard types in `packages/channels`: `InboundMessage`, `OutboundMessage`, `ChannelAdapter` interface (parse webhook, send text, send image, send buttons/list where supported)
-- [ ] Schema: `channel_connections`, `conversations`, `messages`, `agent_settings`, `agent_actions`
-- [ ] Encrypted token storage for channel connections
-- [ ] Inbound pipeline: webhook → save → enqueue → worker → find/create customer and conversation → route to agent or human
-- [ ] Unified inbox in dashboard: conversation list (channel icon, status, needs-attention), chat view, reply as human, "Take over" / "Give back to agent"
-- [ ] Track `last_customer_message_at` and block free-form replies outside the 24-hour window
+- [x] Standard types in `packages/channels` (shapes defined in Core and re-exported, see ADR 0010): `InboundMessage`, `OutboundMessage`, `ChannelAdapter` interface (parse webhook, send text, send image, send buttons/list where supported)
+- [x] Schema: `channel_connections`, `conversations`, `messages`, `agent_settings`, `agent_actions`
+- [x] Encrypted token storage for channel connections (`credentials` encrypted with `encryptSecret`; saving real connections comes with A3)
+- [x] Inbound pipeline: webhook → save → enqueue → worker → find/create customer and conversation → route to agent or human (queue → worker part built and used by the test chat; the WhatsApp webhook comes with A3)
+- [x] Unified inbox in dashboard: conversation list (channel icon, status, needs-attention), chat view, reply as human, "Take over" / "Give back to agent"
+- [x] Track `last_customer_message_at` and block free-form replies outside the 24-hour window
 
 ### A2 — The agent brain (`packages/agent`)
 

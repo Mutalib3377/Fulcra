@@ -111,6 +111,9 @@ importers:
 
   apps/worker:
     dependencies:
+      '@fulcra/channels':
+        specifier: workspace:*
+        version: link:../../packages/channels
       '@fulcra/config':
         specifier: workspace:*
         version: link:../../packages/config

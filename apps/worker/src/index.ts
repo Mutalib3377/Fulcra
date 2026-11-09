@@ -1,6 +1,7 @@
 import { APP_NAME } from '@fulcra/config';
 import { ensureQueues, JOBS } from '@fulcra/core';
 import { handleCatalogImport } from './jobs/catalog-import';
+import { handleInboundMessage, handleSendMessage } from './jobs/messages';
 import { handlePaystackWebhook } from './jobs/paystack-webhook';
 import { handleShopifyWebhook } from './jobs/shopify-webhook';
 import { loadEnv } from './env';
@@ -17,6 +18,8 @@ async function main(): Promise<void> {
   // Imports download photos one by one; one at a time keeps memory low on a small server.
   await boss.work(JOBS.catalogImport.name, { localConcurrency: 1 }, handleCatalogImport);
   await boss.work(JOBS.shopifyWebhook.name, { localConcurrency: 1 }, handleShopifyWebhook);
+  await boss.work(JOBS.inboundMessage.name, { localConcurrency: 4 }, handleInboundMessage);
+  await boss.work(JOBS.sendMessage.name, { localConcurrency: 4 }, handleSendMessage);
   console.info(`[worker] ${APP_NAME} worker ready`);
 
   let stopping = false;
