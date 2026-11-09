@@ -17,6 +17,20 @@ export const JOBS = {
     name: 'shopify-webhook',
     data: z.object({ webhookEventId: z.uuid() }),
   },
+  /** Store an incoming message (find the customer and chat, route to the assistant or the team). */
+  inboundMessage: {
+    name: 'inbound-message',
+    data: z.object({
+      businessId: z.uuid(),
+      connectionId: z.uuid(),
+      message: z.record(z.string(), z.unknown()),
+    }),
+  },
+  /** Send a queued outgoing message through its channel. */
+  sendMessage: {
+    name: 'send-message',
+    data: z.object({ businessId: z.uuid(), messageId: z.uuid() }),
+  },
   /** Save the approved products of a catalog import (photos, products, stock). */
   catalogImport: {
     name: 'catalog-import',
@@ -83,4 +97,26 @@ export async function enqueueShopifyWebhook(webhookEventId: string): Promise<voi
   const data = JOBS.shopifyWebhook.data.parse({ webhookEventId });
   const boss = await getSender();
   await boss.send(JOBS.shopifyWebhook.name, data, { ...RETRY, singletonKey: webhookEventId });
+}
+
+export async function enqueueInboundMessage(
+  businessId: string,
+  connectionId: string,
+  message: Record<string, unknown>,
+): Promise<void> {
+  const data = JOBS.inboundMessage.data.parse({ businessId, connectionId, message });
+  const boss = await getSender();
+  await boss.send(JOBS.inboundMessage.name, data, RETRY);
+}
+
+export async function enqueueSendMessage(businessId: string, messageId: string): Promise<void> {
+  const data = JOBS.sendMessage.data.parse({ businessId, messageId });
+  const boss = await getSender();
+  // singletonKey: a message is never sent twice at once.
+  await boss.send(JOBS.sendMessage.name, data, {
+    retryLimit: 5,
+    retryDelay: 10,
+    retryBackoff: true,
+    singletonKey: messageId,
+  });
 }

@@ -25,3 +25,14 @@ export type {
   CatalogSourceStatus,
 } from '@fulcra/db/schema';
 export * from './storefront/whatsapp-buttons';
+export * from './conversations/rules';
+export type { InboundMessage, OutboundMessage } from './conversations/message-types';
+export type {
+  Message,
+  MessageMedia,
+  MessageStatus,
+  MessageSender,
+  MessageType,
+  ConversationHandler,
+  Channel,
+} from '@fulcra/db/schema';
