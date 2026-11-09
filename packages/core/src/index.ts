@@ -65,4 +65,5 @@ export * from './conversations/conversations';
 export * from './agent/rules';
 export * from './agent/settings';
 export * from './agent/assistant';
+export * from './agent/photos';
 export { isAssistant, type AssistantActor, type Performer } from './members/access';

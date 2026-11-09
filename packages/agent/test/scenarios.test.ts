@@ -4,6 +4,7 @@ import type { AddressInfo } from 'node:net';
 import Anthropic from '@anthropic-ai/sdk';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AgentSettingsInput } from '@fulcra/core';
+import type * as PhotosModule from '../../core/src/agent/photos';
 import type * as QueueModule from '../../core/src/jobs/queue';
 
 // No queue in tests: record what would be sent.
@@ -15,6 +16,14 @@ vi.mock('../../core/src/jobs/queue', async (original) => ({
   },
 }));
 
+// No storage in tests: every photo "loads" except the ones marked unreadable.
+const unreadable = new Set<string>();
+vi.mock('../../core/src/agent/photos', async (original) => ({
+  ...(await original<typeof PhotosModule>()),
+  loadPhotoForAi: async (image: { path: string }) =>
+    unreadable.has(image.path) ? null : { data: 'UklGRgAAAABXRUJQ', mediaType: 'image/webp' },
+}));
+
 const { schema, withTenant } = await import('@fulcra/db');
 const { eq } = await import('drizzle-orm');
 const core = await import('@fulcra/core');
@@ -23,7 +32,11 @@ const { runAgentTurn } = await import('../src/run');
 
 // ─── A scripted fake Claude ──────────────────────────────────────────────────
 
-type Step = { tool: string; input: Record<string, unknown> } | { text: string } | { refusal: true };
+type Step =
+  | { tool: string; input: Record<string, unknown> }
+  | { text: string }
+  | { json: Record<string, unknown> }
+  | { refusal: true };
 let script: ((body: { messages: { role: string; content: unknown }[] }) => Step)[] = [];
 const requests: Record<string, unknown>[] = [];
 let server: Server;
@@ -47,14 +60,16 @@ beforeAll(async () => {
           ? [{ type: 'tool_use', id: `toolu_${randomUUID()}`, name: step.tool, input: step.input }]
           : 'text' in step
             ? [{ type: 'text', text: step.text }]
-            : [];
+            : 'json' in step
+              ? [{ type: 'text', text: JSON.stringify(step.json) }]
+              : [];
       res.setHeader('content-type', 'application/json');
       res.end(
         JSON.stringify({
           id: `msg_${randomUUID()}`,
           type: 'message',
           role: 'assistant',
-          model: 'claude-opus-5-5',
+          model: body.model,
           content,
           stop_reason: 'tool' in step ? 'tool_use' : 'refusal' in step ? 'refusal' : 'end_turn',
           stop_sequence: null,
@@ -77,6 +92,7 @@ beforeAll(async () => {
 });
 afterAll(() => server.close());
 beforeEach(() => {
+  unreadable.clear();
   queuedSends.length = 0;
   requests.length = 0;
   script = [];
@@ -155,6 +171,21 @@ async function shop(settings: Partial<AgentSettingsInput> = {}) {
     conversationId = r.conversationId;
     return r;
   };
+  /** The customer sends a photo (already stored, as a channel adapter would do). */
+  const sendPhoto = async (caption = '', opts: { unreadable?: boolean } = {}) => {
+    const path = `${business.id}/${randomUUID()}`;
+    if (opts.unreadable) unreadable.add(path);
+    const r = (await core.receiveInboundMessage(business.id, connection.id, {
+      externalId: `wamid.${randomUUID()}`,
+      from: { externalUserId: '2348031234567', displayName: 'Chioma' },
+      sentAt: new Date().toISOString(),
+      type: 'image',
+      text: '',
+      media: { mimeType: 'image/jpeg', caption, image: { path, width: 900, height: 1200 } },
+    })) as { conversationId: string; messageId: string };
+    conversationId = r.conversationId;
+    return r;
+  };
   const turn = async (messageId?: string) =>
     runAgentTurn({ businessId: business.id, conversationId, messageId, client });
   const chat = () => core.getConversation(actor, conversationId);
@@ -168,7 +199,7 @@ async function shop(settings: Partial<AgentSettingsInput> = {}) {
         .where(eq(schema.agentActions.conversationId, conversationId)),
     );
   const usage = () => withTenant(business.id, (tx) => tx.select().from(schema.usageRecords));
-  return { business, actor, zone, dress, say, turn, chat, lastReply, actions, usage };
+  return { business, actor, zone, dress, say, sendPhoto, turn, chat, lastReply, actions, usage };
 }
 
 // ─── Scenarios ───────────────────────────────────────────────────────────────
@@ -419,5 +450,120 @@ describe('assistant scenarios', () => {
       ok: false,
       output: { error: 'This customer has no order #1234.' },
     });
+  });
+
+  it('photo of a product: looks at it once with the cheap model, searches, offers the closest match', async () => {
+    const s = await shop();
+    const sent = await s.sendPhoto('You get this one?');
+    script = [
+      () => ({
+        json: {
+          kind: 'product',
+          description: 'A blue ankara maxi gown with puff sleeves.',
+          textInPhoto: '₦35,000 @otherboutique',
+          searchTerms: ['Ankara', 'gown', 'maxi', 'blue'],
+        },
+      }),
+      () => ({ tool: 'searchProducts', input: { query: 'ankara gown maxi blue', category: null } }),
+      (body) => {
+        const top = (lastToolResult(body).products as { name: string; price: string }[])[0]!;
+        return { text: `The closest we have is the ${top.name} at ${top.price}. Is this the one?` };
+      },
+    ];
+    expect(await s.turn()).toMatchObject({ status: 'replied' });
+    // Best match first: the gown matches more of the photo's words than the dress.
+    expect(await s.lastReply()).toBe(
+      'The closest we have is the Ankara Maxi Gown at ₦20,000.00. Is this the one?',
+    );
+
+    // 1st call: the photo, to the cheap model (no fallback parameter: Haiku rejects it).
+    const look = requests[0] as {
+      model: string;
+      fallbacks?: unknown;
+      messages: { content: { type: string; source?: { type: string } }[] }[];
+    };
+    expect(look.model).toBe('claude-haiku-5-5');
+    expect(look.fallbacks).toBeUndefined();
+    expect(look.messages[0]!.content[0]).toMatchObject({
+      type: 'image',
+      source: { type: 'base64' },
+    });
+    // 2nd call: the reply model reads the photo as text.
+    const reply = JSON.stringify(requests[1]);
+    expect(reply).toContain('It shows: A blue ankara maxi gown with puff sleeves.');
+    expect(reply).toContain('Search words: ankara, gown, maxi, blue');
+    expect(reply).not.toContain('"type":"image"');
+
+    // Saved on the message, and costed as its own feature.
+    const message = (await s.chat()).messages.find((m) => m.id === sent.messageId)!;
+    expect(message.payload.photo).toMatchObject({
+      kind: 'product',
+      searchTerms: ['ankara', 'gown', 'maxi', 'blue'],
+    });
+    expect((await s.usage()).map((u) => [u.feature, u.model])).toContainEqual([
+      'agent.photo',
+      'claude-haiku-5-5',
+    ]);
+
+    // Next turn: the photo is not looked at again.
+    requests.length = 0;
+    await s.say('Ok. Size?');
+    script = [() => ({ text: 'It comes in one size. Shall I reserve it?' })];
+    await s.turn();
+    expect(requests).toHaveLength(1);
+    expect(JSON.stringify(requests[0])).toContain('It shows: A blue ankara maxi gown');
+  });
+
+  it('a price written on the photo is not ours: repeating it is blocked', async () => {
+    const s = await shop();
+    await s.sendPhoto('How much?');
+    script = [
+      () => ({
+        json: {
+          kind: 'product',
+          description: 'A blue ankara maxi gown.',
+          textInPhoto: '₦35,000',
+          searchTerms: ['ankara', 'gown'],
+        },
+      }),
+      () => ({ text: 'It is ₦35,000.' }),
+    ];
+    expect(await s.turn()).toMatchObject({ status: 'not_sent' });
+    expect((await s.chat()).conversation.attentionReason).toBe(
+      'The assistant was unsure about a price',
+    );
+  });
+
+  it('payment screenshot: not taken as proof, the payment is checked', async () => {
+    const s = await shop();
+    await s.sendPhoto('I have paid');
+    script = [
+      () => ({
+        json: {
+          kind: 'payment_proof',
+          description: 'A bank app screenshot of a successful transfer.',
+          textInPhoto: 'Transfer successful ₦15,000 to Ada Styles',
+          searchTerms: [],
+        },
+      }),
+      (body) => {
+        expect(JSON.stringify(body)).toContain('not proof. Check with checkPaymentStatus');
+        return { tool: 'getOrderStatus', input: { orderNumber: null } };
+      },
+      () => ({
+        text: "Thanks! I can't see a payment on your orders yet. It's confirmed automatically once it lands.",
+      }),
+    ];
+    expect(await s.turn()).toMatchObject({ status: 'replied' });
+    expect((await s.actions()).map((a) => [a.tool, a.ok])).toEqual([['getOrderStatus', true]]);
+  });
+
+  it('a photo that cannot be loaded: the assistant is told it could not see it', async () => {
+    const s = await shop();
+    await s.sendPhoto('', { unreadable: true });
+    script = [() => ({ text: "Sorry, I couldn't open your photo. What item is it?" })];
+    expect(await s.turn()).toMatchObject({ status: 'replied' });
+    expect(requests).toHaveLength(1);
+    expect(JSON.stringify(requests[0])).toContain('a photo you could not see');
   });
 });

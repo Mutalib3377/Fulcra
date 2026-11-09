@@ -12,11 +12,11 @@ import {
   unverifiedAmounts,
   type AgentTurn,
 } from '@fulcra/core';
+import { AGENT_MODEL, PHOTO_MODEL, withFallback } from './models';
+import { describeNewPhotos, photoNote } from './photos';
 import { buildSystemPrompt, turnNote } from './prompt';
 import { runTool, TOOLS } from './tools';
 
-/** The model for customer replies (see docs/decisions/0011). */
-export const AGENT_MODEL = 'claude-opus-5-5';
 /** Chat replies are simple work; low effort keeps them fast and cheap. */
 const AGENT_EFFORT = 'low' as const;
 /** Tool rounds per reply before giving up and handing off. */
@@ -36,7 +36,7 @@ export function agentClientFromEnv(env: NodeJS.ProcessEnv = process.env): Anthro
 }
 
 const MEDIA_NOTE: Record<string, string> = {
-  image: '[The customer sent a photo you cannot see yet.]',
+  image: '[The customer sent a photo you could not see. Ask what it shows.]',
   audio: '[The customer sent a voice note you cannot listen to.]',
   video: '[The customer sent a video.]',
   document: '[The customer sent a file.]',
@@ -50,7 +50,11 @@ export function historyToMessages(turn: AgentTurn): Anthropic.Beta.BetaMessagePa
   for (const m of turn.history) {
     const role = m.sender === 'customer' ? 'user' : 'assistant';
     const label = m.sender === 'human' ? '[A person from the team wrote:] ' : '';
-    const text = `${label}${m.text || MEDIA_NOTE[m.type] || ''}`.trim();
+    const media = m.photo ? photoNote(m.photo) : m.type === 'image' ? MEDIA_NOTE.image : '';
+    const body = media
+      ? [media, m.text].filter(Boolean).join('\n')
+      : m.text || MEDIA_NOTE[m.type] || '';
+    const text = `${label}${body}`.trim();
     if (!text) continue;
     const prev = messages.at(-1);
     if (prev && prev.role === role && typeof prev.content === 'string')
@@ -79,7 +83,10 @@ export async function runAgentTurn(params: {
   conversationId: string;
   messageId?: string;
   client: Anthropic | null;
+  /** The reply model (default AGENT_MODEL). */
   model?: string;
+  /** The model that describes photos (default PHOTO_MODEL). */
+  photoModel?: string;
   now?: Date;
 }): Promise<TurnResult> {
   const { businessId, conversationId, client } = params;
@@ -109,6 +116,9 @@ export async function runAgentTurn(params: {
     return { status: 'away' };
   }
 
+  const model = params.model ?? AGENT_MODEL;
+  await describeNewPhotos(turn, client, params.photoModel ?? PHOTO_MODEL);
+
   const system: Anthropic.Beta.BetaTextBlockParam[] = [
     { type: 'text', text: buildSystemPrompt(turn), cache_control: { type: 'ephemeral' } },
   ];
@@ -127,11 +137,10 @@ export async function runAgentTurn(params: {
     let response: Anthropic.Beta.BetaMessage;
     try {
       response = await client.beta.messages.create({
-        model: params.model ?? AGENT_MODEL,
+        model,
         max_tokens: 8000,
         // A refused request is retried on another model instead of failing.
-        betas: ['server-side-fallback-2026-07-01'],
-        fallbacks: 'default',
+        ...withFallback(model),
         output_config: { effort: AGENT_EFFORT },
         system,
         tools: TOOLS,

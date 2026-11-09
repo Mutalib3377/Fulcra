@@ -19,6 +19,7 @@ const { receiveInboundMessage, getConversation } =
   await import('../src/conversations/conversations');
 const a = await import('../src/agent/assistant');
 const { getAgentSettings, saveAgentSettings } = await import('../src/agent/settings');
+const { savePhotoDescription } = await import('../src/agent/photos');
 const { FakePaystack } = await import('../src/testing/fake-paystack');
 const { addMember, productDraft, shopWithStock } = await import('./helpers');
 
@@ -254,5 +255,54 @@ describe('assistant tools', () => {
     const actions = await withTenant(s.b, (tx) => tx.select().from(schema.agentActions));
     expect(actions).toEqual([expect.objectContaining({ tool: 'searchProducts', ok: true })]);
     expect(await a.priorReplyTexts(s.b, first.conversationId)).toEqual(['Hello! Yes, I am here.']);
+  });
+});
+
+describe('photos and search', () => {
+  it('search words: lowercase, no filler words, simple plurals', () => {
+    expect(a.searchWords('Do you have the BLUE Ankara gowns, abeg?')).toEqual([
+      'blue',
+      'ankara',
+      'gown',
+    ]);
+    expect(a.searchWords('dress')).toEqual(['dress']);
+  });
+
+  it('search: products matching more words, and in the name, come first', async () => {
+    const shop = await assistantShop();
+    await createProduct(shop.actor, {
+      ...productDraft(),
+      name: 'Ankara Maxi Gown',
+      category: 'Dresses',
+      description: 'Blue, puff sleeves',
+    });
+    const r = (await shop.say('hi')) as { conversationId: string };
+    const names = async (query: string) =>
+      (await a.assistantSearchProducts(shop.b, r.conversationId, { query })).products.map(
+        (x) => x.name,
+      );
+    expect((await names('blue ankara maxi gown'))[0]).toBe('Ankara Maxi Gown');
+    const dressName = (await names('dress'))[0]!;
+    expect(dressName).not.toBe('Ankara Maxi Gown'); // "Dresses" in the category counts less
+    expect(await names('shoes')).toEqual([]);
+  });
+
+  it('what a photo shows is saved on the message and given to the next turn', async () => {
+    const shop = await assistantShop();
+    const r = (await shop.say('see this')) as { conversationId: string; messageId: string };
+    const saved = await savePhotoDescription(shop.business.id, r.messageId, {
+      kind: 'product',
+      description: '  A red dress.  ',
+      textInPhoto: '',
+      searchTerms: ['Red', 'red', 'Dress', ''],
+    });
+    expect(saved).toEqual({
+      kind: 'product',
+      description: 'A red dress.',
+      textInPhoto: '',
+      searchTerms: ['red', 'dress'],
+    });
+    const turn = await a.claimAgentTurn(shop.business.id, r.conversationId, r.messageId);
+    expect(turn!.history.at(-1)).toMatchObject({ id: r.messageId, photo: saved, image: null });
   });
 });

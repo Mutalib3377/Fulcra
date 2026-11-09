@@ -221,7 +221,7 @@ describe('replies and handover', () => {
 describe('test chat', () => {
   it('goes through the same pipeline and shows in the inbox as a test', async () => {
     const { actor, business } = await newBusiness('chat');
-    await sendTestCustomerMessage(actor, 'Do you deliver to Lekki?');
+    await sendTestCustomerMessage(actor, { text: 'Do you deliver to Lekki?' });
     expect(inbound).toHaveLength(1);
     // The worker stores it.
     const job = inbound[0]!;
@@ -243,7 +243,41 @@ describe('test chat', () => {
       tx.select().from(schema.channelConnections).where(eq(schema.channelConnections.mode, 'test')),
     );
     expect(conn).toHaveLength(1);
-    await sendTestCustomerMessage(actor, 'Thanks');
+    await sendTestCustomerMessage(actor, { text: 'Thanks' });
     expect(inbound[1]!.connectionId).toBe(conn[0]!.id); // same test connection
+  });
+
+  it("sends a photo: only the business's own stored image, kept on the message", async () => {
+    const { actor, business } = await newBusiness('photo');
+    const other = await newBusiness('photo-other');
+    const image = { path: `${business.id}/${randomUUID()}`, width: 600, height: 800 };
+    await expect(sendTestCustomerMessage(actor, { text: '' })).rejects.toThrow(
+      'Type a message or add a photo.',
+    );
+    await expect(
+      sendTestCustomerMessage(actor, {
+        image: { ...image, path: `${other.business.id}/${randomUUID()}` },
+      }),
+    ).rejects.toThrow('could not be used');
+
+    inbound.length = 0;
+    await sendTestCustomerMessage(actor, { text: 'This one?', image });
+    const job = inbound[0]!;
+    expect(job.message).toMatchObject({ type: 'image', media: { image, caption: 'This one?' } });
+    await receiveInboundMessage(job.businessId, job.connectionId, job.message as never);
+    const [message] = (await getTestChat(actor)).messages;
+    expect(message).toMatchObject({ type: 'image', text: 'This one?', media: { image } });
+    const [item] = await listConversations(actor);
+    expect(item!.lastMessagePreview).toContain('This one?');
+
+    // A channel can never attach another business's file.
+    const foreign = { path: `${other.business.id}/${randomUUID()}`, width: 1, height: 1 };
+    await receiveInboundMessage(job.businessId, job.connectionId, {
+      ...(job.message as InboundMessageInput),
+      externalId: `test-${randomUUID()}`,
+      media: { image: foreign },
+    });
+    const saved = (await getTestChat(actor)).messages.at(-1)!;
+    expect(saved.media?.image).toBeUndefined();
   });
 });

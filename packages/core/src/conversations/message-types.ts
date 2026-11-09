@@ -39,6 +39,14 @@ export const inboundMessage = z.object({
       providerMediaId: z.string().max(200).optional(),
       mimeType: z.string().max(100).optional(),
       caption: text(1024).optional(),
+      /** Our stored copy of a photo (channels download it before queuing; see storeImage). */
+      image: z
+        .object({
+          path: z.string().max(200),
+          width: z.number().int().positive(),
+          height: z.number().int().positive(),
+        })
+        .optional(),
     })
     .optional(),
   location: z
