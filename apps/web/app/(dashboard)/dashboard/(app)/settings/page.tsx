@@ -9,6 +9,7 @@ import {
   CardTitle,
 } from '@fulcra/ui';
 import {
+  Bot,
   ChevronRight,
   Globe,
   Landmark,
@@ -66,6 +67,23 @@ export default async function SettingsPage() {
           </dl>
         </CardContent>
       </Card>
+
+      <Link href="/settings/assistant" className="block">
+        <Card className="transition-colors hover:bg-muted/50">
+          <CardHeader className="flex-row items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Bot className="size-5 text-primary" aria-hidden />
+              <div>
+                <CardTitle>Assistant</CardTitle>
+                <CardDescription>
+                  Switch it on, opening hours, policies, what to pass to you.
+                </CardDescription>
+              </div>
+            </div>
+            <ChevronRight className="size-5 text-muted-foreground" aria-hidden />
+          </CardHeader>
+        </Card>
+      </Link>
 
       <Link href="/settings/store" className="block">
         <Card className="transition-colors hover:bg-muted/50">

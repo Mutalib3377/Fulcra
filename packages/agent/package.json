@@ -13,13 +13,16 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^1.6.0",
     "@fulcra/channels": "workspace:*",
     "@fulcra/config": "workspace:*",
     "@fulcra/core": "workspace:*",
-    "@fulcra/db": "workspace:*"
+    "@fulcra/db": "workspace:*",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/node": "^22",
+    "drizzle-orm": "^0.45.4",
     "typescript": "~6.0.3",
     "vitest": "^5.1.0"
   }

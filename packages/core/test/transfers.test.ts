@@ -12,7 +12,7 @@ import {
 } from '../src/payments/dedicated-accounts';
 import { assignPayment, dismissPayment, listPayments } from '../src/payments/transfers';
 import { getReceipt } from '../src/payments/receipts';
-import { FakePaystack, TEST_SECRET } from './fake-paystack';
+import { FakePaystack, TEST_SECRET } from '../src/testing/fake-paystack';
 import { addMember, shopWithStock } from './helpers';
 
 let paystack: FakePaystack;

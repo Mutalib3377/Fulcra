@@ -3,7 +3,13 @@ import { schema, withTenant } from '@fulcra/db';
 import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { recordEvent, userActor } from '../events/events';
-import { requireMember, type ActorContext } from '../members/access';
+import {
+  authorize,
+  isAssistant,
+  requireMember,
+  type ActorContext,
+  type Performer,
+} from '../members/access';
 import { CoreError } from '../shared/errors';
 import { dedicatedAccountBank, getPaystackClient, PaystackError } from './paystack';
 import { dedicatedAccountEmail } from './urls';
@@ -56,12 +62,12 @@ export async function getCustomerDedicatedAccount(
  * Owner or staff. On failure the payment link is the fallback.
  */
 export async function getOrCreateDedicatedAccount(
-  actor: ActorContext,
+  actor: Performer,
   customerId: string,
 ): Promise<DedicatedAccountView> {
   const id = z.uuid().parse(customerId);
   const ctx = await withTenant(actor.businessId, async (tx) => {
-    await requireMember(tx, actor, EDITORS);
+    await authorize(tx, actor, EDITORS);
     const [business] = await tx
       .select({ subaccount: schema.businesses.paystackSubaccountCode })
       .from(schema.businesses)
@@ -163,12 +169,12 @@ export async function getOrCreateDedicatedAccount(
  * order to awaiting payment, and returns a ready-to-send message.
  */
 export async function prepareAccountDetails(
-  actor: ActorContext,
+  actor: Performer,
   orderId: string,
 ): Promise<{ account: DedicatedAccountView; message: string }> {
   const id = z.uuid().parse(orderId);
   const order = await withTenant(actor.businessId, async (tx) => {
-    await requireMember(tx, actor, EDITORS);
+    await authorize(tx, actor, EDITORS);
     const [row] = await tx
       .select({
         order: schema.orders,
@@ -198,7 +204,7 @@ export async function prepareAccountDetails(
     if (moved) {
       await recordEvent(tx, actor.businessId, {
         type: 'order.status_changed',
-        actor: userActor(actor),
+        actor: isAssistant(actor) ? { type: 'agent' } : userActor(actor),
         orderId: id,
         customerId: moved.customerId,
         payload: { orderNumber: order.order.orderNumber, from: 'new', to: 'awaiting_payment' },

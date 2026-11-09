@@ -26,6 +26,11 @@ export const JOBS = {
       message: z.record(z.string(), z.unknown()),
     }),
   },
+  /** Let the assistant answer a chat (after a short wait, so quick messages get one reply). */
+  agentReply: {
+    name: 'agent-reply',
+    data: z.object({ businessId: z.uuid(), conversationId: z.uuid(), messageId: z.uuid() }),
+  },
   /** Send a queued outgoing message through its channel. */
   sendMessage: {
     name: 'send-message',
@@ -118,5 +123,27 @@ export async function enqueueSendMessage(businessId: string, messageId: string):
     retryDelay: 10,
     retryBackoff: true,
     singletonKey: messageId,
+  });
+}
+
+/** Seconds to wait before the assistant answers, so "Hi" + "how much?" get one reply. */
+export const AGENT_REPLY_DELAY_SECONDS = 4;
+
+/**
+ * Queues the assistant's answer to a customer message. Every message queues a job; a job only
+ * answers if its message is still the newest, so the last one answers everything at once.
+ */
+export async function enqueueAgentReply(
+  businessId: string,
+  conversationId: string,
+  messageId: string,
+): Promise<void> {
+  const data = JOBS.agentReply.data.parse({ businessId, conversationId, messageId });
+  const boss = await getSender();
+  await boss.send(JOBS.agentReply.name, data, {
+    startAfter: AGENT_REPLY_DELAY_SECONDS,
+    singletonKey: messageId,
+    retryLimit: 2,
+    retryDelay: 10,
   });
 }

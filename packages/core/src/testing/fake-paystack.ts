@@ -1,5 +1,5 @@
 import { createHmac } from 'node:crypto';
-import type { PaystackClient, PaystackVerifiedTransaction } from '../src/payments/paystack';
+import type { PaystackClient, PaystackVerifiedTransaction } from '../payments/paystack';
 
 export const TEST_SECRET = 'sk_test_fulcra_fake_key';
 
@@ -41,7 +41,7 @@ export class FakePaystack implements PaystackClient {
 
   async resolveAccount({ accountNumber }: { accountNumber: string; bankCode: string }) {
     if (accountNumber === '0000000000') {
-      const { PaystackError } = await import('../src/payments/paystack');
+      const { PaystackError } = await import('../payments/paystack');
       throw new PaystackError('Could not resolve account name', 422);
     }
     return { accountName: 'ADA STYLES ENTERPRISES' };
@@ -95,7 +95,7 @@ export class FakePaystack implements PaystackClient {
     subaccount: string;
   }) {
     if (this.failDedicated) {
-      const { PaystackError } = await import('../src/payments/paystack');
+      const { PaystackError } = await import('../payments/paystack');
       throw new PaystackError(this.failDedicated, 400);
     }
     const accountNumber = String(9_000_000_000 + Math.floor(Math.random() * 999_999_999));

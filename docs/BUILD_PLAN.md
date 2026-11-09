@@ -178,20 +178,20 @@ Goal: the agent sells on WhatsApp end to end, the owner can watch and take over,
 
 ### A2 — The agent brain (`packages/agent`)
 
-- [ ] System prompt built from brand kit, agent settings, policies and business info (with prompt caching for stable parts)
-- [ ] Tools (each calls Core services with Zod-validated input):
+- [x] System prompt built from brand kit, agent settings, policies and business info (with prompt caching for stable parts)
+- [x] Tools (each calls Core services with Zod-validated input) (business info, hours and the customer's details are given to the model in the prompt and turn note instead of `getBusinessInfo` / `getCustomerHistory` tools):
   - `searchProducts`, `getProduct`, `checkStock`, `suggestAlternatives`
   - `getDeliveryFee`, `getBusinessInfo`
   - `createOrder`, `sendPaymentLink`, `sendAccountDetails`, `checkPaymentStatus`, `getOrderStatus`
   - `getCustomerHistory`, `tagCustomer`
   - `handOffToHuman`
 - [ ] Image matching: customer photo/screenshot → closest products (image embeddings or vision model; propose approach first)
-- [ ] Retail vs wholesale pricing by quantity
-- [ ] Never states a price, stock level or payment status that did not come from a tool
-- [ ] Handoff when unsure, customer upset, asks for a human, or topic is in `handoff_topics`
-- [ ] Away message outside business hours (agent still takes orders if owner allows)
+- [x] Retail vs wholesale pricing by quantity
+- [x] Never states a price, stock level or payment status that did not come from a tool (amounts in a reply are checked against tool results; an unchecked amount blocks the reply and hands off)
+- [x] Handoff when unsure, customer upset, asks for a human, or topic is in `handoff_topics`
+- [x] Away message outside business hours (agent still takes orders if owner allows)
 - [x] Schema: `usage_records` (created early in I1c for website-import AI calls; used again in B1)
-- [ ] Every tool call logged to `agent_actions`; every model call logged to `usage_records` with cost
+- [x] Every tool call logged to `agent_actions`; every model call logged to `usage_records` with cost
 - [ ] Model choice per task (cheaper model for simple replies)
 - [ ] Scenario tests: price question, screenshot, variant out of stock, wholesale quantity, full order + payment, "I've sent it" with no payment, handoff
 

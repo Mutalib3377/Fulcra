@@ -3,7 +3,14 @@ import { schema, withSystem, withTenant, type Tx } from '@fulcra/db';
 import { and, desc, eq, gt, inArray, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { recordEvent, userActor } from '../events/events';
-import { requireMember, type ActorContext } from '../members/access';
+import {
+  authorize,
+  isAssistant,
+  performerUserId,
+  requireMember,
+  type ActorContext,
+  type Performer,
+} from '../members/access';
 import { CoreError } from '../shared/errors';
 import {
   getPaystackClient,
@@ -37,14 +44,11 @@ type Prepared =
  * Creates (or reuses) a Paystack checkout for the full order total, settled to the
  * business's subaccount. Moves a new order to "awaiting payment".
  */
-export async function createPaymentLink(
-  actor: ActorContext,
-  orderId: string,
-): Promise<PaymentLink> {
+export async function createPaymentLink(actor: Performer, orderId: string): Promise<PaymentLink> {
   const id = z.uuid().parse(orderId);
 
   const prepared = await withTenant(actor.businessId, async (tx): Promise<Prepared> => {
-    await requireMember(tx, actor, EDITORS);
+    await authorize(tx, actor, EDITORS);
     const [business] = await tx
       .select({
         subaccount: schema.businesses.paystackSubaccountCode,
@@ -106,7 +110,7 @@ export async function createPaymentLink(
         provider: 'paystack',
         reference,
         amount: order.total,
-        createdBy: actor.userId,
+        createdBy: performerUserId(actor),
       })
       .returning();
     return {
@@ -162,7 +166,7 @@ export async function createPaymentLink(
     if (order) {
       await recordEvent(tx, actor.businessId, {
         type: 'order.status_changed',
-        actor: userActor(actor),
+        actor: isAssistant(actor) ? { type: 'agent' } : userActor(actor),
         orderId: id,
         customerId: order.customerId,
         payload: { orderNumber: p.orderNumber, from: 'new', to: 'awaiting_payment' },

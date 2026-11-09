@@ -61,3 +61,8 @@ export * from './businesses/website';
 export * from './conversations/message-types';
 export * from './conversations/rules';
 export * from './conversations/conversations';
+
+export * from './agent/rules';
+export * from './agent/settings';
+export * from './agent/assistant';
+export { isAssistant, type AssistantActor, type Performer } from './members/access';
