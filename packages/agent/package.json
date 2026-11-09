@@ -10,7 +10,8 @@
   "scripts": {
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "measure": "vitest run --config vitest.measure.config.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.6.0",

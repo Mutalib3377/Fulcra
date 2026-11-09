@@ -1,6 +1,7 @@
 import { schema, withTenant, type Tx } from '@fulcra/db';
-import { and, asc, desc, eq, ilike, isNull, ne, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, ilike, isNull, ne, sql } from 'drizzle-orm';
 import { z } from 'zod';
+import { photoDescription, type PhotoDescription } from './photos';
 import { formatNaira } from '@fulcra/config';
 import { variantLabel } from '../catalog/rules';
 import { messagePreview, replyWindow } from '../conversations/rules';
@@ -42,10 +43,15 @@ export type AgentTurn = {
   deliveryAreas: { name: string; fee: number }[];
   categories: string[];
   history: {
+    id: string;
     sender: schema.MessageSender;
     type: schema.MessageType;
     text: string;
     createdAt: Date;
+    /** A customer's photo (our stored copy). */
+    image: schema.StoredImage | null;
+    /** What the photo shows, once the assistant has looked at it. */
+    photo: PhotoDescription | null;
   }[];
   /** The newest customer message this turn answers (to notice newer ones). */
   lastInboundId: string;
@@ -154,12 +160,18 @@ export async function claimAgentTurn(
       },
       deliveryAreas: zones,
       categories: categories.map((r) => r.category).filter((x): x is string => Boolean(x)),
-      history: recent.map((m) => ({
-        sender: m.sender,
-        type: m.type,
-        text: m.text,
-        createdAt: m.createdAt,
-      })),
+      history: recent.map((m) => {
+        const photo = photoDescription.safeParse(m.payload.photo);
+        return {
+          id: m.id,
+          sender: m.sender,
+          type: m.type,
+          text: m.text,
+          createdAt: m.createdAt,
+          image: m.media?.image ?? null,
+          photo: photo.success ? photo.data : null,
+        };
+      }),
       lastInboundId: last.id,
     };
   });
@@ -168,6 +180,38 @@ export async function claimAgentTurn(
 // ─── Catalog tools ───────────────────────────────────────────────────────────
 
 const naira = (kobo: number) => formatNaira(kobo);
+
+const STOP_WORDS = new Set([
+  'a',
+  'an',
+  'and',
+  'the',
+  'for',
+  'with',
+  'of',
+  'in',
+  'on',
+  'do',
+  'you',
+  'have',
+  'any',
+  'this',
+  'that',
+  'is',
+  'it',
+  'please',
+  'abeg',
+]);
+
+/** Search words: lowercase, no filler words, simple plurals ("gowns" finds "gown"). */
+export function searchWords(query: string): string[] {
+  const words = query
+    .toLowerCase()
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter((w) => w.length > 1 && !STOP_WORDS.has(w))
+    .map((w) => (w.length > 3 && w.endsWith('s') && !w.endsWith('ss') ? w.slice(0, -1) : w));
+  return [...new Set(words)].slice(0, 8);
+}
 
 export const searchProductsInput = z.object({
   query: z.string().trim().max(100),
@@ -183,22 +227,21 @@ export async function assistantSearchProducts(
   const { query, category } = searchProductsInput.parse(input);
   return withTenant(businessId, async (tx) => {
     await requireAssistantChat(tx, conversationId);
-    const words = query
-      .split(/\s+/)
-      .filter((w) => w.length > 1)
-      .slice(0, 6);
+    const words = searchWords(query);
     const like = (w: string) => `%${w.replace(/[\\%_]/g, '\\$&')}%`;
     const conditions = [eq(p.isActive, true), isNull(p.archivedAt)];
     if (category) conditions.push(ilike(p.category, category));
-    if (words.length) {
-      conditions.push(
-        or(
-          ...words.map((w) =>
-            or(ilike(p.name, like(w)), ilike(p.description, like(w)), ilike(p.category, like(w)))!,
+    // Best matches first: two points per search word in the name, one in the description,
+    // category or an option's colour (photo searches send several words).
+    const score = words.length
+      ? sql<number>`(${sql.join(
+          words.map(
+            (w) =>
+              sql`(case when bool_or(${p.name} ilike ${like(w)}) then 2 when bool_or(${p.description} ilike ${like(w)} or coalesce(${p.category}, '') ilike ${like(w)} or coalesce(${v.colour}, '') ilike ${like(w)}) then 1 else 0 end)`,
           ),
-        )!,
-      );
-    }
+          sql` + `,
+        )})::int`
+      : sql<number>`0`;
     const rows = await tx
       .select({
         productId: p.id,
@@ -215,7 +258,8 @@ export async function assistantSearchProducts(
       .innerJoin(v, and(eq(v.productId, p.id), isNull(v.archivedAt)))
       .where(and(...conditions))
       .groupBy(p.id)
-      .orderBy(desc(p.updatedAt))
+      .having(words.length ? sql`${score} > 0` : undefined)
+      .orderBy(desc(score), desc(p.updatedAt))
       .limit(8);
     return {
       products: rows.map((r) => ({

@@ -185,15 +185,15 @@ Goal: the agent sells on WhatsApp end to end, the owner can watch and take over,
   - `createOrder`, `sendPaymentLink`, `sendAccountDetails`, `checkPaymentStatus`, `getOrderStatus`
   - `getCustomerHistory`, `tagCustomer`
   - `handOffToHuman`
-- [ ] Image matching: customer photo/screenshot → closest products (image embeddings or vision model; propose approach first)
+- [x] Image matching: customer photo/screenshot → closest products (a cheap vision call describes the photo once and gives search words; the catalog search ranks products by matching words; payment screenshots are never taken as proof)
 - [x] Retail vs wholesale pricing by quantity
 - [x] Never states a price, stock level or payment status that did not come from a tool (amounts in a reply are checked against tool results; an unchecked amount blocks the reply and hands off)
 - [x] Handoff when unsure, customer upset, asks for a human, or topic is in `handoff_topics`
 - [x] Away message outside business hours (agent still takes orders if owner allows)
 - [x] Schema: `usage_records` (created early in I1c for website-import AI calls; used again in B1)
 - [x] Every tool call logged to `agent_actions`; every model call logged to `usage_records` with cost
-- [ ] Model choice per task (cheaper model for simple replies)
-- [ ] Scenario tests: price question, screenshot, variant out of stock, wholesale quantity, full order + payment, "I've sent it" with no payment, handoff
+- [x] Model choice per task (Haiku describes photos; replies stay on Opus at low effort until measured: `pnpm --filter @fulcra/agent measure` compares models on real conversations once `ANTHROPIC_API_KEY` is set; `AGENT_MODEL` switches without code changes)
+- [x] Scenario tests: price question, screenshot, variant out of stock, wholesale quantity, full order + payment, "I've sent it" with no payment, handoff
 
 ### A3 — WhatsApp adapter
 

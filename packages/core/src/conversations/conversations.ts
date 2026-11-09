@@ -6,6 +6,7 @@ import { findOrCreateCustomerInTx } from '../customers/customers';
 import { recordEvent, userActor } from '../events/events';
 import { enqueueInboundMessage, enqueueSendMessage } from '../jobs/queue';
 import { requireMember, type ActorContext } from '../members/access';
+import { isOwnImagePath } from '../media/images';
 import { decryptSecret } from '../shared/crypto';
 import { CoreError, isUniqueViolation } from '../shared/errors';
 import { normalizePhoneNumber } from '../shared/phone';
@@ -119,6 +120,16 @@ export async function receiveInboundMessage(
 
     const conversation = await findOrOpenConversation(tx, businessId, connection, customer.id);
     const text = message.text || message.media?.caption || '';
+    // Only our own stored copy for this business (never a path from another business).
+    const media = message.media
+      ? {
+          ...message.media,
+          image:
+            message.media.image && isOwnImagePath(businessId, message.media.image.path)
+              ? message.media.image
+              : undefined,
+        }
+      : null;
     const [saved] = await tx
       .insert(m)
       .values({
@@ -128,7 +139,7 @@ export async function receiveInboundMessage(
         sender: 'customer',
         type: message.type,
         text,
-        media: message.media ?? null,
+        media,
         payload: {
           ...(message.location ? { location: message.location } : {}),
           ...(message.replyId ? { replyId: message.replyId } : {}),
@@ -498,8 +509,29 @@ async function testConnection(tx: Tx, actor: ActorContext): Promise<schema.Chann
  * pipeline as a real one (queued, then stored by the worker) and shows in the inbox,
  * marked "Test". It behaves like WhatsApp, including the 24-hour rule.
  */
-export async function sendTestCustomerMessage(actor: ActorContext, text: string): Promise<void> {
-  const body = replyInput.parse({ text }).text;
+export const testCustomerMessageInput = z
+  .object({
+    text: z.string().trim().max(4096, 'This message is too long.').default(''),
+    /** A photo uploaded through /api/uploads (the business's own stored image). */
+    image: z
+      .object({
+        path: z.string().max(200),
+        width: z.number().int().positive(),
+        height: z.number().int().positive(),
+      })
+      .nullable()
+      .default(null),
+  })
+  .refine((v) => v.text.length > 0 || v.image, { message: 'Type a message or add a photo.' });
+
+export async function sendTestCustomerMessage(
+  actor: ActorContext,
+  input: z.input<typeof testCustomerMessageInput>,
+): Promise<void> {
+  const { text, image } = testCustomerMessageInput.parse(input);
+  if (image && !isOwnImagePath(actor.businessId, image.path)) {
+    throw new CoreError('validation', 'This photo could not be used. Please upload it again.');
+  }
   const connection = await withTenant(actor.businessId, async (tx) => {
     await requireMember(tx, actor, INBOX);
     return testConnection(tx, actor);
@@ -508,8 +540,13 @@ export async function sendTestCustomerMessage(actor: ActorContext, text: string)
     externalId: `test-${randomUUID()}`,
     from: { externalUserId: TEST_CUSTOMER_ID, displayName: 'Test customer' },
     sentAt: new Date().toISOString(),
-    type: 'text',
-    text: body,
+    ...(image
+      ? {
+          type: 'image' as const,
+          text: '',
+          media: { image, mimeType: 'image/webp', caption: text || undefined },
+        }
+      : { type: 'text' as const, text }),
   });
 }
 

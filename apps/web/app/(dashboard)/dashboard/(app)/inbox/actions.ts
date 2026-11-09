@@ -1,6 +1,11 @@
 'use server';
 
-import { sendHumanReply, sendTestCustomerMessage, setConversationHandler } from '@fulcra/core';
+import {
+  sendHumanReply,
+  sendTestCustomerMessage,
+  setConversationHandler,
+  type StoredImage,
+} from '@fulcra/core';
 import type { ConversationHandler } from '@fulcra/core/rules';
 import { toActionError, type ActionResult } from '@/lib/action-result';
 import { getActionContext, SESSION_ENDED } from '@/lib/auth';
@@ -30,11 +35,14 @@ export async function setHandlerAction(
   }
 }
 
-export async function sendTestMessageAction(text: string): Promise<ActionResult> {
+export async function sendTestMessageAction(input: {
+  text: string;
+  image: StoredImage | null;
+}): Promise<ActionResult> {
   const context = await getActionContext();
   if (!context) return SESSION_ENDED;
   try {
-    await sendTestCustomerMessage(context.actor, text);
+    await sendTestCustomerMessage(context.actor, input);
     return { ok: true, data: undefined };
   } catch (error) {
     return toActionError(error);
