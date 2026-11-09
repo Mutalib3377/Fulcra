@@ -17,6 +17,8 @@ export const EVENT_TYPES = [
   'catalog.imported',
   'conversation.started',
   'conversation.handoff',
+  'channel.connected',
+  'channel.disconnected',
 ] as const;
 export type EventType = (typeof EVENT_TYPES)[number];
 

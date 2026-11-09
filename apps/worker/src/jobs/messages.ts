@@ -1,13 +1,15 @@
 import {
   claimOutboundMessage,
   enqueueAgentReply,
+  imageUrl,
   JOBS,
+  markConnectionError,
   markMessageFailed,
   markMessageSent,
   receiveInboundMessage,
   type InboundMessageInput,
 } from '@fulcra/core';
-import { adapterFor, ChannelSendError } from '@fulcra/channels';
+import { adapterFor, ChannelSendError, type OutboundMessage } from '@fulcra/channels';
 import type { Job } from 'pg-boss';
 
 /** Stores an incoming message and routes it: to the assistant (queued reply) or the team. */
@@ -48,16 +50,31 @@ export async function handleSendMessage(jobs: Job<unknown>[]): Promise<void> {
       continue;
     }
     try {
+      const image = delivery.message.media?.image;
+      const message: OutboundMessage = image
+        ? {
+            type: 'image',
+            imageUrl: imageUrl(image, 'lg'),
+            ...(delivery.message.text ? { caption: delivery.message.text.slice(0, 1024) } : {}),
+          }
+        : { type: 'text', text: delivery.message.text };
       const { externalId } = await adapter.send({
         accountId: delivery.externalAccountId,
         credentials: delivery.credentials,
         to: delivery.to,
-        message: { type: 'text', text: delivery.message.text },
+        message,
       });
       await markMessageSent(businessId, messageId, externalId);
     } catch (error) {
       if (error instanceof ChannelSendError && !error.retry) {
         await markMessageFailed(businessId, messageId, error.message);
+        // The owner sees why in Settings and must reconnect.
+        if (error.connectionBroken)
+          await markConnectionError(
+            businessId,
+            delivery.connectionId,
+            'WhatsApp stopped accepting our access token (it may have expired or been removed).',
+          );
         continue;
       }
       throw error;

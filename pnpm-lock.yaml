@@ -32,6 +32,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@fulcra/channels':
+        specifier: workspace:*
+        version: link:../../packages/channels
       '@fulcra/config':
         specifier: workspace:*
         version: link:../../packages/config
@@ -194,6 +197,9 @@ importers:
       '@fulcra/db':
         specifier: workspace:*
         version: link:../db
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
     devDependencies:
       '@types/node':
         specifier: ^22

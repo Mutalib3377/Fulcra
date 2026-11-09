@@ -15,6 +15,7 @@ const nextConfig: NextConfig = {
   outputFileTracingRoot: path.join(import.meta.dirname, '../../'),
   // Workspace packages ship TypeScript source; Next compiles them.
   transpilePackages: [
+    '@fulcra/channels',
     '@fulcra/config',
     '@fulcra/core',
     '@fulcra/db',

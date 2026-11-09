@@ -2,6 +2,7 @@ import { APP_NAME } from '@fulcra/config';
 import { ensureQueues, JOBS } from '@fulcra/core';
 import { handleAgentReply } from './jobs/agent-reply';
 import { handleCatalogImport } from './jobs/catalog-import';
+import { handleChannelWebhook, handleMessageStatus } from './jobs/channel-webhook';
 import { handleInboundMessage, handleSendMessage } from './jobs/messages';
 import { handlePaystackWebhook } from './jobs/paystack-webhook';
 import { handleShopifyWebhook } from './jobs/shopify-webhook';
@@ -22,6 +23,8 @@ async function main(): Promise<void> {
   await boss.work(JOBS.inboundMessage.name, { localConcurrency: 4 }, handleInboundMessage);
   await boss.work(JOBS.sendMessage.name, { localConcurrency: 4 }, handleSendMessage);
   await boss.work(JOBS.agentReply.name, { localConcurrency: 4 }, handleAgentReply);
+  await boss.work(JOBS.channelWebhook.name, { localConcurrency: 2 }, handleChannelWebhook);
+  await boss.work(JOBS.messageStatus.name, { localConcurrency: 4 }, handleMessageStatus);
   console.info(`[worker] ${APP_NAME} worker ready`);
 
   let stopping = false;

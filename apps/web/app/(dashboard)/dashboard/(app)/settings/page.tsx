@@ -10,6 +10,7 @@ import {
 } from '@fulcra/ui';
 import {
   Bot,
+  Smartphone,
   ChevronRight,
   Globe,
   Landmark,
@@ -96,6 +97,23 @@ export default async function SettingsPage() {
                   {business.hasExternalWebsite && business.websiteUrl
                     ? `Your website: ${business.websiteUrl.replace(/^https?:\/\//, '')}`
                     : 'Customers shop on your Fulcra store.'}
+                </CardDescription>
+              </div>
+            </div>
+            <ChevronRight className="size-5 text-muted-foreground" aria-hidden />
+          </CardHeader>
+        </Card>
+      </Link>
+
+      <Link href="/settings/whatsapp" className="block">
+        <Card className="transition-colors hover:bg-muted/50">
+          <CardHeader className="flex-row items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Smartphone className="size-5 text-primary" aria-hidden />
+              <div>
+                <CardTitle>WhatsApp number</CardTitle>
+                <CardDescription>
+                  Connect your number so chats arrive in your inbox.
                 </CardDescription>
               </div>
             </div>
