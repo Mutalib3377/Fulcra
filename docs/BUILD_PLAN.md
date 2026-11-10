@@ -197,10 +197,10 @@ Goal: the agent sells on WhatsApp end to end, the owner can watch and take over,
 
 ### A3 — WhatsApp adapter
 
-- [ ] Connect a business's number (Cloud API embedded signup) (A3a: connect with Meta details, checked with Meta, works with the test number; the Embedded Signup button comes in A3b)
+- [x] Connect a business's number (Cloud API embedded signup) ("Connect WhatsApp" button: code exchanged for the seller's token, number registered with a PIN we keep encrypted, app subscribed; connecting with Meta details stays under "Advanced". Works for other people's numbers once Meta Business Verification and App Review are done)
 - [x] Webhook handler + signature check
 - [x] Send text, images, interactive buttons/lists (plus customer photos downloaded, delivery/read ticks, "typing…" while the assistant works)
-- [ ] Message templates for receipts, order updates, alerts and briefings (submitted to Meta)
+- [x] Message templates for receipts, order updates, alerts and briefings (submitted to Meta) (customer templates: order confirmation, payment received, order update, payment reminder, ask to reply; submitted per number on connect, statuses from Meta's webhook. Owner alerts and briefings come from a Fulcra number in A4. Automatic customer messages run every minute from order events; the inbox offers templates when the 24-hour window has closed)
 - [x] Conversation usage metered per business (Meta now charges per delivered message: each charged message is costed once from its delivery update)
 
 ### A4 — Owner alerts and daily briefing

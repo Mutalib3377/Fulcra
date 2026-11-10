@@ -2,6 +2,8 @@
 
 import {
   sendHumanReply,
+  sendInboxTemplate,
+  type InboxTemplate,
   sendTestCustomerMessage,
   setConversationHandler,
   type StoredImage,
@@ -43,6 +45,20 @@ export async function sendTestMessageAction(input: {
   if (!context) return SESSION_ENDED;
   try {
     await sendTestCustomerMessage(context.actor, input);
+    return { ok: true, data: undefined };
+  } catch (error) {
+    return toActionError(error);
+  }
+}
+
+export async function sendTemplateAction(
+  conversationId: string,
+  purpose: InboxTemplate,
+): Promise<ActionResult> {
+  const context = await getActionContext();
+  if (!context) return SESSION_ENDED;
+  try {
+    await sendInboxTemplate(context.actor, conversationId, purpose);
     return { ok: true, data: undefined };
   } catch (error) {
     return toActionError(error);

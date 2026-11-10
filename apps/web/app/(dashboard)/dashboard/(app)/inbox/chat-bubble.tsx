@@ -2,7 +2,12 @@ import { cn } from '@fulcra/ui';
 import { AlertCircle, Check, CheckCheck, Clock } from 'lucide-react';
 import type { ChatMessage } from './types';
 
-const SENDER_LABEL = { agent: 'Assistant', human: 'Team', system: 'Fulcra', customer: '' } as const;
+const SENDER_LABEL = {
+  agent: 'Assistant',
+  human: 'Team',
+  system: 'Automatic message',
+  customer: '',
+} as const;
 
 function time(iso: string) {
   return new Date(iso).toLocaleTimeString('en-NG', { hour: 'numeric', minute: '2-digit' });

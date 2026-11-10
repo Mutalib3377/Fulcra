@@ -245,6 +245,56 @@ export const agentActions = pgTable(
   ],
 ).enableRLS();
 
+/** Where a message template is with Meta. "not_submitted" = waiting for our worker to send it. */
+export const templateStatuses = [
+  'not_submitted',
+  'pending',
+  'approved',
+  'rejected',
+  'paused',
+  'disabled',
+] as const;
+export const templateStatus = pgEnum('template_status', templateStatuses);
+
+/**
+ * WhatsApp message templates (A3b): the only messages allowed outside the 24-hour window.
+ * Fulcra submits a starter set for each connected number; Meta approves or rejects them.
+ */
+export const messageTemplates = pgTable(
+  'message_templates',
+  {
+    id: id(),
+    businessId: uuid('business_id').notNull(),
+    connectionId: uuid('connection_id').notNull(),
+    /** What Fulcra uses it for, e.g. "payment_receipt". */
+    purpose: text('purpose').notNull(),
+    /** The template's name at Meta (lowercase, underscores). */
+    name: text('name').notNull(),
+    language: text('language').notNull().default('en'),
+    /** Meta's category: utility, marketing or authentication. */
+    category: text('category').notNull().default('utility'),
+    /** Wording with numbered placeholders: "Hi {{1}}, …". */
+    body: text('body').notNull(),
+    status: templateStatus('status').notNull().default('not_submitted'),
+    /** Meta's id for the template. */
+    externalId: text('external_id'),
+    /** Why Meta rejected or paused it. */
+    statusReason: text('status_reason'),
+    ...timestamps,
+  },
+  (t) => [
+    foreignKey({
+      name: 'message_templates_connection_fk',
+      columns: [t.connectionId, t.businessId],
+      foreignColumns: [channelConnections.id, channelConnections.businessId],
+    }).onDelete('cascade'),
+    uniqueIndex('message_templates_connection_name_unique').on(t.connectionId, t.name, t.language),
+    tenantPolicy('message_templates', t.businessId),
+  ],
+).enableRLS();
+
+export type MessageTemplate = typeof messageTemplates.$inferSelect;
+export type TemplateStatus = (typeof templateStatuses)[number];
 export type ChannelConnection = typeof channelConnections.$inferSelect;
 export type Conversation = typeof conversations.$inferSelect;
 export type Message = typeof messages.$inferSelect;

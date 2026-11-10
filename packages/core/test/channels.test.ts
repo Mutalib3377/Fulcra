@@ -8,6 +8,7 @@ vi.mock('../src/jobs/queue', async (original) => ({
   enqueueSendMessage: async (_b: string, id: string) => {
     sent.push(id);
   },
+  enqueueSubmitTemplates: async () => {},
 }));
 
 const { schema, withSystem, withTenant } = await import('@fulcra/db');

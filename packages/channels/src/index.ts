@@ -21,6 +21,9 @@ export {
 export * from './types';
 export {
   WhatsAppApiError,
+  createWhatsAppTemplate,
+  exchangeEmbeddedSignupCode,
+  registerWhatsAppNumber,
   lookupWhatsAppNumber,
   subscribeWhatsAppApp,
   verifyWhatsAppSignature,

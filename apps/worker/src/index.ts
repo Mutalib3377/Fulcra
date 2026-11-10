@@ -3,6 +3,7 @@ import { ensureQueues, JOBS } from '@fulcra/core';
 import { handleAgentReply } from './jobs/agent-reply';
 import { handleCatalogImport } from './jobs/catalog-import';
 import { handleChannelWebhook, handleMessageStatus } from './jobs/channel-webhook';
+import { handleCustomerNotifications, handleSubmitTemplates } from './jobs/templates';
 import { handleInboundMessage, handleSendMessage } from './jobs/messages';
 import { handlePaystackWebhook } from './jobs/paystack-webhook';
 import { handleShopifyWebhook } from './jobs/shopify-webhook';
@@ -25,6 +26,12 @@ async function main(): Promise<void> {
   await boss.work(JOBS.agentReply.name, { localConcurrency: 4 }, handleAgentReply);
   await boss.work(JOBS.channelWebhook.name, { localConcurrency: 2 }, handleChannelWebhook);
   await boss.work(JOBS.messageStatus.name, { localConcurrency: 4 }, handleMessageStatus);
+  await boss.work(JOBS.submitTemplates.name, { localConcurrency: 1 }, handleSubmitTemplates);
+  await boss.work(JOBS.customerNotifications.name, { localConcurrency: 1 }, () =>
+    handleCustomerNotifications(),
+  );
+  // Receipts and order updates on WhatsApp, checked every minute.
+  await boss.schedule(JOBS.customerNotifications.name, '* * * * *', {}, { singletonKey: 'tick' });
   console.info(`[worker] ${APP_NAME} worker ready`);
 
   let stopping = false;

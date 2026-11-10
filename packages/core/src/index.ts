@@ -63,6 +63,7 @@ export * from './conversations/message-types';
 export * from './conversations/rules';
 export * from './conversations/conversations';
 export * from './conversations/channels';
+export * from './conversations/templates';
 
 export * from './agent/rules';
 export * from './agent/settings';

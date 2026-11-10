@@ -49,7 +49,12 @@ export function historyToMessages(turn: AgentTurn): Anthropic.Beta.BetaMessagePa
   const messages: Anthropic.Beta.BetaMessageParam[] = [];
   for (const m of turn.history) {
     const role = m.sender === 'customer' ? 'user' : 'assistant';
-    const label = m.sender === 'human' ? '[A person from the team wrote:] ' : '';
+    const label =
+      m.sender === 'human'
+        ? '[A person from the team wrote:] '
+        : m.sender === 'system'
+          ? '[Automatic message sent to the customer:] '
+          : '';
     const media = m.photo ? photoNote(m.photo) : m.type === 'image' ? MEDIA_NOTE.image : '';
     const body = media
       ? [media, m.text].filter(Boolean).join('\n')
