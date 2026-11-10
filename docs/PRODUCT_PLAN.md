@@ -167,7 +167,10 @@ Every business-owned table has `business_id`. Amounts are integers in kobo.
 | channel_connections | business_id, channel, mode (live / test), external_account_id, external_business_id (WhatsApp Business Account), display_name, credentials (encrypted), status, expires_at |
 | conversations | business_id, customer_id, connection_id, channel, status, handled_by (agent / human), needs_attention, attention_reason, last_customer_message_at, last_message_at, last_message_preview, unread_count |
 | messages | conversation_id, direction, sender (customer / agent / human / system), sent_by_user_id, type, text, media, payload, external_id (unique), status (received / queued / sent / delivered / read / failed), created_at |
-| agent_settings | business_id, enabled, greeting, away_message, business_hours, after_hours_orders, policies, handoff_topics (tone comes from the brand kit) |
+| agent_settings | business_id, enabled, greeting, away_message, business_hours, after_hours_orders, policies, handoff_topics, payment_options (tone comes from the brand kit) |
+| owner_notification_settings | business_id, owner_whatsapp, alert_paid_orders, alert_low_stock, alert_unmatched_payments, alert_waiting_customers, briefing_enabled, briefing_time, customer_messages_enabled |
+| owner_alerts | business_id, kind, dedupe_key (unique per business), event_id, to_phone, params, text, status, external_id, error |
+| platform_templates | purpose, name, language, category, body, status, external_id, status_reason (Fulcra's own number; no business) |
 | message_templates | business_id, connection_id, purpose, name, language, category, body, status (not_submitted / pending / approved / rejected / paused / disabled), external_id, status_reason |
 | agent_actions | conversation_id, message_id, tool, input, output, ok, created_at (audit trail) |
 | webhook_events | provider, event_id (unique per provider), event_type, payload, processed_at, attempts, last_error (system-only) |

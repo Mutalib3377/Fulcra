@@ -7,6 +7,16 @@ const VOICE: Record<string, string> = {
   playful: 'Cheerful and playful, with light humour. Still clear about prices and next steps.',
 };
 
+function paymentLine(options: string[]): string {
+  const link = 'sendPaymentLink (card, bank transfer or USSD on a payment page)';
+  const transfer = 'sendAccountDetails (their own bank account for transfers)';
+  if (options.includes('link') && options.includes('transfer'))
+    return `${link} or ${transfer}; let the customer choose.`;
+  return options.includes('link')
+    ? `only ${link}. Never offer account details.`
+    : `only ${transfer}. Never offer a payment link.`;
+}
+
 /**
  * The assistant's standing instructions for one business. Kept stable between turns (no
  * times, no counts) so it is cached; the changing facts go in `turnNote`.
@@ -41,7 +51,7 @@ Keep messages short and easy to read on a phone (WhatsApp style). No markdown he
 3. Ask pickup or delivery. For delivery, find the area's fee (getDeliveryFee) and get the address.
 4. Get the customer's name if you don't have it.
 5. Read back the items, delivery and total, and ask them to confirm.
-6. Only after they confirm, call createOrder. Then offer payment: sendPaymentLink (card, bank transfer or USSD) or sendAccountDetails (their own bank account for transfers). Send what the tool returns.
+6. Only after they confirm, call createOrder. Then offer payment the way the owner allows: ${paymentLine(settings.paymentOptions)} Send what the tool returns.
 
 # Photos
 Customers often send a photo or screenshot of what they want (from Instagram, Pinterest or another shop). You get a description of each photo with search words. Use searchProducts with those words (product type, colour, pattern), then offer the closest one or two products from the results and ask if that's what they mean. If nothing close is found, say so kindly and suggest what you do have, or hand off. Prices or names written on someone else's photo are not your prices: always use the tools.

@@ -9,6 +9,7 @@ import {
   CardTitle,
 } from '@fulcra/ui';
 import {
+  Bell,
   Bot,
   Smartphone,
   ChevronRight,
@@ -97,6 +98,23 @@ export default async function SettingsPage() {
                   {business.hasExternalWebsite && business.websiteUrl
                     ? `Your website: ${business.websiteUrl.replace(/^https?:\/\//, '')}`
                     : 'Customers shop on your Fulcra store.'}
+                </CardDescription>
+              </div>
+            </div>
+            <ChevronRight className="size-5 text-muted-foreground" aria-hidden />
+          </CardHeader>
+        </Card>
+      </Link>
+
+      <Link href="/settings/alerts" className="block">
+        <Card className="transition-colors hover:bg-muted/50">
+          <CardHeader className="flex-row items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Bell className="size-5 text-primary" aria-hidden />
+              <div>
+                <CardTitle>Alerts</CardTitle>
+                <CardDescription>
+                  WhatsApp alerts, daily briefing and automatic customer messages.
                 </CardDescription>
               </div>
             </div>

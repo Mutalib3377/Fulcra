@@ -99,6 +99,8 @@ const whatsAppUsageInput = z.object({
   reference: z.string().min(1).max(200),
   /** Meta's pricing category from the delivery update (service, utility, marketing…). */
   category: z.string().min(1).max(60),
+  /** What caused it, when not a customer chat (e.g. "owner_alert"). */
+  feature: z.string().min(1).max(60).optional(),
 });
 
 /**
@@ -117,7 +119,7 @@ export async function recordWhatsAppUsage(
       .values({
         businessId: id,
         kind: 'whatsapp_message',
-        feature: `whatsapp.${data.category}`,
+        feature: data.feature ? `${data.feature}.${data.category}` : `whatsapp.${data.category}`,
         reference: data.reference,
         quantity: 1,
         costUsd: whatsAppMessageCostUsd(data.category),

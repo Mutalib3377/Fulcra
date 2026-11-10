@@ -444,6 +444,12 @@ export async function pendingCustomerNotifications(
 ): Promise<string[]> {
   const since = new Date(Math.max(now.getTime() - NOTIFY_LOOKBACK_MS, connectedAt.getTime()));
   return withTenant(businessId, async (tx) => {
+    // The owner can switch automatic customer messages off (Settings → Alerts).
+    const [settings] = await tx
+      .select({ on: schema.ownerNotificationSettings.customerMessagesEnabled })
+      .from(schema.ownerNotificationSettings)
+      .limit(1);
+    if (settings && !settings.on) return [];
     const rows = await tx
       .select({ id: schema.events.id })
       .from(schema.events)

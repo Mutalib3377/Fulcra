@@ -263,6 +263,21 @@ describe('automatic customer messages', () => {
     ]);
   });
 
+  it('the owner can switch automatic customer messages off', async () => {
+    const { saveOwnerAlertSettings } = await import('../src/alerts/settings');
+    const shop = await connectedShop();
+    await customerWrites(shop);
+    await createOrder(shop.actor, {
+      customer: { name: 'Chioma Obi', phone: '0803 123 4567' },
+      items: [{ variantId: shop.variant.id, quantity: 1 }],
+      fulfilment: 'pickup',
+    });
+    await saveOwnerAlertSettings(shop.actor, { customerMessagesEnabled: false });
+    expect(
+      await t.pendingCustomerNotifications(shop.business.id, new Date(Date.now() - 60_000)),
+    ).toEqual([]);
+  });
+
   it('customers who never wrote on WhatsApp get nothing', async () => {
     const shop = await connectedShop();
     await createOrder(shop.actor, {

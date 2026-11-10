@@ -1,7 +1,10 @@
 import { adapterFor, type InboundMessageInput } from '@fulcra/channels';
 import {
   applyMessageStatus,
+  applyOwnerAlertStatus,
+  applyPlatformTemplateStatus,
   applyTemplateStatusUpdate,
+  platformWhatsApp,
   claimChannelWebhook,
   enqueueInboundMessage,
   enqueueMessageStatus,
@@ -32,7 +35,9 @@ export async function handleChannelWebhook(jobs: Job<unknown>[]): Promise<void> 
     }
     try {
       const parsed = adapter.parseWebhook(event.payload);
+      const platform = event.channel === 'whatsapp' ? platformWhatsApp() : null;
       for (const { accountId, message } of parsed.messages) {
+        if (platform && accountId === platform.phoneNumberId) continue; // a reply to an alert
         const connection = await findConnectionByAccount(event.channel, accountId);
         if (!connection || connection.mode !== 'live') {
           console.warn(`[worker] message for an unknown ${event.channel} account ${accountId}`);
@@ -42,12 +47,18 @@ export async function handleChannelWebhook(jobs: Job<unknown>[]): Promise<void> 
         await enqueueInboundMessage(connection.businessId, connection.id, withPhoto);
       }
       for (const { accountId, update } of parsed.statuses) {
+        // Fulcra's own number: owner alerts and briefings.
+        if (platform && accountId === platform.phoneNumberId) {
+          await applyOwnerAlertStatus(update);
+          continue;
+        }
         const connection = await findConnectionByAccount(event.channel, accountId);
         if (!connection) continue;
         await enqueueMessageStatus(connection.businessId, update);
       }
       for (const update of parsed.templates ?? []) {
         await applyTemplateStatusUpdate(event.channel, update);
+        await applyPlatformTemplateStatus(update);
       }
       await markChannelWebhookProcessed(webhookEventId);
       console.info(
