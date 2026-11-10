@@ -30,6 +30,16 @@ export const JOBS = {
       update: z.record(z.string(), z.unknown()),
     }),
   },
+  /** Send a WhatsApp number's message templates to Meta for approval. */
+  submitTemplates: {
+    name: 'submit-templates',
+    data: z.object({ businessId: z.uuid(), connectionId: z.uuid() }),
+  },
+  /** Every minute: WhatsApp receipts and order updates for new order events. */
+  customerNotifications: {
+    name: 'customer-notifications',
+    data: z.object({}).loose(),
+  },
   /** Store an incoming message (find the customer and chat, route to the assistant or the team). */
   inboundMessage: {
     name: 'inbound-message',
@@ -182,4 +192,13 @@ export async function enqueueMessageStatus(
     retryDelay: 5,
     retryBackoff: true,
   });
+}
+
+export async function enqueueSubmitTemplates(
+  businessId: string,
+  connectionId: string,
+): Promise<void> {
+  const data = JOBS.submitTemplates.data.parse({ businessId, connectionId });
+  const boss = await getSender();
+  await boss.send(JOBS.submitTemplates.name, data, { ...RETRY, singletonKey: connectionId });
 }

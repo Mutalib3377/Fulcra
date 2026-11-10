@@ -84,6 +84,17 @@ export const outboundMessage = z.discriminatedUnion('type', [
       .min(1)
       .max(10),
   }),
+  /**
+   * An approved template (the only kind allowed outside the 24-hour window). `text` is the
+   * filled-in wording, for the inbox and for channels without templates.
+   */
+  z.object({
+    type: z.literal('template'),
+    name: z.string().min(1).max(512),
+    language: z.string().min(2).max(15),
+    params: z.array(z.string().min(1).max(1000)).max(10),
+    text: z.string().trim().min(1).max(4096),
+  }),
 ]);
 
 export type OutboundMessage = z.infer<typeof outboundMessage>;

@@ -14,6 +14,7 @@ import { CheckCircle2, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useTransition } from 'react';
 import { connectWhatsAppAction, disconnectWhatsAppAction } from './actions';
+import { ConnectWhatsAppButton } from './connect-button';
 
 type Connection = {
   id: string;
@@ -26,11 +27,15 @@ type Connection = {
 export function WhatsAppConnection({
   connection,
   canEdit,
+  signup,
 }: {
   connection: Connection | null;
   canEdit: boolean;
+  /** Set when "Connect WhatsApp" (Embedded Signup) is configured. */
+  signup: { appId: string; configId: string; version: string } | null;
 }) {
   const [editing, setEditing] = useState(!connection);
+  const [advanced, setAdvanced] = useState(!signup);
   const [pending, start] = useTransition();
   const [error, setError] = useState<{ message: string; field?: string } | null>(null);
   const [form, setForm] = useState({ phoneNumberId: '', businessAccountId: '', accessToken: '' });
@@ -125,14 +130,49 @@ export function WhatsAppConnection({
         <p className="text-muted-foreground">Ask the business owner to connect WhatsApp.</p>
       )}
 
-      {canEdit && editing && (
+      {canEdit && editing && signup && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Connect your WhatsApp number</CardTitle>
+            <CardDescription>
+              Use the number your customers already message. It must not be in use on the WhatsApp
+              Business app at the same time.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3">
+            <ConnectWhatsAppButton
+              {...signup}
+              onConnected={(c) => {
+                setCurrent({
+                  id: c.id,
+                  displayName: c.displayName,
+                  status: 'connected',
+                  lastError: null,
+                  phoneNumberId: '',
+                });
+                setEditing(false);
+              }}
+            />
+            {!advanced && (
+              <button
+                type="button"
+                className="self-start text-sm text-primary underline-offset-4 hover:underline"
+                onClick={() => setAdvanced(true)}
+              >
+                Advanced: connect with Meta details
+              </button>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {canEdit && editing && advanced && (
         <Card>
           <CardHeader>
             <CardTitle>Connect with your Meta details</CardTitle>
             <CardDescription>
-              For now, numbers are connected with details from your Meta developer app (WhatsApp →
-              API Setup). This also works with Meta’s free test number. A one-tap “Connect WhatsApp”
-              button is coming.
+              With details from a Meta developer app (WhatsApp → API Setup). This also works with
+              Meta’s free test number.
             </CardDescription>
           </CardHeader>
           <CardContent>

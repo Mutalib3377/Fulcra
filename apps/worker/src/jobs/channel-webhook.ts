@@ -1,6 +1,7 @@
 import { adapterFor, type InboundMessageInput } from '@fulcra/channels';
 import {
   applyMessageStatus,
+  applyTemplateStatusUpdate,
   claimChannelWebhook,
   enqueueInboundMessage,
   enqueueMessageStatus,
@@ -44,6 +45,9 @@ export async function handleChannelWebhook(jobs: Job<unknown>[]): Promise<void> 
         const connection = await findConnectionByAccount(event.channel, accountId);
         if (!connection) continue;
         await enqueueMessageStatus(connection.businessId, update);
+      }
+      for (const update of parsed.templates ?? []) {
+        await applyTemplateStatusUpdate(event.channel, update);
       }
       await markChannelWebhookProcessed(webhookEventId);
       console.info(

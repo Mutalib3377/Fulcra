@@ -51,13 +51,16 @@ export async function handleSendMessage(jobs: Job<unknown>[]): Promise<void> {
     }
     try {
       const image = delivery.message.media?.image;
-      const message: OutboundMessage = image
-        ? {
-            type: 'image',
-            imageUrl: imageUrl(image, 'lg'),
-            ...(delivery.message.text ? { caption: delivery.message.text.slice(0, 1024) } : {}),
-          }
-        : { type: 'text', text: delivery.message.text };
+      const template = templateOf(delivery.message.payload);
+      const message: OutboundMessage = template
+        ? { type: 'template', ...template, text: delivery.message.text }
+        : image
+          ? {
+              type: 'image',
+              imageUrl: imageUrl(image, 'lg'),
+              ...(delivery.message.text ? { caption: delivery.message.text.slice(0, 1024) } : {}),
+            }
+          : { type: 'text', text: delivery.message.text };
       const { externalId } = await adapter.send({
         accountId: delivery.externalAccountId,
         credentials: delivery.credentials,
@@ -80,4 +83,17 @@ export async function handleSendMessage(jobs: Job<unknown>[]): Promise<void> {
       throw error;
     }
   }
+}
+
+/** A template saved on the message (approved templates outside the 24-hour window). */
+function templateOf(
+  payload: Record<string, unknown>,
+): { name: string; language: string; params: string[] } | null {
+  const t = payload.template as
+    { name?: unknown; language?: unknown; params?: unknown } | undefined;
+  if (!t || typeof t.name !== 'string' || typeof t.language !== 'string') return null;
+  const params = Array.isArray(t.params)
+    ? t.params.filter((p): p is string => typeof p === 'string')
+    : [];
+  return { name: t.name, language: t.language, params };
 }

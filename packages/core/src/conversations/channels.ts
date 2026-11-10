@@ -3,9 +3,11 @@ import { schema, withSystem, withTenant } from '@fulcra/db';
 import { and, eq, ne, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { recordEvent, userActor } from '../events/events';
+import { enqueueSubmitTemplates } from '../jobs/queue';
 import { requireMember, type ActorContext } from '../members/access';
 import { decryptSecret, encryptSecret } from '../shared/crypto';
 import { CoreError, isUniqueViolation } from '../shared/errors';
+import { ensureStarterTemplatesInTx, resetTemplatesInTx } from './templates';
 
 /**
  * Channel connections and the platform's side of messaging: saving webhooks, finding which
@@ -189,6 +191,11 @@ export const whatsAppConnectionInput = z.object({
     .trim()
     .regex(/^\d{5,25}$/, 'The WhatsApp Business Account ID is a long number from Meta.'),
   accessToken: z.string().trim().min(20, 'Paste the access token from Meta.').max(1000),
+  /** The two-step PIN Fulcra set when registering the number (Embedded Signup). */
+  pin: z
+    .string()
+    .regex(/^\d{6}$/)
+    .optional(),
   /** Checked with Meta by the caller (the adapter): the number as WhatsApp shows it. */
   displayName: z.string().trim().max(120).default(''),
 });
@@ -230,12 +237,14 @@ export async function saveWhatsAppConnection(
   input: WhatsAppConnectionInput,
 ): Promise<ChannelConnectionView> {
   const data = whatsAppConnectionInput.parse(input);
-  return withTenant(actor.businessId, async (tx) => {
+  const saved = await withTenant(actor.businessId, async (tx) => {
     await requireMember(tx, actor, ['owner']);
     const values = {
       externalBusinessId: data.businessAccountId,
       displayName: data.displayName,
-      credentials: encryptSecret(JSON.stringify({ accessToken: data.accessToken })),
+      credentials: encryptSecret(
+        JSON.stringify({ accessToken: data.accessToken, ...(data.pin ? { pin: data.pin } : {}) }),
+      ),
       status: 'connected' as const,
       lastError: null,
       connectedBy: actor.userId,
@@ -273,6 +282,10 @@ export async function saveWhatsAppConnection(
         );
       throw error;
     }
+    // Templates belong to the WhatsApp Business Account: a new account means sending them again.
+    if (existing && existing.externalBusinessId !== data.businessAccountId)
+      await resetTemplatesInTx(tx, row.id);
+    await ensureStarterTemplatesInTx(tx, actor.businessId, row.id);
     await recordEvent(tx, actor.businessId, {
       type: 'channel.connected',
       actor: userActor(actor),
@@ -288,6 +301,9 @@ export async function saveWhatsAppConnection(
       externalAccountId: row.externalAccountId,
     };
   });
+  // Meta reviews templates in minutes to hours; the worker sends them now.
+  await enqueueSubmitTemplates(actor.businessId, saved.id);
+  return saved;
 }
 
 /** Disconnects a channel (owner only). Chats stay; nothing more is received or sent. */

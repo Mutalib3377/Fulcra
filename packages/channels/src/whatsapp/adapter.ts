@@ -7,6 +7,7 @@ import {
   type MessageStatusUpdate,
   type ParsedWebhook,
   type SendParams,
+  type TemplateStatusUpdate,
 } from '../types';
 
 /**
@@ -51,6 +52,7 @@ const webhookSchema = z.object({
   entry: z
     .array(
       z.object({
+        id: z.string().optional(),
         changes: z
           .array(
             z.object({
@@ -58,6 +60,11 @@ const webhookSchema = z.object({
               value: z
                 .object({
                   metadata: z.object({ phone_number_id: z.string() }).optional(),
+                  event: z.string().optional(),
+                  message_template_id: z.union([z.string(), z.number()]).optional(),
+                  message_template_name: z.string().optional(),
+                  message_template_language: z.string().optional(),
+                  reason: z.string().nullable().optional(),
                   contacts: z
                     .array(
                       z.object({
@@ -193,6 +200,22 @@ function parseWebhook(body: unknown): ParsedWebhook {
   if (!parsed.success || parsed.data.object !== 'whatsapp_business_account') return result;
   for (const entry of parsed.data.entry) {
     for (const change of entry.changes) {
+      if (change.field === 'message_template_status_update') {
+        const v = change.value;
+        if (!entry.id || !v.event) continue;
+        const update: TemplateStatusUpdate = {
+          businessAccountId: entry.id,
+          status: v.event,
+          ...(v.message_template_id !== undefined
+            ? { externalId: String(v.message_template_id) }
+            : {}),
+          ...(v.message_template_name ? { name: v.message_template_name } : {}),
+          ...(v.message_template_language ? { language: v.message_template_language } : {}),
+          ...(v.reason !== undefined ? { reason: v.reason } : {}),
+        };
+        (result.templates ??= []).push(update);
+        continue;
+      }
       if (change.field !== 'messages') continue;
       const value = change.value;
       const accountId = value.metadata?.phone_number_id;
@@ -229,6 +252,7 @@ export class WhatsAppApiError extends Error {
     message: string,
     readonly status: number,
     readonly code: number | undefined,
+    readonly subcode?: number,
   ) {
     super(message);
     this.name = 'WhatsAppApiError';
@@ -247,7 +271,7 @@ function accessToken(credentials: string | null): string {
 
 async function call(
   path: string,
-  token: string,
+  token: string | null,
   init: { method?: 'GET' | 'POST'; body?: unknown } = {},
 ): Promise<Record<string, unknown>> {
   let response: Response;
@@ -255,7 +279,7 @@ async function call(
     response = await fetch(`${graph()}/${path}`, {
       method: init.method ?? 'GET',
       headers: {
-        authorization: `Bearer ${token}`,
+        ...(token ? { authorization: `Bearer ${token}` } : {}),
         ...(init.body ? { 'content-type': 'application/json' } : {}),
       },
       body: init.body ? JSON.stringify(init.body) : undefined,
@@ -268,9 +292,10 @@ async function call(
   if (!response.ok) {
     const error = obj(data.error);
     throw new WhatsAppApiError(
-      str(error.message) ?? `WhatsApp answered ${response.status}`,
+      str(error.error_user_msg) ?? str(error.message) ?? `WhatsApp answered ${response.status}`,
       response.status,
       typeof error.code === 'number' ? error.code : undefined,
+      typeof error.error_subcode === 'number' ? error.error_subcode : undefined,
     );
   }
   return data;
@@ -323,6 +348,25 @@ function sendBody(to: string, message: OutboundMessage): Record<string, unknown>
               reply: { id: b.id, title: b.title },
             })),
           },
+        },
+      };
+    case 'template':
+      return {
+        ...base,
+        type: 'template',
+        template: {
+          name: message.name,
+          language: { code: message.language },
+          ...(message.params.length
+            ? {
+                components: [
+                  {
+                    type: 'body',
+                    parameters: message.params.map((text) => ({ type: 'text', text })),
+                  },
+                ],
+              }
+            : {}),
         },
       };
     case 'list':
@@ -432,6 +476,97 @@ export async function subscribeWhatsAppApp(
   token: string,
 ): Promise<void> {
   await call(`${encodeURIComponent(businessAccountId)}/subscribed_apps`, token, { method: 'POST' });
+}
+
+// ─── Templates ───────────────────────────────────────────────────────────────
+
+/**
+ * Submits a message template for review. A template already at Meta with that name
+ * (e.g. submitted before) is looked up instead. Returns Meta's id and status.
+ */
+export async function createWhatsAppTemplate(
+  businessAccountId: string,
+  token: string,
+  template: { name: string; language: string; category: string; body: string; examples: string[] },
+): Promise<{ externalId: string; status: string }> {
+  try {
+    const data = await call(`${encodeURIComponent(businessAccountId)}/message_templates`, token, {
+      method: 'POST',
+      body: {
+        name: template.name,
+        language: template.language,
+        category: template.category.toUpperCase(),
+        components: [
+          {
+            type: 'BODY',
+            text: template.body,
+            ...(template.examples.length ? { example: { body_text: [template.examples] } } : {}),
+          },
+        ],
+      },
+    });
+    const id = str(data.id);
+    if (!id) throw new WhatsAppApiError('WhatsApp gave no template id.', 502, undefined);
+    return { externalId: id, status: str(data.status) ?? 'PENDING' };
+  } catch (error) {
+    // Name already used in this account: read the existing one.
+    if (
+      error instanceof WhatsAppApiError &&
+      error.code === 100 &&
+      (error.subcode === 2388023 ||
+        error.subcode === 2388024 ||
+        /already exists/i.test(error.message))
+    ) {
+      const found = await call(
+        `${encodeURIComponent(businessAccountId)}/message_templates?name=${encodeURIComponent(template.name)}&fields=id,name,language,status`,
+        token,
+      );
+      const match = ((found.data as unknown[] | undefined) ?? [])
+        .map(obj)
+        .find((t) => str(t.name) === template.name && str(t.language) === template.language);
+      if (match && str(match.id))
+        return { externalId: str(match.id)!, status: str(match.status) ?? 'PENDING' };
+    }
+    throw error;
+  }
+}
+
+// ─── Embedded Signup ─────────────────────────────────────────────────────────
+
+/**
+ * Exchanges the code from the "Connect WhatsApp" popup for the seller's business token
+ * (long-lived). Needs META_APP_ID and META_APP_SECRET.
+ */
+export async function exchangeEmbeddedSignupCode(
+  code: string,
+  env: NodeJS.ProcessEnv = process.env,
+): Promise<string> {
+  if (!env.META_APP_ID || !env.META_APP_SECRET)
+    throw new WhatsAppApiError('Meta app keys are not set.', 0, undefined);
+  const params = new URLSearchParams({
+    client_id: env.META_APP_ID,
+    client_secret: env.META_APP_SECRET,
+    code,
+  });
+  const data = await call(`oauth/access_token?${params.toString()}`, null);
+  const token = str(data.access_token);
+  if (!token) throw new WhatsAppApiError('Meta gave no access token.', 502, undefined);
+  return token;
+}
+
+/**
+ * Registers the number for the Cloud API with a two-step verification PIN (needed once
+ * after Embedded Signup). A number that is already registered is fine.
+ */
+export async function registerWhatsAppNumber(
+  phoneNumberId: string,
+  token: string,
+  pin: string,
+): Promise<void> {
+  await call(`${encodeURIComponent(phoneNumberId)}/register`, token, {
+    method: 'POST',
+    body: { messaging_product: 'whatsapp', pin },
+  });
 }
 
 export const whatsAppAdapter: ChannelAdapter = {

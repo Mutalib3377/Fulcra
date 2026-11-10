@@ -3,7 +3,14 @@ import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import type { ChannelSendError } from '../types';
-import { lookupWhatsAppNumber, verifyWhatsAppSignature, whatsAppAdapter as wa } from './adapter';
+import {
+  createWhatsAppTemplate,
+  exchangeEmbeddedSignupCode,
+  lookupWhatsAppNumber,
+  registerWhatsAppNumber,
+  verifyWhatsAppSignature,
+  whatsAppAdapter as wa,
+} from './adapter';
 
 // ─── A fake Graph API ────────────────────────────────────────────────────────
 
@@ -320,5 +327,160 @@ describe('media and number checks', () => {
     expect(seen[0]!.path).toBe('/v26.0/106540352242922?fields=display_phone_number,verified_name');
     respond = () => ({ status: 400, body: { error: { message: 'Invalid OAuth', code: 190 } } });
     await expect(lookupWhatsAppNumber('1', 'bad')).rejects.toMatchObject({ code: 190 });
+  });
+});
+
+// ─── Templates and Embedded Signup ───────────────────────────────────────────
+
+describe('templates', () => {
+  it('reads template reviews from webhooks', () => {
+    const parsed = wa.parseWebhook({
+      object: 'whatsapp_business_account',
+      entry: [
+        {
+          id: '102290129340398',
+          time: 1762700000,
+          changes: [
+            {
+              field: 'message_template_status_update',
+              value: {
+                event: 'REJECTED',
+                message_template_id: 594425479261596,
+                message_template_name: 'fulcra_order_update_v1',
+                message_template_language: 'en',
+                reason: 'INVALID_FORMAT',
+              },
+            },
+          ],
+        },
+      ],
+    });
+    expect(parsed).toEqual({
+      messages: [],
+      statuses: [],
+      templates: [
+        {
+          businessAccountId: '102290129340398',
+          externalId: '594425479261596',
+          name: 'fulcra_order_update_v1',
+          language: 'en',
+          status: 'REJECTED',
+          reason: 'INVALID_FORMAT',
+        },
+      ],
+    });
+  });
+
+  it('sends an approved template with its values', async () => {
+    await wa.send({
+      accountId: '106540352242922',
+      credentials,
+      to: '2348031234567',
+      message: {
+        type: 'template',
+        name: 'fulcra_payment_receipt_v1',
+        language: 'en',
+        params: ['Chioma', '₦17,000.00'],
+        text: 'Hi Chioma…',
+      },
+    });
+    expect(seen[0]!.body).toEqual({
+      messaging_product: 'whatsapp',
+      recipient_type: 'individual',
+      to: '2348031234567',
+      type: 'template',
+      template: {
+        name: 'fulcra_payment_receipt_v1',
+        language: { code: 'en' },
+        components: [
+          {
+            type: 'body',
+            parameters: [
+              { type: 'text', text: 'Chioma' },
+              { type: 'text', text: '₦17,000.00' },
+            ],
+          },
+        ],
+      },
+    });
+  });
+
+  it('submits a template for review, or finds it when the name already exists', async () => {
+    const tpl = {
+      name: 'fulcra_reply_request_v1',
+      language: 'en',
+      category: 'utility',
+      body: 'Hi {{1}}, this is {{2}} following up.',
+      examples: ['Chioma', 'Ada Styles'],
+    };
+    respond = () => ({ body: { id: '777', status: 'PENDING', category: 'UTILITY' } });
+    expect(await createWhatsAppTemplate('102290129340398', 'EAAtoken', tpl)).toEqual({
+      externalId: '777',
+      status: 'PENDING',
+    });
+    expect(seen[0]).toMatchObject({
+      method: 'POST',
+      path: '/v26.0/102290129340398/message_templates',
+      body: {
+        name: 'fulcra_reply_request_v1',
+        language: 'en',
+        category: 'UTILITY',
+        components: [
+          {
+            type: 'BODY',
+            text: 'Hi {{1}}, this is {{2}} following up.',
+            example: { body_text: [['Chioma', 'Ada Styles']] },
+          },
+        ],
+      },
+    });
+
+    seen.length = 0;
+    respond = (req) =>
+      req.method === 'POST'
+        ? {
+            status: 400,
+            body: { error: { message: 'Invalid parameter', code: 100, error_subcode: 2388024 } },
+          }
+        : {
+            body: {
+              data: [
+                { id: '778', name: 'fulcra_reply_request_v1', language: 'fr', status: 'PENDING' },
+                { id: '779', name: 'fulcra_reply_request_v1', language: 'en', status: 'APPROVED' },
+              ],
+            },
+          };
+    expect(await createWhatsAppTemplate('102290129340398', 'EAAtoken', tpl)).toEqual({
+      externalId: '779',
+      status: 'APPROVED',
+    });
+    expect(seen[1]!.path).toContain('/message_templates?name=fulcra_reply_request_v1');
+  });
+
+  it('Embedded Signup: exchanges the code for a token and registers the number', async () => {
+    respond = () => ({ body: { access_token: 'EAAbusiness', token_type: 'bearer' } });
+    const token = await exchangeEmbeddedSignupCode('the-code', {
+      ...process.env,
+      META_APP_ID: '1234',
+      META_APP_SECRET: 'shh',
+    });
+    expect(token).toBe('EAAbusiness');
+    expect(seen[0]).toMatchObject({
+      method: 'GET',
+      path: '/v26.0/oauth/access_token?client_id=1234&client_secret=shh&code=the-code',
+      auth: undefined,
+    });
+    await expect(
+      exchangeEmbeddedSignupCode('x', { ...process.env, META_APP_ID: '' }),
+    ).rejects.toThrow('Meta app keys are not set');
+
+    respond = () => ({ body: { success: true } });
+    await registerWhatsAppNumber('106540352242922', 'EAAbusiness', '123456');
+    expect(seen.at(-1)).toMatchObject({
+      method: 'POST',
+      path: '/v26.0/106540352242922/register',
+      auth: 'Bearer EAAbusiness',
+      body: { messaging_product: 'whatsapp', pin: '123456' },
+    });
   });
 });

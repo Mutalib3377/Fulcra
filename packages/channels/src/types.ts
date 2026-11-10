@@ -15,6 +15,19 @@ export type MessageStatusUpdate = {
 export type ParsedWebhook = {
   messages: { accountId: string; message: InboundMessageInput }[];
   statuses: { accountId: string; update: MessageStatusUpdate }[];
+  /** Template reviews (approved, rejected…), for platforms with templates. */
+  templates?: TemplateStatusUpdate[];
+};
+
+/** Meta's decision on a message template. */
+export type TemplateStatusUpdate = {
+  /** The business account the template belongs to (WhatsApp Business Account id). */
+  businessAccountId: string;
+  externalId?: string;
+  name?: string;
+  language?: string;
+  status: string;
+  reason?: string | null;
 };
 
 export type SendParams = {
@@ -74,6 +87,8 @@ export function toPlainText(message: OutboundMessage): string {
       return message.text;
     case 'image':
       return message.caption ?? '';
+    case 'template':
+      return message.text;
     case 'buttons':
       return [message.text, '', ...message.buttons.map((b, i) => `${i + 1}. ${b.title}`)].join(
         '\n',

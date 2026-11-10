@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { useEffect, useRef, useState, useTransition } from 'react';
 import { sendReplyAction, setHandlerAction } from '../actions';
 import { ChatBubble } from '../chat-bubble';
+import { TemplatePicker } from './template-picker';
 import { fetchJson, type ChatView as View } from '../types';
 
 /** One chat, checked every 5 seconds while open. */
@@ -161,6 +162,8 @@ export function ChatView({ conversationId }: { conversationId: string }) {
             <Send aria-hidden />
           </Button>
         </form>
+      ) : data.connection.mode === 'live' && data.conversation.channel === 'whatsapp' ? (
+        <TemplatePicker conversationId={conversationId} onSent={refresh} />
       ) : (
         <p role="status" className="rounded-lg bg-warning-soft px-3 py-2 text-sm text-warning">
           It’s been more than 24 hours since this customer last wrote. WhatsApp and Instagram only

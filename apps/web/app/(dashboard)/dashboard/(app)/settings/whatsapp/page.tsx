@@ -1,7 +1,8 @@
-import { listChannelConnections } from '@fulcra/core';
+import { listChannelConnections, listMessageTemplates } from '@fulcra/core';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getDashboardContext } from '@/lib/auth';
+import { TemplateList } from './template-list';
 import { WhatsAppConnection } from './whatsapp-connection';
 
 export const metadata: Metadata = { title: 'WhatsApp' };
@@ -13,6 +14,13 @@ export default async function WhatsAppSettingsPage() {
   }
   const connection =
     (await listChannelConnections(actor)).find((c) => c.channel === 'whatsapp') ?? null;
+  const templates = connection ? await listMessageTemplates(actor) : [];
+  const appId = process.env.META_APP_ID;
+  const configId = process.env.WHATSAPP_EMBEDDED_SIGNUP_CONFIG_ID;
+  const signup =
+    appId && configId
+      ? { appId, configId, version: process.env.WHATSAPP_GRAPH_VERSION || 'v26.0' }
+      : null;
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
       <div>
@@ -36,7 +44,9 @@ export default async function WhatsAppSettingsPage() {
           }
         }
         canEdit={membership.role === 'owner'}
+        signup={signup}
       />
+      {connection && <TemplateList templates={templates} />}
     </div>
   );
 }

@@ -92,6 +92,13 @@
       "when": 1794260619737,
       "tag": "0012_whatsapp",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1794304278892,
+      "tag": "0013_message-templates",
+      "breakpoints": true
     }
   ]
 }

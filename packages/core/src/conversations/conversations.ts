@@ -32,7 +32,7 @@ export type ReceiveResult =
   | { status: 'duplicate' }
   | { status: 'ignored'; reason: string };
 
-async function findOrOpenConversation(
+export async function findOrOpenConversation(
   tx: Tx,
   businessId: string,
   connection: schema.ChannelConnection,
