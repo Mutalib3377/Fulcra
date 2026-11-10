@@ -64,6 +64,9 @@ export * from './conversations/rules';
 export * from './conversations/conversations';
 export * from './conversations/channels';
 export * from './conversations/templates';
+export * from './alerts/settings';
+export * from './alerts/platform';
+export * from './alerts/alerts';
 
 export * from './agent/rules';
 export * from './agent/settings';

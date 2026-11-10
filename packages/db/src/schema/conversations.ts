@@ -215,6 +215,11 @@ export const agentSettings = pgTable(
       .array()
       .notNull()
       .default(sql`'{}'::text[]`),
+    /** How the assistant offers payment: "link" (Paystack link) and/or "transfer" (account details). */
+    paymentOptions: text('payment_options')
+      .array()
+      .notNull()
+      .default(sql`'{link,transfer}'::text[]`),
     ...timestamps,
   },
   (t) => [tenantPolicy('agent_settings', t.businessId)],

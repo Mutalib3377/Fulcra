@@ -205,10 +205,10 @@ Goal: the agent sells on WhatsApp end to end, the owner can watch and take over,
 
 ### A4 — Owner alerts and daily briefing
 
-- [ ] Owner WhatsApp number in settings
-- [ ] Alerts: new paid order, low stock, unmatched payment, customer waiting for a human
-- [ ] Daily briefing at the owner's chosen time (sales, pending, unpaid, low stock)
-- [ ] Agent settings page: tone, hours, away message, return/refund policy, payment options, handoff topics, alerts on/off
+- [x] Owner WhatsApp number in settings (Settings → Alerts; alerts come from Fulcra's own WhatsApp number)
+- [x] Alerts: new paid order, low stock, unmatched payment, customer waiting for a human (from events every minute, once each; each switchable; test alert button; recent alerts with delivery status)
+- [x] Daily briefing at the owner's chosen time (sales, pending, unpaid, low stock) (yesterday's sales plus what is waiting now; default 08:00 Lagos time)
+- [x] Agent settings page: tone, hours, away message, return/refund policy, payment options, handoff topics, alerts on/off (tone in the brand kit; payment link / bank transfer / both; alerts and automatic customer messages on Settings → Alerts)
 
 **Done when:** in a test week with a design partner on WhatsApp, the agent completes orders end to end, hands off cleanly, and the owner receives alerts and briefings.
 

@@ -99,6 +99,13 @@
       "when": 1794304278892,
       "tag": "0013_message-templates",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1794307469959,
+      "tag": "0014_owner-alerts",
+      "breakpoints": true
     }
   ]
 }

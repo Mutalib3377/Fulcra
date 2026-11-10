@@ -93,3 +93,7 @@ export function amountsInData(data: unknown, into = new Set<number>()): Set<numb
 export function unverifiedAmounts(reply: string, allowedKobo: Set<number>): number[] {
   return amountsInText(reply).filter((amount) => !allowedKobo.has(amount));
 }
+
+/** How the assistant may offer payment: a Paystack link and/or the customer's transfer account. */
+export const PAYMENT_OPTIONS = ['link', 'transfer'] as const;
+export type PaymentOption = (typeof PAYMENT_OPTIONS)[number];

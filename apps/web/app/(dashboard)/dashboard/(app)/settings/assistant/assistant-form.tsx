@@ -58,6 +58,8 @@ export function AssistantForm({
   const [greeting, setGreeting] = useState(initial.greeting);
   const [policies, setPolicies] = useState(initial.policies);
   const [topics, setTopics] = useState(initial.handoffTopics.join(', '));
+  const [payLink, setPayLink] = useState(initial.paymentOptions.includes('link'));
+  const [payTransfer, setPayTransfer] = useState(initial.paymentOptions.includes('transfer'));
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [pending, start] = useTransition();
 
@@ -83,6 +85,10 @@ export function AssistantForm({
           .split(',')
           .map((t) => t.trim())
           .filter(Boolean),
+        paymentOptions: [
+          ...(payLink ? (['link'] as const) : []),
+          ...(payTransfer ? (['transfer'] as const) : []),
+        ],
       });
       setMessage(
         result.ok
@@ -189,6 +195,44 @@ export function AssistantForm({
                   onChange={(e) => setAwayMessage(e.target.value)}
                 />
               </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">How customers pay</CardTitle>
+            <CardDescription>
+              What the assistant offers after an order. Payments confirm themselves either way.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3">
+            <label className="flex items-center justify-between gap-4">
+              <span className="text-sm">
+                <span className="font-medium">Payment link</span>
+                <span className="block text-muted-foreground">
+                  A page where they pay by card, bank transfer or USSD.
+                </span>
+              </span>
+              <Switch checked={payLink} onCheckedChange={setPayLink} aria-label="Payment link" />
+            </label>
+            <label className="flex items-center justify-between gap-4 border-t pt-3">
+              <span className="text-sm">
+                <span className="font-medium">Bank transfer</span>
+                <span className="block text-muted-foreground">
+                  The customer’s own account number to transfer into.
+                </span>
+              </span>
+              <Switch
+                checked={payTransfer}
+                onCheckedChange={setPayTransfer}
+                aria-label="Bank transfer"
+              />
+            </label>
+            {!payLink && !payTransfer && (
+              <p role="alert" className="text-sm text-danger">
+                Choose at least one way for customers to pay.
+              </p>
             )}
           </CardContent>
         </Card>

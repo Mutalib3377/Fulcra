@@ -1,7 +1,7 @@
 import { schema, withTenant } from '@fulcra/db';
 import { z } from 'zod';
 import { requireMember, type ActorContext } from '../members/access';
-import { WEEKDAYS } from './rules';
+import { PAYMENT_OPTIONS, WEEKDAYS } from './rules';
 
 const time = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Use a time like 09:00.');
 const slot = z
@@ -33,6 +33,12 @@ export const agentSettingsInput = z.object({
     .max(20, 'Add up to 20 topics.')
     .default([])
     .transform((topics) => [...new Map(topics.map((t) => [t.toLowerCase(), t])).values()]),
+  /** How the assistant offers payment: a Paystack link, the customer's transfer account, or both. */
+  paymentOptions: z
+    .array(z.enum(PAYMENT_OPTIONS))
+    .min(1, 'Choose at least one way for customers to pay.')
+    .default(['link', 'transfer'])
+    .transform((options) => PAYMENT_OPTIONS.filter((o) => options.includes(o))),
 });
 
 export type AgentSettingsInput = z.input<typeof agentSettingsInput>;
@@ -46,6 +52,7 @@ export const AGENT_SETTINGS_DEFAULTS: AgentSettingsView = {
   afterHoursOrders: true,
   policies: '',
   handoffTopics: [],
+  paymentOptions: ['link', 'transfer'],
 };
 
 const toView = (row: schema.AgentSettings | undefined): AgentSettingsView =>
@@ -58,6 +65,7 @@ const toView = (row: schema.AgentSettings | undefined): AgentSettingsView =>
         afterHoursOrders: row.afterHoursOrders,
         policies: row.policies,
         handoffTopics: row.handoffTopics,
+        paymentOptions: PAYMENT_OPTIONS.filter((o) => row.paymentOptions.includes(o)),
       }
     : AGENT_SETTINGS_DEFAULTS;
 

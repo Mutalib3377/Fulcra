@@ -15,7 +15,7 @@ import { createPaymentLink } from '../payments/payments';
 import { storeUrl } from '../payments/urls';
 import { storeStockStatus } from '../storefront/rules';
 import { CoreError, isCoreError } from '../shared/errors';
-import { describeHours, isOpen } from './rules';
+import { describeHours, isOpen, PAYMENT_OPTIONS } from './rules';
 import { AGENT_SETTINGS_DEFAULTS, type AgentSettingsView } from './settings';
 
 /**
@@ -75,6 +75,22 @@ async function requireAssistantChat(tx: Tx, conversationId: string) {
   return chat.conversation;
 }
 
+/** The owner chose which ways to pay the assistant may offer. */
+async function requirePaymentOption(tx: Tx, option: 'link' | 'transfer') {
+  const [row] = await tx
+    .select({ options: schema.agentSettings.paymentOptions })
+    .from(schema.agentSettings)
+    .limit(1);
+  const options = row?.options ?? ['link', 'transfer'];
+  if (!options.includes(option))
+    throw new CoreError(
+      'conflict',
+      option === 'link'
+        ? 'This business does not take payment links. Offer bank transfer instead.'
+        : 'This business does not take bank transfers. Offer a payment link instead.',
+    );
+}
+
 /**
  * Worker: everything the assistant needs to answer, or null when it should not answer
  * (assistant off, chat taken over, closed, 24-hour window shut, nothing new to answer, or a
@@ -131,6 +147,7 @@ export async function claimAgentTurn(
           afterHoursOrders: settingsRow.afterHoursOrders,
           policies: settingsRow.policies,
           handoffTopics: settingsRow.handoffTopics,
+          paymentOptions: PAYMENT_OPTIONS.filter((o) => settingsRow.paymentOptions.includes(o)),
         }
       : AGENT_SETTINGS_DEFAULTS;
     return {
@@ -517,9 +534,11 @@ export async function assistantPaymentLink(
   orderNumber: number,
 ) {
   const n = z.number().int().positive().parse(orderNumber);
-  const order = await withTenant(businessId, async (tx) =>
-    customerOrder(tx, await requireAssistantChat(tx, conversationId), n),
-  );
+  const order = await withTenant(businessId, async (tx) => {
+    const conversation = await requireAssistantChat(tx, conversationId);
+    await requirePaymentOption(tx, 'link');
+    return customerOrder(tx, conversation, n);
+  });
   const link = await createPaymentLink(assistant(businessId), order.id);
   return { orderNumber: n, total: naira(order.total), paymentLink: link.url };
 }
@@ -531,9 +550,11 @@ export async function assistantAccountDetails(
   orderNumber: number,
 ) {
   const n = z.number().int().positive().parse(orderNumber);
-  const order = await withTenant(businessId, async (tx) =>
-    customerOrder(tx, await requireAssistantChat(tx, conversationId), n),
-  );
+  const order = await withTenant(businessId, async (tx) => {
+    const conversation = await requireAssistantChat(tx, conversationId);
+    await requirePaymentOption(tx, 'transfer');
+    return customerOrder(tx, conversation, n);
+  });
   const { message, account } = await prepareAccountDetails(assistant(businessId), order.id);
   return { orderNumber: n, total: naira(order.total), ...account, messageToSend: message };
 }

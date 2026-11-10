@@ -4,6 +4,13 @@ function rootDomain(env: NodeJS.ProcessEnv = process.env): string {
   return env.ROOT_DOMAIN || DEFAULT_ROOT_DOMAIN;
 }
 
+/** A page of the owner dashboard, e.g. `dashboardUrl('/orders/<id>')`. */
+export function dashboardUrl(path = '/', env: NodeJS.ProcessEnv = process.env): string {
+  const root = rootDomain(env);
+  const protocol = root.startsWith('localhost') ? 'http' : 'https';
+  return `${protocol}://app.${root}${path.startsWith('/') ? path : `/${path}`}`;
+}
+
 /** A page on the business's store, e.g. `storeUrl('ada', '/p/<id>')`. */
 export function storeUrl(
   subdomain: string,

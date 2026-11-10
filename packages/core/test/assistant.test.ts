@@ -71,6 +71,7 @@ describe('assistant settings', () => {
       enabled: false,
       afterHoursOrders: true,
       businessHours: null,
+      paymentOptions: ['link', 'transfer'],
     });
     const saved = await saveAgentSettings(actor, {
       enabled: true,
@@ -212,6 +213,28 @@ describe('assistant tools', () => {
     await expect(a.assistantPaymentLink(s.b, other.conversationId, 1001)).rejects.toThrow(
       'has no order #1001',
     );
+  });
+
+  it('offers only the ways to pay the owner allows', async () => {
+    const s = await assistantShop();
+    const { conversationId } = await s.say('I want 1');
+    await a.assistantCreateOrder(s.b, conversationId, {
+      items: [{ variantId: s.variant.id, quantity: 1 }],
+      fulfilment: 'pickup',
+    });
+    await expect(saveAgentSettings(s.actor, { enabled: true, paymentOptions: [] })).rejects.toThrow(
+      'Choose at least one way',
+    );
+    const saved = await saveAgentSettings(s.actor, {
+      enabled: true,
+      paymentOptions: ['transfer', 'transfer'],
+    });
+    expect(saved.paymentOptions).toEqual(['transfer']);
+    await expect(a.assistantPaymentLink(s.b, conversationId, 1001)).rejects.toThrow(
+      'does not take payment links',
+    );
+    const turn = await a.claimAgentTurn(s.b, conversationId);
+    expect(turn!.settings.paymentOptions).toEqual(['transfer']);
   });
 
   it('hands off with a reason, and then the tools stop working for the assistant', async () => {

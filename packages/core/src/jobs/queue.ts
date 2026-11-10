@@ -40,6 +40,16 @@ export const JOBS = {
     name: 'customer-notifications',
     data: z.object({}).loose(),
   },
+  /** Every minute: owner alerts and daily briefings from Fulcra's WhatsApp number. */
+  ownerAlerts: {
+    name: 'owner-alerts',
+    data: z.object({}).loose(),
+  },
+  /** Send the templates of Fulcra's own WhatsApp number to Meta (worker start). */
+  submitPlatformTemplates: {
+    name: 'submit-platform-templates',
+    data: z.object({}).loose(),
+  },
   /** Store an incoming message (find the customer and chat, route to the assistant or the team). */
   inboundMessage: {
     name: 'inbound-message',
@@ -201,4 +211,15 @@ export async function enqueueSubmitTemplates(
   const data = JOBS.submitTemplates.data.parse({ businessId, connectionId });
   const boss = await getSender();
   await boss.send(JOBS.submitTemplates.name, data, { ...RETRY, singletonKey: connectionId });
+}
+
+/** Runs the owner-alerts job now (e.g. a test alert), besides the every-minute run. */
+export async function enqueueOwnerAlertsNow(): Promise<void> {
+  const boss = await getSender();
+  await boss.send(JOBS.ownerAlerts.name, {}, { singletonKey: 'now', retryLimit: 2 });
+}
+
+export async function enqueueSubmitPlatformTemplates(): Promise<void> {
+  const boss = await getSender();
+  await boss.send(JOBS.submitPlatformTemplates.name, {}, { ...RETRY, singletonKey: 'platform' });
 }

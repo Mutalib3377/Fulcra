@@ -1,8 +1,15 @@
 import { APP_NAME } from '@fulcra/config';
-import { ensureQueues, JOBS } from '@fulcra/core';
+import {
+  enqueueSubmitPlatformTemplates,
+  ensurePlatformTemplates,
+  ensureQueues,
+  JOBS,
+  platformWhatsApp,
+} from '@fulcra/core';
 import { handleAgentReply } from './jobs/agent-reply';
 import { handleCatalogImport } from './jobs/catalog-import';
 import { handleChannelWebhook, handleMessageStatus } from './jobs/channel-webhook';
+import { handleOwnerAlerts, handleSubmitPlatformTemplates } from './jobs/owner-alerts';
 import { handleCustomerNotifications, handleSubmitTemplates } from './jobs/templates';
 import { handleInboundMessage, handleSendMessage } from './jobs/messages';
 import { handlePaystackWebhook } from './jobs/paystack-webhook';
@@ -30,6 +37,14 @@ async function main(): Promise<void> {
   await boss.work(JOBS.customerNotifications.name, { localConcurrency: 1 }, () =>
     handleCustomerNotifications(),
   );
+  await boss.work(JOBS.ownerAlerts.name, { localConcurrency: 1 }, () => handleOwnerAlerts());
+  await boss.work(JOBS.submitPlatformTemplates.name, { localConcurrency: 1 }, () =>
+    handleSubmitPlatformTemplates(),
+  );
+  await boss.schedule(JOBS.ownerAlerts.name, '* * * * *', {}, { singletonKey: 'tick' });
+  // Fulcra's own alert templates go to Meta once (missing ones only).
+  await ensurePlatformTemplates();
+  if (platformWhatsApp()) await enqueueSubmitPlatformTemplates();
   // Receipts and order updates on WhatsApp, checked every minute.
   await boss.schedule(JOBS.customerNotifications.name, '* * * * *', {}, { singletonKey: 'tick' });
   console.info(`[worker] ${APP_NAME} worker ready`);
