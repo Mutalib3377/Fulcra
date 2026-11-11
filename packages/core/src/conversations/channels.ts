@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { schema, withSystem, withTenant } from '@fulcra/db';
-import { and, eq, ne, sql } from 'drizzle-orm';
+import { and, eq, isNotNull, lt, ne, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { recordEvent, userActor } from '../events/events';
 import { enqueueSubmitTemplates } from '../jobs/queue';
@@ -375,4 +375,154 @@ export async function readReceiptTarget(
       externalMessageId: row.message.externalId,
     };
   });
+}
+
+// ─── Connecting Instagram ────────────────────────────────────────────────────
+
+export const instagramConnectionInput = z.object({
+  /** The Instagram professional account id (what webhooks name). */
+  accountId: z.string().regex(/^\d{5,30}$/),
+  username: z.string().trim().max(60).default(''),
+  accessToken: z.string().min(20).max(1000),
+  expiresAt: z.coerce.date(),
+});
+export type InstagramConnectionInput = z.input<typeof instagramConnectionInput>;
+
+/**
+ * Saves the business's Instagram account after "Connect Instagram" (owner only). The
+ * 60-day token is stored encrypted (rule 11) with its expiry; the worker renews it.
+ */
+export async function saveInstagramConnection(
+  actor: ActorContext,
+  input: InstagramConnectionInput,
+): Promise<ChannelConnectionView> {
+  const data = instagramConnectionInput.parse(input);
+  return withTenant(actor.businessId, async (tx) => {
+    await requireMember(tx, actor, ['owner']);
+    const values = {
+      externalAccountId: data.accountId,
+      displayName: data.username ? `@${data.username}` : '',
+      credentials: encryptSecret(JSON.stringify({ accessToken: data.accessToken })),
+      expiresAt: data.expiresAt,
+      status: 'connected' as const,
+      lastError: null,
+      connectedBy: actor.userId,
+    };
+    const [existing] = await tx
+      .select()
+      .from(cn)
+      .where(and(eq(cn.channel, 'instagram'), eq(cn.mode, 'live')))
+      .limit(1);
+    let row: schema.ChannelConnection;
+    try {
+      [row] = (
+        existing
+          ? await tx.update(cn).set(values).where(eq(cn.id, existing.id)).returning()
+          : await tx
+              .insert(cn)
+              .values({
+                ...values,
+                businessId: actor.businessId,
+                channel: 'instagram',
+                mode: 'live',
+              })
+              .returning()
+      ) as [schema.ChannelConnection];
+    } catch (error) {
+      if (isUniqueViolation(error, 'channel_connections_account_unique'))
+        throw new CoreError(
+          'conflict',
+          'This Instagram account is already connected to another Fulcra business.',
+        );
+      throw error;
+    }
+    await recordEvent(tx, actor.businessId, {
+      type: 'channel.connected',
+      actor: userActor(actor),
+      payload: { channel: 'instagram', connectionId: row.id, accountId: data.accountId },
+    });
+    return {
+      id: row.id,
+      channel: row.channel,
+      displayName: row.displayName,
+      status: row.status,
+      lastError: row.lastError,
+      createdAt: row.createdAt,
+      externalAccountId: row.externalAccountId,
+    };
+  });
+}
+
+/** Renew Instagram tokens this many days before they run out (they last 60). */
+const REFRESH_BEFORE_DAYS = 15;
+
+/**
+ * Worker (daily): Instagram connections whose token should be renewed now. System access:
+ * the job walks all businesses (docs/decisions/0003).
+ */
+export async function instagramTokensToRefresh(
+  now = new Date(),
+): Promise<{ businessId: string; connectionId: string }[]> {
+  const soon = new Date(now.getTime() + REFRESH_BEFORE_DAYS * 86_400_000);
+  const dayAgo = new Date(now.getTime() - 86_400_000);
+  return withSystem((tx) =>
+    tx
+      .select({ businessId: cn.businessId, connectionId: cn.id })
+      .from(cn)
+      .where(
+        and(
+          eq(cn.channel, 'instagram'),
+          eq(cn.mode, 'live'),
+          eq(cn.status, 'connected'),
+          isNotNull(cn.expiresAt),
+          lt(cn.expiresAt, soon),
+          // Instagram only renews tokens that are at least a day old.
+          lt(cn.updatedAt, dayAgo),
+        ),
+      ),
+  );
+}
+
+/** Worker: the current token of a connection (null when it has run out or is gone). */
+export async function connectionToken(
+  businessId: string,
+  connectionId: string,
+  now = new Date(),
+): Promise<string | null> {
+  const [row] = await withTenant(businessId, (tx) =>
+    tx
+      .select()
+      .from(cn)
+      .where(eq(cn.id, z.uuid().parse(connectionId)))
+      .limit(1),
+  );
+  if (!row?.credentials || row.status !== 'connected') return null;
+  if (row.expiresAt && row.expiresAt < now) {
+    await markConnectionError(
+      businessId,
+      connectionId,
+      'The Instagram connection ran out. Connect Instagram again.',
+    );
+    return null;
+  }
+  const token = (JSON.parse(decryptSecret(row.credentials)) as { accessToken?: string })
+    .accessToken;
+  return token ?? null;
+}
+
+/** Worker: saves a renewed token and its new expiry. */
+export async function saveRenewedToken(
+  businessId: string,
+  connectionId: string,
+  token: { accessToken: string; expiresAt: Date },
+): Promise<void> {
+  await withTenant(businessId, (tx) =>
+    tx
+      .update(cn)
+      .set({
+        credentials: encryptSecret(JSON.stringify({ accessToken: token.accessToken })),
+        expiresAt: token.expiresAt,
+      })
+      .where(eq(cn.id, connectionId)),
+  );
 }

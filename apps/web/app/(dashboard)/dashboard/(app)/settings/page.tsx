@@ -10,6 +10,7 @@ import {
 } from '@fulcra/ui';
 import {
   Bell,
+  Camera,
   Bot,
   Smartphone,
   ChevronRight,
@@ -99,6 +100,21 @@ export default async function SettingsPage() {
                     ? `Your website: ${business.websiteUrl.replace(/^https?:\/\//, '')}`
                     : 'Customers shop on your Fulcra store.'}
                 </CardDescription>
+              </div>
+            </div>
+            <ChevronRight className="size-5 text-muted-foreground" aria-hidden />
+          </CardHeader>
+        </Card>
+      </Link>
+
+      <Link href="/settings/instagram" className="block">
+        <Card className="transition-colors hover:bg-muted/50">
+          <CardHeader className="flex-row items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Camera className="size-5 text-primary" aria-hidden />
+              <div>
+                <CardTitle>Instagram</CardTitle>
+                <CardDescription>Connect your account so DMs arrive in your inbox.</CardDescription>
               </div>
             </div>
             <ChevronRight className="size-5 text-muted-foreground" aria-hidden />

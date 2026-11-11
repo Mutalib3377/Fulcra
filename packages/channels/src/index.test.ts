@@ -41,15 +41,17 @@ describe('channels', () => {
   });
 
   it('finds registered adapters', () => {
-    expect(adapterFor('instagram')).toBeNull();
+    expect(adapterFor('whatsapp')?.channel).toBe('whatsapp');
+    expect(adapterFor('instagram')?.channel).toBe('instagram');
+    expect(adapterFor('web')).toBeNull(); // the website widget comes in W1
     const fake: ChannelAdapter = {
-      channel: 'instagram',
+      channel: 'web',
       capabilities: { images: true, buttons: false, lists: false },
       verifyWebhook: () => true,
       parseWebhook: () => ({ messages: [], statuses: [] }),
       send: async () => ({ externalId: 'x' }),
     };
     registerAdapter(fake);
-    expect(adapterFor('instagram')).toBe(fake);
+    expect(adapterFor('web')).toBe(fake);
   });
 });

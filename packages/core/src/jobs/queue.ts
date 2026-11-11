@@ -50,6 +50,11 @@ export const JOBS = {
     name: 'submit-platform-templates',
     data: z.object({}).loose(),
   },
+  /** Daily: renew Instagram tokens before their 60 days run out. */
+  refreshChannelTokens: {
+    name: 'refresh-channel-tokens',
+    data: z.object({}).loose(),
+  },
   /** Store an incoming message (find the customer and chat, route to the assistant or the team). */
   inboundMessage: {
     name: 'inbound-message',

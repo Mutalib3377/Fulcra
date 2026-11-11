@@ -37,6 +37,8 @@ export const inboundMessage = z.object({
   media: z
     .object({
       providerMediaId: z.string().max(200).optional(),
+      /** A temporary download link, for platforms that give one instead of an id (Instagram). */
+      url: z.string().max(2048).optional(),
       mimeType: z.string().max(100).optional(),
       caption: text(1024).optional(),
       /** Our stored copy of a photo (channels download it before queuing; see storeImage). */

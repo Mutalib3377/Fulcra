@@ -316,31 +316,33 @@ export async function applyTemplateStatusUpdate(
 
 type Chat = { conversation: schema.Conversation; connection: schema.ChannelConnection };
 
-/** The customer's WhatsApp chat on the live number (opened if needed), or null. */
-async function customerWhatsAppChat(
-  tx: Tx,
-  businessId: string,
-  customerId: string,
-): Promise<Chat | null> {
-  const [connection] = await tx
-    .select()
-    .from(cn)
-    .where(and(eq(cn.channel, 'whatsapp'), eq(cn.mode, 'live'), eq(cn.status, 'connected')))
-    .limit(1);
-  if (!connection) return null;
-  const [identity] = await tx
-    .select({ id: schema.customerIdentities.id })
-    .from(schema.customerIdentities)
-    .where(
-      and(
-        eq(schema.customerIdentities.customerId, customerId),
-        eq(schema.customerIdentities.channel, 'whatsapp'),
-      ),
-    )
-    .limit(1);
-  if (!identity) return null;
-  const conversation = await findOrOpenConversation(tx, businessId, connection, customerId);
-  return { conversation, connection };
+/**
+ * The customer's chat on a connected channel (opened if needed), or null: WhatsApp first
+ * (templates work after 24 hours), then Instagram (only while the chat is open).
+ */
+async function customerChat(tx: Tx, businessId: string, customerId: string): Promise<Chat | null> {
+  for (const channel of MESSAGING_CHANNELS) {
+    const [connection] = await tx
+      .select()
+      .from(cn)
+      .where(and(eq(cn.channel, channel), eq(cn.mode, 'live'), eq(cn.status, 'connected')))
+      .limit(1);
+    if (!connection) continue;
+    const [identity] = await tx
+      .select({ id: schema.customerIdentities.id })
+      .from(schema.customerIdentities)
+      .where(
+        and(
+          eq(schema.customerIdentities.customerId, customerId),
+          eq(schema.customerIdentities.channel, channel),
+        ),
+      )
+      .limit(1);
+    if (!identity) continue;
+    const conversation = await findOrOpenConversation(tx, businessId, connection, customerId);
+    return { conversation, connection };
+  }
+  return null;
 }
 
 async function approvedTemplate(
@@ -415,18 +417,32 @@ async function queueCustomerMessageInTx(
 /** How far back events are looked at (and retried while a template waits for approval). */
 const NOTIFY_LOOKBACK_MS = 24 * 3_600_000;
 
+/** Channels automatic customer messages can use, in order of preference. */
+const MESSAGING_CHANNELS = ['whatsapp', 'instagram'] as const;
+
 /**
- * Businesses with a connected WhatsApp number (system access: the one cross-business list
- * the notifications job needs, docs/decisions/0003). Everything after runs per business.
+ * Businesses with a connected WhatsApp number or Instagram account (system access: the one
+ * cross-business list the notifications job needs, docs/decisions/0003). Everything after
+ * runs per business. One row per business, from its earliest connection.
  */
-export async function businessesWithWhatsApp(): Promise<
+export async function businessesWithMessaging(): Promise<
   { businessId: string; connectedAt: Date }[]
 > {
   return withSystem((tx) =>
     tx
-      .select({ businessId: cn.businessId, connectedAt: cn.updatedAt })
+      .select({
+        businessId: cn.businessId,
+        connectedAt: sql<Date>`min(${cn.createdAt})`.mapWith(cn.createdAt),
+      })
       .from(cn)
-      .where(and(eq(cn.channel, 'whatsapp'), eq(cn.mode, 'live'), eq(cn.status, 'connected'))),
+      .where(
+        and(
+          inArray(cn.channel, [...MESSAGING_CHANNELS]),
+          eq(cn.mode, 'live'),
+          eq(cn.status, 'connected'),
+        ),
+      )
+      .groupBy(cn.businessId),
   );
 }
 
@@ -457,7 +473,7 @@ export async function pendingCustomerNotifications(
         schema.customerIdentities,
         and(
           eq(schema.customerIdentities.customerId, schema.events.customerId),
-          eq(schema.customerIdentities.channel, 'whatsapp'),
+          inArray(schema.customerIdentities.channel, [...MESSAGING_CHANNELS]),
         ),
       )
       .where(
@@ -509,7 +525,7 @@ export async function sendCustomerNotification(
       .limit(1);
     if (!order || !business || !customer) return { status: 'skipped' as const };
 
-    const chat = await customerWhatsAppChat(tx, businessId, event.customerId);
+    const chat = await customerChat(tx, businessId, event.customerId);
     if (!chat) return { status: 'skipped' as const };
     await tx.select({ id: c.id }).from(c).where(eq(c.id, chat.conversation.id)).for('update');
     const key = `event:${event.id}`;

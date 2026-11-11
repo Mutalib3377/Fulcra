@@ -57,7 +57,12 @@ export interface ChannelAdapter {
     externalMessageId: string;
     typing: boolean;
   }): Promise<void>;
-  /** Downloads a photo or file the customer sent (platform media id). */
+  /** The customer's name, for platforms whose webhooks don't include it (Instagram). */
+  lookupProfile?(params: {
+    credentials: string | null;
+    userId: string;
+  }): Promise<{ displayName: string } | null>;
+  /** Downloads a photo or file the customer sent (platform media id, or its link). */
   downloadMedia?(params: {
     credentials: string | null;
     mediaId: string;
