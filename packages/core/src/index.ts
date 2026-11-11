@@ -64,6 +64,7 @@ export * from './conversations/rules';
 export * from './conversations/conversations';
 export * from './conversations/channels';
 export * from './conversations/templates';
+export { createSignedState, readSignedState } from './shared/signed-state';
 export * from './alerts/settings';
 export * from './alerts/platform';
 export * from './alerts/alerts';

@@ -43,7 +43,8 @@ export async function handleChannelWebhook(jobs: Job<unknown>[]): Promise<void> 
           console.warn(`[worker] message for an unknown ${event.channel} account ${accountId}`);
           continue;
         }
-        const withPhoto = await attachPhoto(adapter, connection, message);
+        const named = await addName(adapter, connection, message);
+        const withPhoto = await attachPhoto(adapter, connection, named);
         await enqueueInboundMessage(connection.businessId, connection.id, withPhoto);
       }
       for (const { accountId, update } of parsed.statuses) {
@@ -74,13 +75,29 @@ export async function handleChannelWebhook(jobs: Job<unknown>[]): Promise<void> 
   }
 }
 
+/** The customer's name when the webhook has none (Instagram). Best effort. */
+async function addName(
+  adapter: NonNullable<ReturnType<typeof adapterFor>>,
+  connection: { credentials: string | null },
+  message: InboundMessageInput,
+): Promise<InboundMessageInput> {
+  if (message.from.displayName || !adapter.lookupProfile) return message;
+  const profile = await adapter.lookupProfile({
+    credentials: connection.credentials,
+    userId: message.from.externalUserId,
+  });
+  return profile
+    ? { ...message, from: { ...message.from, displayName: profile.displayName } }
+    : message;
+}
+
 /** Downloads and stores a customer's photo. Without it, the message still arrives. */
 async function attachPhoto(
   adapter: NonNullable<ReturnType<typeof adapterFor>>,
   connection: { businessId: string; credentials: string | null },
   message: InboundMessageInput,
 ): Promise<InboundMessageInput> {
-  const mediaId = message.media?.providerMediaId;
+  const mediaId = message.media?.providerMediaId ?? message.media?.url;
   if (message.type !== 'image' || !mediaId || !adapter.downloadMedia) return message;
   try {
     const file = await adapter.downloadMedia({ credentials: connection.credentials, mediaId });

@@ -166,8 +166,9 @@ export function ChatView({ conversationId }: { conversationId: string }) {
         <TemplatePicker conversationId={conversationId} onSent={refresh} />
       ) : (
         <p role="status" className="rounded-lg bg-warning-soft px-3 py-2 text-sm text-warning">
-          It’s been more than 24 hours since this customer last wrote. WhatsApp and Instagram only
-          allow approved template messages now, so you can reply when they write again.
+          {data.conversation.channel === 'instagram'
+            ? 'It’s been more than 24 hours since this customer last wrote. Instagram doesn’t allow messages after that, so you can reply when they write again.'
+            : 'It’s been more than 24 hours since this customer last wrote. WhatsApp only allows approved template messages now, so you can reply when they write again.'}
         </p>
       )}
       {error && (

@@ -8,6 +8,7 @@
  */
 import type { Channel } from '@fulcra/core/rules';
 import type { ChannelAdapter } from './types';
+import { instagramAdapter } from './instagram/adapter';
 import { whatsAppAdapter } from './whatsapp/adapter';
 
 export {
@@ -19,6 +20,18 @@ export {
 } from '@fulcra/core';
 
 export * from './types';
+export {
+  InstagramApiError,
+  exchangeInstagramCode,
+  getInstagramAppConfig,
+  instagramAdapter,
+  instagramAuthorizeUrl,
+  refreshInstagramToken,
+  subscribeInstagramApp,
+  verifyInstagramSignature,
+  type InstagramAppConfig,
+  type InstagramToken,
+} from './instagram/adapter';
 export {
   WhatsAppApiError,
   createWhatsAppTemplate,
@@ -42,3 +55,4 @@ export function adapterFor(channel: Channel): ChannelAdapter | null {
 }
 
 registerAdapter(whatsAppAdapter);
+registerAdapter(instagramAdapter);

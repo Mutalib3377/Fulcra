@@ -1,6 +1,6 @@
 import { createWhatsAppTemplate, WhatsAppApiError } from '@fulcra/channels';
 import {
-  businessesWithWhatsApp,
+  businessesWithMessaging,
   JOBS,
   markConnectionError,
   pendingCustomerNotifications,
@@ -61,7 +61,7 @@ export async function handleSubmitTemplates(jobs: Job<unknown>[]): Promise<void>
  * delivered). Each event is sent once; ones waiting for template approval are tried again.
  */
 export async function handleCustomerNotifications(): Promise<void> {
-  for (const { businessId, connectedAt } of await businessesWithWhatsApp()) {
+  for (const { businessId, connectedAt } of await businessesWithMessaging()) {
     try {
       for (const eventId of await pendingCustomerNotifications(businessId, connectedAt)) {
         const result = await sendCustomerNotification(businessId, eventId);

@@ -10,6 +10,7 @@ import { handleAgentReply } from './jobs/agent-reply';
 import { handleCatalogImport } from './jobs/catalog-import';
 import { handleChannelWebhook, handleMessageStatus } from './jobs/channel-webhook';
 import { handleOwnerAlerts, handleSubmitPlatformTemplates } from './jobs/owner-alerts';
+import { handleRefreshChannelTokens } from './jobs/refresh-tokens';
 import { handleCustomerNotifications, handleSubmitTemplates } from './jobs/templates';
 import { handleInboundMessage, handleSendMessage } from './jobs/messages';
 import { handlePaystackWebhook } from './jobs/paystack-webhook';
@@ -42,6 +43,11 @@ async function main(): Promise<void> {
     handleSubmitPlatformTemplates(),
   );
   await boss.schedule(JOBS.ownerAlerts.name, '* * * * *', {}, { singletonKey: 'tick' });
+  await boss.work(JOBS.refreshChannelTokens.name, { localConcurrency: 1 }, () =>
+    handleRefreshChannelTokens(),
+  );
+  // Instagram tokens last 60 days; checked once a day (UTC).
+  await boss.schedule(JOBS.refreshChannelTokens.name, '23 3 * * *', {}, { singletonKey: 'daily' });
   // Fulcra's own alert templates go to Meta once (missing ones only).
   await ensurePlatformTemplates();
   if (platformWhatsApp()) await enqueueSubmitPlatformTemplates();

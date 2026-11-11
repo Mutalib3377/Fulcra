@@ -222,10 +222,10 @@ Goal: the agent sells on WhatsApp end to end, the owner can watch and take over,
 
 ### G1 — Instagram adapter
 
-- [ ] "Connect Instagram" (Instagram Login), long-lived token storage and refresh
-- [ ] Webhook (`messages`, `messaging_postbacks`) + signature check
-- [ ] Send text and images; map to the standard message types
-- [ ] Respect the 24-hour window; human replies supported in the inbox
+- [x] "Connect Instagram" (Instagram Login), long-lived token storage and refresh (60-day token encrypted with its expiry; renewed daily when 15 days are left)
+- [x] Webhook (`messages`, `messaging_postbacks`) + signature check (plus `messaging_seen` for read ticks)
+- [x] Send text and images; map to the standard message types (quick replies for buttons; customer photos stored; names from Instagram)
+- [x] Respect the 24-hour window; human replies supported in the inbox (no templates on Instagram: receipts and order updates only while the chat is open)
 - [ ] Screen recording + App Review submission for Advanced Access (owner)
 
 ### W1 — Website chat widget

@@ -146,6 +146,8 @@ export type MessageMedia = {
   image?: StoredImage;
   /** The platform's media id, to download it later. */
   providerMediaId?: string;
+  /** A temporary download link (Instagram). */
+  url?: string;
   mimeType?: string;
   caption?: string;
 };
