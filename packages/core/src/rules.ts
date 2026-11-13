@@ -40,3 +40,4 @@ export * from './agent/rules';
 export type { AgentSettingsInput, AgentSettingsView } from './agent/settings';
 export type { BusinessHours } from '@fulcra/db/schema';
 export type { OwnerAlertSettingsInput, OwnerAlertSettingsView } from './alerts/settings';
+export * from './conversations/web-chat-rules';

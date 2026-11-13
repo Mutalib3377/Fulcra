@@ -24,6 +24,7 @@ describe('getStoreBySubdomain', () => {
       name: business.name,
       subdomain: business.subdomain,
       whatsappNumber: '+2348012345678',
+      webChatKey: null, // website chat off
       brand: {
         logo: null,
         primaryColour: '#0f6b55',

@@ -5,6 +5,7 @@ import { photoDescription, type PhotoDescription } from './photos';
 import { formatNaira } from '@fulcra/config';
 import { variantLabel } from '../catalog/rules';
 import { messagePreview, replyWindow } from '../conversations/rules';
+import { mergeCustomerIntoInTx } from '../customers/merge';
 import { recordEvent } from '../events/events';
 import { enqueueSendMessage } from '../jobs/queue';
 import type { AssistantActor } from '../members/access';
@@ -15,6 +16,7 @@ import { createPaymentLink } from '../payments/payments';
 import { storeUrl } from '../payments/urls';
 import { storeStockStatus } from '../storefront/rules';
 import { CoreError, isCoreError } from '../shared/errors';
+import { normalizePhoneNumber } from '../shared/phone';
 import { describeHours, isOpen, PAYMENT_OPTIONS } from './rules';
 import { AGENT_SETTINGS_DEFAULTS, type AgentSettingsView } from './settings';
 
@@ -604,6 +606,74 @@ export async function assistantTagCustomer(
       })
       .where(eq(schema.customers.id, conversation.customerId));
     return { tagged: clean };
+  });
+}
+
+export const saveCustomerDetailsInput = z.object({
+  name: z.string().trim().max(120).default(''),
+  phone: z.string().trim().max(30).default(''),
+});
+
+/**
+ * Saves the customer's name and phone number when they give them (website and Instagram
+ * chats start without them). A number that already belongs to a customer links this chat to
+ * them, so their orders and WhatsApp chats stay together.
+ */
+export async function assistantSaveCustomerDetails(
+  businessId: string,
+  conversationId: string,
+  input: z.input<typeof saveCustomerDetailsInput>,
+) {
+  const data = saveCustomerDetailsInput.parse(input);
+  const phone = data.phone ? normalizePhoneNumber(data.phone) : null;
+  if (data.phone && !phone)
+    throw new CoreError(
+      'validation',
+      'That phone number does not look right. Ask for a Nigerian number like 0803 123 4567.',
+    );
+  return withTenant(businessId, async (tx) => {
+    const conversation = await requireAssistantChat(tx, conversationId);
+    let customerId = conversation.customerId;
+    let linked = false;
+    if (phone) {
+      const [existing] = await tx
+        .select({ id: schema.customers.id })
+        .from(schema.customers)
+        .where(eq(schema.customers.phone, phone))
+        .limit(1);
+      if (existing && existing.id !== customerId) {
+        await mergeCustomerIntoInTx(tx, businessId, customerId, existing.id, { type: 'agent' });
+        customerId = existing.id;
+        linked = true;
+      }
+    }
+    const [current] = await tx
+      .select()
+      .from(schema.customers)
+      .where(eq(schema.customers.id, customerId))
+      .limit(1);
+    const changes = {
+      ...(data.name && (!current?.name || !linked) ? { name: data.name } : {}),
+      ...(phone && !current?.phone ? { phone } : {}),
+    };
+    const [saved] = Object.keys(changes).length
+      ? await tx
+          .update(schema.customers)
+          .set(changes)
+          .where(eq(schema.customers.id, customerId))
+          .returning()
+      : [current];
+    const [orders] = await tx
+      .select({ n: sql<number>`count(*)::int` })
+      .from(schema.orders)
+      .where(eq(schema.orders.customerId, customerId));
+    return {
+      saved: true,
+      name: saved?.name ?? '',
+      phone: saved?.phone ?? null,
+      knownCustomer: linked,
+      pastOrders: orders?.n ?? 0,
+    };
   });
 }
 

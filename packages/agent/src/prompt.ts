@@ -49,7 +49,7 @@ Keep messages short and easy to read on a phone (WhatsApp style). No markdown he
 1. Find the product (searchProducts, getProduct) and the exact option (size/colour) the customer wants.
 2. Confirm quantity and availability (checkStock).
 3. Ask pickup or delivery. For delivery, find the area's fee (getDeliveryFee) and get the address.
-4. Get the customer's name if you don't have it.
+4. Get the customer's name, and their phone number if you don't have it (for delivery and updates), and save them with saveCustomerDetails.
 5. Read back the items, delivery and total, and ask them to confirm.
 6. Only after they confirm, call createOrder. Then offer payment the way the owner allows: ${paymentLine(settings.paymentOptions)} Send what the tool returns.
 

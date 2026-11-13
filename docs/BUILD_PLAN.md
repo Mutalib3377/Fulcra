@@ -230,11 +230,11 @@ Goal: the agent sells on WhatsApp end to end, the owner can watch and take over,
 
 ### W1 — Website chat widget
 
-- [ ] `packages/widget`: tiny async script, isolated styles (shadow DOM), brand colours, mobile friendly
-- [ ] Widget API routes in `apps/web/app/api/widget` (rate limited, per-business public key)
-- [ ] Visitor identity: anonymous session → ask for name/phone when ordering → links to customer
-- [ ] Copy-paste install code in the dashboard; simple WordPress plugin
-- [ ] "Chat to buy" on our storefront opens the widget
+- [x] `packages/widget`: tiny async script, isolated styles (shadow DOM), brand colours, mobile friendly (8 KB, 4 KB compressed, built with esbuild into `apps/web/public/widget.js`)
+- [x] Widget API routes in `apps/web/app/api/widget` (rate limited, per-business public key) (only the business's own website and store when a website is saved)
+- [x] Visitor identity: anonymous session → ask for name/phone when ordering → links to customer (assistant tool `saveCustomerDetails`; a known number merges the visitor into that customer)
+- [x] Copy-paste install code in the dashboard; simple WordPress plugin (downloaded with the key inside; trying it on a real WordPress site is the owner's)
+- [x] "Chat to buy" on our storefront opens the widget (falls back to WhatsApp without JavaScript)
 
 ### B1 — Entitlements and billing
 

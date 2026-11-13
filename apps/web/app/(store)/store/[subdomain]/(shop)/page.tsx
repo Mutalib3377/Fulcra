@@ -61,6 +61,16 @@ export default async function StoreHome({ params }: Props) {
           >
             Order on WhatsApp
           </WhatsAppButton>
+          {store.webChatKey ? (
+            // Opens the chat bubble; without JavaScript it falls back to WhatsApp.
+            <a
+              href={whatsAppLink(store.whatsappNumber, whatsAppHelloMessage(store.name))}
+              data-fulcra-open
+              className="inline-flex h-11 items-center justify-center rounded-md border border-current px-5 font-medium"
+            >
+              Chat to buy
+            </a>
+          ) : null}
         </div>
       </section>
 

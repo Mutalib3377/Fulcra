@@ -6,6 +6,7 @@ import { requireMember, type ActorContext } from '../members/access';
 /** Every event type written today. Other parts of the app react to these (jobs, alerts). */
 export const EVENT_TYPES = [
   'customer.created',
+  'customer.linked',
   'order.created',
   'order.status_changed',
   'order.paid',

@@ -9,6 +9,7 @@
 import type { Channel } from '@fulcra/core/rules';
 import type { ChannelAdapter } from './types';
 import { instagramAdapter } from './instagram/adapter';
+import { webChatAdapter } from './web-widget/adapter';
 import { whatsAppAdapter } from './whatsapp/adapter';
 
 export {
@@ -56,3 +57,4 @@ export function adapterFor(channel: Channel): ChannelAdapter | null {
 
 registerAdapter(whatsAppAdapter);
 registerAdapter(instagramAdapter);
+registerAdapter(webChatAdapter);

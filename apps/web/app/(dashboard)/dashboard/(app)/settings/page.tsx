@@ -11,6 +11,7 @@ import {
 import {
   Bell,
   Camera,
+  MessagesSquare,
   Bot,
   Smartphone,
   ChevronRight,
@@ -115,6 +116,21 @@ export default async function SettingsPage() {
               <div>
                 <CardTitle>Instagram</CardTitle>
                 <CardDescription>Connect your account so DMs arrive in your inbox.</CardDescription>
+              </div>
+            </div>
+            <ChevronRight className="size-5 text-muted-foreground" aria-hidden />
+          </CardHeader>
+        </Card>
+      </Link>
+
+      <Link href="/settings/website-chat" className="block">
+        <Card className="transition-colors hover:bg-muted/50">
+          <CardHeader className="flex-row items-center justify-between">
+            <div className="flex items-center gap-3">
+              <MessagesSquare className="size-5 text-primary" aria-hidden />
+              <div>
+                <CardTitle>Website chat</CardTitle>
+                <CardDescription>A chat bubble for your website and store.</CardDescription>
               </div>
             </div>
             <ChevronRight className="size-5 text-muted-foreground" aria-hidden />
