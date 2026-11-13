@@ -4,3 +4,4 @@ packages/db/migrations/
 dist/
 coverage/
 *.md
+apps/web/public/widget.js

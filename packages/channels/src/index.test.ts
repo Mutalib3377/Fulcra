@@ -43,7 +43,7 @@ describe('channels', () => {
   it('finds registered adapters', () => {
     expect(adapterFor('whatsapp')?.channel).toBe('whatsapp');
     expect(adapterFor('instagram')?.channel).toBe('instagram');
-    expect(adapterFor('web')).toBeNull(); // the website widget comes in W1
+    expect(adapterFor('web')?.channel).toBe('web');
     const fake: ChannelAdapter = {
       channel: 'web',
       capabilities: { images: true, buttons: false, lists: false },

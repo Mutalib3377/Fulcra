@@ -9,6 +9,7 @@ import {
   assistantPaymentLink,
   assistantSearchProducts,
   assistantSuggestAlternatives,
+  assistantSaveCustomerDetails,
   assistantTagCustomer,
   type AgentTurn,
 } from '@fulcra/core';
@@ -129,6 +130,14 @@ export const TOOLS: Anthropic.Beta.BetaTool[] = [
     }),
   ),
   tool(
+    'saveCustomerDetails',
+    "Save the customer's name and/or phone number when they give them. Use before createOrder if you don't have them yet. If the number is a known customer, this links their past orders.",
+    object({
+      name: str('Their name, or "" if not given'),
+      phone: str('Their phone number as they typed it, or "" if not given'),
+    }),
+  ),
+  tool(
     'tagCustomer',
     'Add a short tag to this customer for the owner, e.g. "wholesale buyer" or "Lagos Island".',
     object({
@@ -163,6 +172,7 @@ const inputs = {
   checkPaymentStatus: orderNumber,
   getOrderStatus: z.object({ orderNumber: z.number().int().positive().nullable() }),
   tagCustomer: z.object({ tag: z.string() }),
+  saveCustomerDetails: z.object({ name: z.string(), phone: z.string() }),
   handOffToHuman: z.object({ reason: z.string() }),
 } as const;
 
@@ -239,6 +249,14 @@ export async function runTool(
           b,
           cv,
           inputs.getOrderStatus.parse(rawInput).orderNumber,
+        ),
+      };
+    case 'saveCustomerDetails':
+      return {
+        output: await assistantSaveCustomerDetails(
+          b,
+          cv,
+          inputs.saveCustomerDetails.parse(rawInput),
         ),
       };
     case 'tagCustomer':

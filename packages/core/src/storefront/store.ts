@@ -21,6 +21,8 @@ export type StoreInfo = {
   name: string;
   subdomain: string;
   whatsappNumber: string;
+  /** The website chat key when the chat is on (the store shows the chat bubble). */
+  webChatKey: string | null;
   brand: {
     logo: schema.StoredImage | null;
     primaryColour: string;
@@ -105,7 +107,19 @@ export async function getStoreBySubdomain(subdomain: string): Promise<StoreInfo 
       .where(eq(schema.businesses.subdomain, parsed.data))
       .limit(1);
     if (!row) return null;
+    const [chat] = await tx
+      .select({ key: schema.channelConnections.externalAccountId })
+      .from(schema.channelConnections)
+      .where(
+        and(
+          eq(schema.channelConnections.businessId, row.id),
+          eq(schema.channelConnections.channel, 'web'),
+          eq(schema.channelConnections.status, 'connected'),
+        ),
+      )
+      .limit(1);
     return {
+      webChatKey: chat?.key ?? null,
       businessId: row.id,
       name: row.name,
       subdomain: row.subdomain,

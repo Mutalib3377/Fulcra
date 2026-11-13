@@ -26,6 +26,19 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: ['*.localhost'],
   poweredByHeader: false,
   reactStrictMode: true,
+  // The website chat script (built by @fulcra/widget into public/): cached briefly so
+  // updates reach sellers' sites within minutes.
+  async headers() {
+    return [
+      {
+        source: '/widget.js',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=600, stale-while-revalidate=86400' },
+          { key: 'Access-Control-Allow-Origin', value: '*' },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;

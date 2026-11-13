@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { imageUrls } from '@/lib/images';
 import { loadStore } from '@/lib/store';
+import { dashboardUrl } from '@/lib/urls';
 
 type Props = { children: ReactNode; params: Promise<{ subdomain: string }> };
 
@@ -52,6 +53,10 @@ export default async function ShopLayout({ children, params }: Props) {
       <footer className="border-t px-4 py-6 text-center text-xs text-muted-foreground">
         © {store.name} · Store by {APP_NAME}
       </footer>
+      {store.webChatKey && (
+        // The website chat bubble: loads after the page, never blocks it.
+        <script async src={dashboardUrl('/widget.js')} data-fulcra={store.webChatKey} />
+      )}
     </>
   );
 }

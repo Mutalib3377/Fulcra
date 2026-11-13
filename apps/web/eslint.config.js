@@ -2,6 +2,8 @@ import next from '@fulcra/config/eslint/next';
 
 const config = [
   ...next,
+  // Built by @fulcra/widget (minified); not source.
+  { ignores: ['public/widget.js'] },
   {
     // Store pages live on <name>.yourdomain.com, where "/" is the store home, not the
     // marketing page this rule thinks of. They use plain links on purpose: no prefetching,
