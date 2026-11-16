@@ -246,8 +246,8 @@ Goal: the agent sells on WhatsApp end to end, the owner can watch and take over,
 
 ### L1 — Launch readiness
 
-- [ ] Onboarding flow polished end to end (business → brand → store/website → products → delivery → payments → channels → test chat)
-- [ ] Dashboard home: today's sales, orders by status, chats needing attention, low stock
+- [x] Onboarding flow polished end to end (business → brand → store/website → products → delivery → payments → channels → test chat) (sign-up → store or website → first product, then a "Get set up" checklist on the home page that ticks each step from real data; can be hidden and shown again)
+- [x] Dashboard home: today's sales, orders by status, chats needing attention, low stock
 - [ ] Marketing landing page with pricing and sign-up
 - [ ] Deploy to Render (web + worker, Starter, EU); Cloudflare wildcard DNS
 - [ ] Sentry and PostHog in production; uptime check on webhooks

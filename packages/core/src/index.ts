@@ -8,6 +8,7 @@ export { normalizePhoneNumber } from './shared/phone';
 export * from './businesses/subdomain';
 export * from './businesses/create-business';
 export * from './businesses/get-business';
+export * from './businesses/home';
 
 export { requireMember, type ActorContext, type MemberRole } from './members/access';
 export * from './members/memberships';
