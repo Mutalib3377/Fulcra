@@ -174,7 +174,10 @@ Every business-owned table has `business_id`. Amounts are integers in kobo.
 | message_templates | business_id, connection_id, purpose, name, language, category, body, status (not_submitted / pending / approved / rejected / paused / disabled), external_id, status_reason |
 | agent_actions | conversation_id, message_id, tool, input, output, ok, created_at (audit trail) |
 | webhook_events | provider, event_id (unique per provider), event_type, payload, processed_at, attempts, last_error (system-only) |
-| plans / entitlements | plan features and limits; per-business switches |
+| plans | code, name, monthly_price, annual_price, Paystack plan codes (what each plan includes is in code: `PLANS`) |
+| subscriptions | business_id, plan_code, interval, status (trialing / active / past_due / cancelled / expired), trial_ends_at, current_period_end, grace_ends_at, pending_plan_code, Paystack customer / subscription / authorization codes |
+| entitlements | business_id, feature_key, enabled, limit_value (per-business switches and limits on top of the plan) |
+| subscription_payments | business_id, reference (unique), plan_code, interval, amount, paid_at, period_end |
 | usage_records | business_id, kind (ai_call, whatsapp_message), feature, model, input_tokens, output_tokens, quantity, reference (provider id, unique per kind), cost_usd, created_at |
 | events | business_id, type, actor (user / system / agent / customer), order_id, customer_id, payload, created_at |
 

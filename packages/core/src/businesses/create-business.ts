@@ -1,4 +1,5 @@
 import { schema, withSystem } from '@fulcra/db';
+import { TRIAL_DAYS, TRIAL_PLAN } from '../billing/rules';
 import { z } from 'zod';
 import { CoreError, isUniqueViolation } from '../shared/errors';
 import { normalizePhoneNumber } from '../shared/phone';
@@ -55,6 +56,13 @@ export async function createBusiness(
         userId: owner.userId,
         email: owner.email.toLowerCase(),
         role: 'owner',
+      });
+      // Every business starts with a free trial of Growth (B1).
+      await tx.insert(schema.subscriptions).values({
+        businessId: business.id,
+        planCode: TRIAL_PLAN,
+        status: 'trialing',
+        trialEndsAt: new Date(Date.now() + TRIAL_DAYS * 86_400_000),
       });
       return business;
     });

@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { schema, withSystem, withTenant } from '@fulcra/db';
 import { and, eq, isNotNull, lt, ne, sql } from 'drizzle-orm';
 import { z } from 'zod';
+import { requireFeatureInTx } from '../billing/entitlements';
 import { recordEvent, userActor } from '../events/events';
 import { enqueueSubmitTemplates } from '../jobs/queue';
 import { requireMember, type ActorContext } from '../members/access';
@@ -239,6 +240,7 @@ export async function saveWhatsAppConnection(
   const data = whatsAppConnectionInput.parse(input);
   const saved = await withTenant(actor.businessId, async (tx) => {
     await requireMember(tx, actor, ['owner']);
+    await requireFeatureInTx(tx, 'channel.whatsapp');
     const values = {
       externalBusinessId: data.businessAccountId,
       displayName: data.displayName,
@@ -399,6 +401,7 @@ export async function saveInstagramConnection(
   const data = instagramConnectionInput.parse(input);
   return withTenant(actor.businessId, async (tx) => {
     await requireMember(tx, actor, ['owner']);
+    await requireFeatureInTx(tx, 'channel.instagram');
     const values = {
       externalAccountId: data.accountId,
       displayName: data.username ? `@${data.username}` : '',

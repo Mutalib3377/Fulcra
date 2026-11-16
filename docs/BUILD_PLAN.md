@@ -238,11 +238,11 @@ Goal: the agent sells on WhatsApp end to end, the owner can watch and take over,
 
 ### B1 — Entitlements and billing
 
-- [ ] Schema: `plans`, `entitlements`
-- [ ] `canUse(businessId, featureKey)` and `recordUsage(...)` with tests; wired into agent and channels
-- [ ] Conversation limits per plan; friendly warning at 80% and at the limit
+- [x] Schema: `plans`, `entitlements` (plus `subscriptions`, `subscription_payments`, usage kind `agent_conversation`)
+- [x] `canUse(businessId, featureKey)` and `recordUsage(...)` with tests; wired into agent and channels (also alerts, automatic customer messages and shop imports; Starter's one-channel rule)
+- [x] Conversation limits per plan; friendly warning at 80% and at the limit (dashboard banner and WhatsApp alert; over the limit new chats go to the team)
 - [ ] Owner subscription via Paystack: plans, 14-day trial, upgrade, cancel
-- [ ] Billing page: plan, usage, invoices
+- [ ] Billing page: plan, usage, invoices (B1a: plan, trial, usage, plans and payment list; paying comes with the subscriptions in B1b)
 
 ### L1 — Launch readiness
 

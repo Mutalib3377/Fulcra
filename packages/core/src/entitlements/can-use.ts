@@ -1,23 +1,6 @@
 /**
- * Feature keys checked before a module or channel action runs.
- * The list grows as features are built.
+ * Feature checks (rule 6). Moved to `billing/` in B1, where plans and trials live; kept here
+ * so existing imports keep working.
  */
-export type FeatureKey =
-  | 'storefront'
-  | 'agent'
-  | 'channel.whatsapp'
-  | 'channel.instagram'
-  | 'channel.web_widget'
-  | 'payments'
-  | 'catalog_import'
-  | 'owner_alerts';
-
-/**
- * Whether a business may use a feature.
- *
- * Stub: allows everything until plans and entitlements are built in B1. Call it anyway,
- * so every feature is already wired to the check.
- */
-export async function canUse(_businessId: string, _featureKey: FeatureKey): Promise<boolean> {
-  return true;
-}
+export { canUse, featureAccess } from '../billing/entitlements';
+export type { FeatureKey } from '../billing/rules';

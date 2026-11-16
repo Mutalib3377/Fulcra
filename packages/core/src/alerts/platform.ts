@@ -30,6 +30,7 @@ export const ALERT_KINDS = [
   'waiting_customer',
   'briefing',
   'test',
+  'usage_limit',
 ] as const;
 export type AlertKind = (typeof ALERT_KINDS)[number];
 
@@ -85,6 +86,17 @@ export const PLATFORM_TEMPLATES: Record<AlertKind, PlatformTemplate> = {
       '4',
       '1',
       'https://app.yourdomain.com',
+    ],
+  },
+  usage_limit: {
+    name: 'fulcra_alert_usage_limit_v1',
+    body: 'Your assistant at {{1}} has answered {{2}} of {{3}} chats included this month. {{4}}. Manage your plan here: {{5}} (Fulcra alert)',
+    examples: [
+      'Ada Styles',
+      '400',
+      '500',
+      'When it reaches the limit, new chats will come to you instead',
+      'https://app.yourdomain.com/settings/billing',
     ],
   },
   test: {

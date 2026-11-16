@@ -225,7 +225,10 @@ describe('assistant scenarios', () => {
     );
     expect(queuedSends).toHaveLength(1);
     expect((await s.actions()).map((x) => [x.tool, x.ok])).toEqual([['searchProducts', true]]);
-    const usage = await s.usage();
+    const all = await s.usage();
+    // One conversation counted for the plan's monthly limit, two AI calls costed.
+    expect(all.filter((u) => u.kind === 'agent_conversation')).toHaveLength(1);
+    const usage = all.filter((u) => u.kind === 'ai_call');
     expect(usage).toHaveLength(2);
     expect(usage[0]).toMatchObject({
       kind: 'ai_call',
@@ -565,5 +568,20 @@ describe('assistant scenarios', () => {
     expect(await s.turn()).toMatchObject({ status: 'replied' });
     expect(requests).toHaveLength(1);
     expect(JSON.stringify(requests[0])).toContain('a photo you could not see');
+  });
+
+  it('monthly limit reached: no AI call, the chat goes to the team with the reason', async () => {
+    const s = await shop();
+    await core.setBusinessEntitlement(s.business.id, 'agent.conversations', { limitValue: 0 });
+    await s.say('How much is the dress?');
+    expect(await s.turn()).toEqual({
+      status: 'handed_off',
+      reason: 'Monthly assistant limit reached',
+    });
+    expect(requests).toHaveLength(0);
+    expect((await s.chat()).conversation).toMatchObject({
+      handledBy: 'human',
+      attentionReason: 'Monthly assistant limit reached',
+    });
   });
 });

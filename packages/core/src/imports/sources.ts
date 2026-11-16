@@ -73,7 +73,7 @@ export async function connectCatalogSource(
   const credentials = encryptSecret(JSON.stringify(data.credentials));
   return withTenant(actor.businessId, async (tx) => {
     await requireMember(tx, actor, EDITORS);
-    if (!(await canUse(actor.businessId, 'catalog_import'))) {
+    if (!(await canUse(actor.businessId, 'catalog_import.shops'))) {
       throw new CoreError('forbidden', 'Importing products is not part of your plan.');
     }
     const values = {
@@ -125,7 +125,7 @@ export async function startSourceImport(
   const k = z.enum(schema.catalogSourceKinds).parse(kind);
   const created = await withTenant(actor.businessId, async (tx) => {
     await requireMember(tx, actor, EDITORS);
-    if (!(await canUse(actor.businessId, 'catalog_import'))) {
+    if (!(await canUse(actor.businessId, 'catalog_import.shops'))) {
       throw new CoreError('forbidden', 'Importing products is not part of your plan.');
     }
     const [source] = await tx.select().from(s).where(eq(s.kind, k)).for('update').limit(1);
@@ -340,7 +340,7 @@ export async function startUrlImport(
   const { url } = urlImportInput.parse(input);
   const created = await withTenant(actor.businessId, async (tx) => {
     await requireMember(tx, actor, EDITORS);
-    if (!(await canUse(actor.businessId, 'catalog_import'))) {
+    if (!(await canUse(actor.businessId, 'catalog_import.shops'))) {
       throw new CoreError('forbidden', 'Importing products is not part of your plan.');
     }
     const [running] = await tx

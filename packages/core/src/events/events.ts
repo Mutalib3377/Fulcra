@@ -20,6 +20,7 @@ export const EVENT_TYPES = [
   'conversation.handoff',
   'channel.connected',
   'channel.disconnected',
+  'usage.limit',
 ] as const;
 export type EventType = (typeof EVENT_TYPES)[number];
 
