@@ -1,6 +1,7 @@
 import {
   countOrdersByStatus,
   countPaymentsNeedingAttention,
+  getHomeSummary,
   listEvents,
   listLowStock,
   variantLabel,
@@ -15,25 +16,35 @@ import {
   CardTitle,
   EmptyState,
 } from '@fulcra/ui';
-import { ExternalLink, Plus } from 'lucide-react';
+import { formatNaira } from '@fulcra/config';
+import { ExternalLink, MessageCircle, Plus } from 'lucide-react';
 import type { Metadata } from 'next';
+import { cookies } from 'next/headers';
 import Link from 'next/link';
 import { getDashboardContext } from '@/lib/auth';
 import { describeEvent, timeAgo } from '@/lib/orders';
+import { setupHiddenCookie } from '@/lib/setup';
 import { storeHost, storeUrl } from '@/lib/urls';
 import { CopyStoreLink } from './copy-store-link';
+import { showSetupAction } from './home-actions';
+import { SetupChecklist } from './setup-checklist';
 
 export const metadata: Metadata = { title: 'Home' };
 
 export default async function DashboardHome() {
   const { actor, membership } = await getDashboardContext();
   const isEditor = membership.role !== 'rider';
-  const [counts, events, lowStock, attention] = await Promise.all([
+  const [summary, counts, events, lowStock, attention, cookieStore] = await Promise.all([
+    getHomeSummary(actor),
     countOrdersByStatus(actor),
     listEvents(actor, { limit: 15 }),
     listLowStock(actor),
     isEditor ? countPaymentsNeedingAttention(actor) : Promise.resolve({ unmatched: 0, review: 0 }),
+    cookies(),
   ]);
+  const setup = summary.setup;
+  const setupHidden = cookieStore.get(setupHiddenCookie(actor.businessId))?.value === '1';
+  const setupUnfinished = setup !== null && setup.done < setup.total;
   const now = new Date();
   const tiles = [
     { label: 'New', count: counts.new, href: '/orders?status=new' },
@@ -62,6 +73,55 @@ export default async function DashboardHome() {
         )}
       </div>
 
+      {setupUnfinished && !setupHidden && (
+        <SetupChecklist setup={setup} hasExternalWebsite={summary.hasExternalWebsite} />
+      )}
+
+      <div className="grid grid-cols-2 gap-2">
+        <Card className="p-3">
+          <p className="text-sm text-muted-foreground">Today&apos;s sales</p>
+          <p className="text-2xl font-bold">{formatNaira(summary.today.amount)}</p>
+          <p className="text-sm text-muted-foreground">
+            {summary.today.orders} paid order{summary.today.orders === 1 ? '' : 's'}
+          </p>
+        </Card>
+        {summary.chatsWaiting !== null ? (
+          <Link href="/inbox">
+            <Card
+              className={
+                summary.chatsWaiting > 0
+                  ? 'h-full border-warning bg-warning-soft p-3 transition-colors'
+                  : 'h-full p-3 transition-colors hover:bg-muted/50'
+              }
+            >
+              <p className="flex items-center gap-1 text-sm text-muted-foreground">
+                <MessageCircle className="size-4" aria-hidden /> Chats waiting
+              </p>
+              <p className="text-2xl font-bold">{summary.chatsWaiting}</p>
+              <p className="text-sm text-muted-foreground">
+                {summary.chatsWaiting > 0 ? 'Customers need you' : 'All answered'}
+              </p>
+            </Card>
+          </Link>
+        ) : (
+          <Link href="/orders?status=paid">
+            <Card className="h-full p-3 transition-colors hover:bg-muted/50">
+              <p className="text-sm text-muted-foreground">To deliver</p>
+              <p className="text-2xl font-bold">{counts.paid + counts.dispatched}</p>
+            </Card>
+          </Link>
+        )}
+      </div>
+
+      {setupUnfinished && setupHidden && (
+        <form action={showSetupAction} className="-mt-2">
+          <button type="submit" className="text-sm text-primary underline-offset-4 hover:underline">
+            Show setup guide ({setup.done} of {setup.total} done)
+          </button>
+        </form>
+      )}
+
+      <p className="-mb-2 text-sm font-medium text-muted-foreground">Orders</p>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {tiles.map((t) => (
           <Link key={t.label} href={t.href}>
