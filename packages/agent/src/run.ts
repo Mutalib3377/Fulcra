@@ -3,6 +3,7 @@ import {
   amountsInData,
   amountsInText,
   assistantHandOff,
+  claimAgentConversation,
   claimAgentTurn,
   priorReplyTexts,
   queueAgentReply,
@@ -120,6 +121,10 @@ export async function runAgentTurn(params: {
     });
     return { status: 'away' };
   }
+
+  // The plan and the month's conversations (rule 6): over the limit, the team answers.
+  const allowance = await claimAgentConversation(businessId, conversationId, params.now);
+  if (!allowance.allowed) return handOff(allowance.reason);
 
   const model = params.model ?? AGENT_MODEL;
   await describeNewPhotos(turn, client, params.photoModel ?? PHOTO_MODEL);

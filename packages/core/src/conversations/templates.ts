@@ -2,6 +2,7 @@ import { formatNaira } from '@fulcra/config';
 import { schema, withSystem, withTenant, type Tx } from '@fulcra/db';
 import { and, asc, desc, eq, gt, inArray, isNull, ne, or, sql } from 'drizzle-orm';
 import { z } from 'zod';
+import { planStateInTx } from '../billing/entitlements';
 import { enqueueSendMessage, enqueueSubmitTemplates } from '../jobs/queue';
 import { requireMember, type ActorContext } from '../members/access';
 import { createPaymentLink } from '../payments/payments';
@@ -460,6 +461,8 @@ export async function pendingCustomerNotifications(
 ): Promise<string[]> {
   const since = new Date(Math.max(now.getTime() - NOTIFY_LOOKBACK_MS, connectedAt.getTime()));
   return withTenant(businessId, async (tx) => {
+    // Part of every paid plan; paused when the plan has ended (rule 6).
+    if (!(await planStateInTx(tx)).features.has('customer_messages')) return [];
     // The owner can switch automatic customer messages off (Settings → Alerts).
     const [settings] = await tx
       .select({ on: schema.ownerNotificationSettings.customerMessagesEnabled })

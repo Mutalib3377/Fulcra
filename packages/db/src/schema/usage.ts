@@ -13,7 +13,7 @@ import { id, tenantPolicy } from './_shared';
 import { businesses } from './businesses';
 
 /** What was used (rule 12): an AI call, or a WhatsApp message Meta charges for (A3). */
-export const usageKinds = ['ai_call', 'whatsapp_message'] as const;
+export const usageKinds = ['ai_call', 'whatsapp_message', 'agent_conversation'] as const;
 export const usageKind = pgEnum('usage_kind', usageKinds);
 
 /**

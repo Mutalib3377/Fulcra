@@ -1,10 +1,11 @@
 import { getInstagramAppConfig } from '@fulcra/channels';
-import { listChannelConnections } from '@fulcra/core';
+import { featureAccess, listChannelConnections } from '@fulcra/core';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@fulcra/ui';
 import { AlertTriangle, CheckCircle2 } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ActionButton } from '@/components/action-button';
+import { PlanNotice } from '@/components/plan-notice';
 import { getDashboardContext } from '@/lib/auth';
 import { disconnectInstagramAction } from './actions';
 
@@ -31,6 +32,7 @@ export default async function InstagramSettingsPage({
   const connection =
     (await listChannelConnections(actor)).find((c) => c.channel === 'instagram') ?? null;
   const configured = getInstagramAppConfig() !== null;
+  const access = await featureAccess(actor.businessId, 'channel.instagram');
   const isOwner = membership.role === 'owner';
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
@@ -109,7 +111,9 @@ export default async function InstagramSettingsPage({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {!configured ? (
+            {!access.allowed ? (
+              <PlanNotice message={access.message ?? ''} />
+            ) : !configured ? (
               <p className="text-sm text-muted-foreground">
                 Instagram connection is not set up on Fulcra yet.
               </p>

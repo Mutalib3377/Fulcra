@@ -1,8 +1,9 @@
-import { getBusiness, getWebChat, widgetScriptTag } from '@fulcra/core';
+import { featureAccess, getBusiness, getWebChat, widgetScriptTag } from '@fulcra/core';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@fulcra/ui';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ActionButton } from '@/components/action-button';
+import { PlanNotice } from '@/components/plan-notice';
 import { getDashboardContext } from '@/lib/auth';
 import { dashboardUrl, storeUrl } from '@/lib/urls';
 import { setWebChatAction } from './actions';
@@ -18,6 +19,7 @@ export default async function WebsiteChatPage() {
   const [chat, business] = await Promise.all([getWebChat(actor), getBusiness(actor)]);
   const isOwner = membership.role === 'owner';
   const on = chat?.enabled ?? false;
+  const access = await featureAccess(actor.businessId, 'channel.web_widget');
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
       <div>
@@ -41,7 +43,9 @@ export default async function WebsiteChatPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
-          {isOwner ? (
+          {!on && !access.allowed ? (
+            <PlanNotice message={access.message ?? ''} />
+          ) : isOwner ? (
             <ActionButton
               variant={on ? 'outline' : 'primary'}
               action={setWebChatAction.bind(null, !on)}

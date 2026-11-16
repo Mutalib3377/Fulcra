@@ -2,6 +2,7 @@ import { randomBytes } from 'node:crypto';
 import { schema, withSystem, withTenant } from '@fulcra/db';
 import { and, asc, desc, eq, inArray, ne, sql } from 'drizzle-orm';
 import { z } from 'zod';
+import { requireFeatureInTx } from '../billing/entitlements';
 import { recordEvent, userActor } from '../events/events';
 import { enqueueInboundMessage } from '../jobs/queue';
 import { imageUrl } from '../media/images';
@@ -50,6 +51,7 @@ export async function setWebChatEnabled(
 ): Promise<WebChatView> {
   await withTenant(actor.businessId, async (tx) => {
     await requireMember(tx, actor, ['owner']);
+    if (enabled) await requireFeatureInTx(tx, 'channel.web_widget');
     const [row] = await tx
       .select()
       .from(cn)

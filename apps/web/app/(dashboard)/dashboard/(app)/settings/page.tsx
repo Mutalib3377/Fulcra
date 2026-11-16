@@ -11,6 +11,7 @@ import {
 import {
   Bell,
   Camera,
+  CreditCard,
   MessagesSquare,
   Bot,
   Smartphone,
@@ -71,6 +72,23 @@ export default async function SettingsPage() {
           </dl>
         </CardContent>
       </Card>
+
+      <Link href="/settings/billing" className="block">
+        <Card className="transition-colors hover:bg-muted/50">
+          <CardHeader className="flex-row items-center justify-between">
+            <div className="flex items-center gap-3">
+              <CreditCard className="size-5 text-primary" aria-hidden />
+              <div>
+                <CardTitle>Plans and billing</CardTitle>
+                <CardDescription>
+                  Your plan, free trial and assistant chats this month.
+                </CardDescription>
+              </div>
+            </div>
+            <ChevronRight className="size-5 text-muted-foreground" aria-hidden />
+          </CardHeader>
+        </Card>
+      </Link>
 
       <Link href="/settings/assistant" className="block">
         <Card className="transition-colors hover:bg-muted/50">

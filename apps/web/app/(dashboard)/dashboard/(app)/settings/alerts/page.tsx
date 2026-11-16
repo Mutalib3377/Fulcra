@@ -1,7 +1,13 @@
-import { getOwnerAlertSettings, listRecentOwnerAlerts, platformAlertsStatus } from '@fulcra/core';
+import {
+  featureAccess,
+  getOwnerAlertSettings,
+  listRecentOwnerAlerts,
+  platformAlertsStatus,
+} from '@fulcra/core';
 import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle } from '@fulcra/ui';
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { PlanNotice } from '@/components/plan-notice';
 import { getDashboardContext } from '@/lib/auth';
 import { AlertsForm } from './alerts-form';
 
@@ -23,6 +29,7 @@ const KIND: Record<string, string> = {
   waiting_customer: 'Customer waiting',
   briefing: 'Daily briefing',
   test: 'Test alert',
+  usage_limit: 'Assistant chats',
 };
 
 export default async function AlertsSettingsPage() {
@@ -30,10 +37,11 @@ export default async function AlertsSettingsPage() {
   if (membership.role === 'rider') {
     return <p className="text-muted-foreground">Alert settings are for the owner and staff.</p>;
   }
-  const [settings, recent, platform] = await Promise.all([
+  const [settings, recent, platform, access] = await Promise.all([
     getOwnerAlertSettings(actor),
     listRecentOwnerAlerts(actor),
     platformAlertsStatus(),
+    featureAccess(actor.businessId, 'owner_alerts'),
   ]);
   const time = (d: Date) =>
     d.toLocaleString('en-NG', {
@@ -55,6 +63,7 @@ export default async function AlertsSettingsPage() {
           morning.
         </p>
       </div>
+      {!access.allowed && <PlanNotice message={access.message ?? ''} />}
       {!platform.configured ? (
         <p role="status" className="rounded-md bg-warning-soft px-3 py-2 text-sm text-warning">
           Fulcra’s WhatsApp number isn’t set up yet, so alerts are listed below but not sent.

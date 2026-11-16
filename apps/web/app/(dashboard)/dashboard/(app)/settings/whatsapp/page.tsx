@@ -1,8 +1,9 @@
-import { listChannelConnections, listMessageTemplates } from '@fulcra/core';
+import { featureAccess, listChannelConnections, listMessageTemplates } from '@fulcra/core';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getDashboardContext } from '@/lib/auth';
 import { TemplateList } from './template-list';
+import { PlanNotice } from '@/components/plan-notice';
 import { WhatsAppConnection } from './whatsapp-connection';
 
 export const metadata: Metadata = { title: 'WhatsApp' };
@@ -15,6 +16,7 @@ export default async function WhatsAppSettingsPage() {
   const connection =
     (await listChannelConnections(actor)).find((c) => c.channel === 'whatsapp') ?? null;
   const templates = connection ? await listMessageTemplates(actor) : [];
+  const access = await featureAccess(actor.businessId, 'channel.whatsapp');
   const appId = process.env.META_APP_ID;
   const configId = process.env.WHATSAPP_EMBEDDED_SIGNUP_CONFIG_ID;
   const signup =
@@ -33,19 +35,23 @@ export default async function WhatsAppSettingsPage() {
           assistant can answer them.
         </p>
       </div>
-      <WhatsAppConnection
-        connection={
-          connection && {
-            id: connection.id,
-            displayName: connection.displayName,
-            status: connection.status,
-            lastError: connection.lastError,
-            phoneNumberId: connection.externalAccountId,
+      {!connection && !access.allowed ? (
+        <PlanNotice message={access.message ?? ''} />
+      ) : (
+        <WhatsAppConnection
+          connection={
+            connection && {
+              id: connection.id,
+              displayName: connection.displayName,
+              status: connection.status,
+              lastError: connection.lastError,
+              phoneNumberId: connection.externalAccountId,
+            }
           }
-        }
-        canEdit={membership.role === 'owner'}
-        signup={signup}
-      />
+          canEdit={membership.role === 'owner'}
+          signup={signup}
+        />
+      )}
       {connection && <TemplateList templates={templates} />}
     </div>
   );

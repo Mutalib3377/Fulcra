@@ -3,6 +3,7 @@ import { formatNaira } from '@fulcra/config';
 import { schema, withSystem, withTenant, type Tx } from '@fulcra/db';
 import { and, desc, eq, gt, inArray, isNotNull, isNull, lt, sql } from 'drizzle-orm';
 import { z } from 'zod';
+import { planStateInTx } from '../billing/entitlements';
 import { templateParam } from '../conversations/templates';
 import { enqueueOwnerAlertsNow } from '../jobs/queue';
 import { requireMember, type ActorContext } from '../members/access';
@@ -68,7 +69,11 @@ export async function createPendingAlerts(businessId: string, now = new Date()):
     const [row] = await tx.select().from(schema.ownerNotificationSettings).limit(1);
     const settings = toAlertSettingsView(row);
     if (!row || !settings.ownerWhatsapp) return 0;
+    // WhatsApp alerts are part of Growth and Pro (rule 6).
+    if (!(await planStateInTx(tx, now)).features.has('owner_alerts')) return 0;
     const types = [
+      // Assistant limit warnings always go (the owner needs them to keep customers answered).
+      'usage.limit',
       ...(settings.alertPaidOrders ? ['order.paid', 'payment.confirmed'] : []),
       ...(settings.alertLowStock ? ['stock.low'] : []),
       ...(settings.alertUnmatchedPayments ? ['payment.unmatched', 'payment.needs_review'] : []),
@@ -133,6 +138,18 @@ export async function createPendingAlerts(businessId: string, now = new Date()):
           String(asNumber(p.stock)),
           dashboardUrl(`/catalog/${asString(p.productId)}`),
         ];
+      } else if (event.type === 'usage.limit') {
+        const percent = asNumber(p.percent);
+        kind = 'usage_limit';
+        params = [
+          shop,
+          String(asNumber(p.used)),
+          String(asNumber(p.limit)),
+          percent >= 100
+            ? 'New chats now come to you until next month, or until you upgrade'
+            : 'When it reaches the limit, new chats will come to you instead',
+          dashboardUrl('/settings/billing'),
+        ];
       } else if (event.type === 'payment.unmatched' || event.type === 'payment.needs_review') {
         kind = 'unmatched_payment';
         params = [formatNaira(asNumber(p.amount)), shop, dashboardUrl('/payments')];
@@ -190,6 +207,7 @@ export async function createBriefingIfDue(
     const [row] = await tx.select().from(schema.ownerNotificationSettings).limit(1);
     const settings = toAlertSettingsView(row);
     if (!row || !settings.ownerWhatsapp || !settings.briefingEnabled) return null;
+    if (!(await planStateInTx(tx, now)).features.has('owner_alerts')) return null;
     const [business] = await tx
       .select({ name: schema.businesses.name, timezone: schema.businesses.timezone })
       .from(schema.businesses)

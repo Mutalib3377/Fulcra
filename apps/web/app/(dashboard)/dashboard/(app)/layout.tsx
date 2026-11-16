@@ -6,13 +6,14 @@ import { ActionButton } from '@/components/action-button';
 import { QueryProvider } from '@/components/query-provider';
 import { getDashboardContext } from '@/lib/auth';
 import { signOut } from '../(auth)/sign-in/actions';
+import { BillingBanner } from './billing-banner';
 import { BottomNav, SideNav } from './nav-links';
 
 const roleLabels = { owner: 'Owner', staff: 'Staff', rider: 'Rider' } as const;
 
 /** Mobile-first dashboard shell: bottom nav on phones, sidebar on desktop. */
 export default async function AppShellLayout({ children }: { children: ReactNode }) {
-  const { membership } = await getDashboardContext();
+  const { membership, actor } = await getDashboardContext();
 
   return (
     <QueryProvider>
@@ -42,6 +43,7 @@ export default async function AppShellLayout({ children }: { children: ReactNode
             </ActionButton>
           </header>
           <main className="mx-auto w-full max-w-5xl flex-1 px-4 pt-6 pb-24 md:pb-10">
+            {membership.role !== 'rider' && <BillingBanner actor={actor} />}
             {children}
           </main>
         </div>

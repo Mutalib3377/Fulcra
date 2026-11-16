@@ -13,7 +13,18 @@ export { requireMember, type ActorContext, type MemberRole } from './members/acc
 export * from './members/memberships';
 export * from './members/invites';
 
-export * from './entitlements/can-use';
+export * from './billing/rules';
+export {
+  canUse,
+  featureAccess,
+  planStateInTx,
+  requireFeatureInTx,
+  setBusinessEntitlement,
+  type FeatureAccess,
+  type PlanState,
+} from './billing/entitlements';
+export * from './billing/usage';
+export * from './billing/billing';
 
 export { BUSINESS_CATEGORIES, type BusinessCategory } from '@fulcra/config';
 
