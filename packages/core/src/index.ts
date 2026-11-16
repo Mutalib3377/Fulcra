@@ -25,6 +25,13 @@ export {
 } from './billing/entitlements';
 export * from './billing/usage';
 export * from './billing/billing';
+export {
+  cancelPlan,
+  choosePlan,
+  choosePlanInput,
+  syncBillingPlans,
+  type ChoosePlanResult,
+} from './billing/subscriptions';
 
 export { BUSINESS_CATEGORIES, type BusinessCategory } from '@fulcra/config';
 
