@@ -4,6 +4,7 @@ import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle } from
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getDashboardContext } from '@/lib/auth';
+import { CancelPlanButton, PlanButtons } from './plan-actions';
 
 export const metadata: Metadata = { title: 'Plans and billing' };
 
@@ -20,12 +21,28 @@ function daysUntil(d: Date): number {
   return Math.max(0, Math.ceil((d.getTime() - Date.now()) / 86_400_000));
 }
 
-export default async function BillingPage() {
+export default async function BillingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ paid?: string }>;
+}) {
   const { actor, membership } = await getDashboardContext();
   if (membership.role === 'rider') {
     return <p className="text-muted-foreground">Billing is for the owner and staff.</p>;
   }
   const billing = await getBillingSummary(actor);
+  const { paid } = await searchParams;
+  const isOwner = membership.role === 'owner';
+  const paying = billing.status === 'active' || billing.status === 'past_due';
+  const monthly = (code: keyof typeof PLANS) => PLANS[code].monthlyPrice;
+  const modeFor = (code: keyof typeof PLANS) =>
+    !paying
+      ? ('choose' as const)
+      : code === billing.planCode
+        ? ('current' as const)
+        : monthly(code) > monthly(billing.planCode)
+          ? ('upgrade' as const)
+          : ('downgrade' as const);
   const { used, limit } = billing.usage;
   const percent = limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 100;
   const daysLeft = billing.trialEndsAt ? daysUntil(billing.trialEndsAt) : 0;
@@ -37,6 +54,12 @@ export default async function BillingPage() {
         </Link>
         <h1 className="text-2xl font-bold">Plans and billing</h1>
       </div>
+      {paid && (
+        <p role="status" className="rounded-md bg-success-soft px-3 py-2 text-sm text-success">
+          Thank you! Your payment is being confirmed. Your plan turns on in a moment (refresh this
+          page).
+        </p>
+      )}
 
       <Card>
         <CardHeader>
@@ -80,6 +103,12 @@ export default async function BillingPage() {
               style={{ width: `${percent}%` }}
             />
           </div>
+          {billing.pendingPlanCode && (
+            <p className="text-sm">
+              Switching to {PLANS[billing.pendingPlanCode].name} when this period ends.
+            </p>
+          )}
+          {isOwner && paying && <CancelPlanButton />}
           <p className="text-xs text-muted-foreground">
             A chat counts once a month, however many messages it has. Chats your team answers don’t
             count. When the limit is reached, new chats come to you instead.
@@ -108,19 +137,22 @@ export default async function BillingPage() {
                   or {formatNaira(plan.annualPrice)} a year (2 months free)
                 </p>
               </CardHeader>
-              <CardContent className="flex flex-col gap-1 text-sm">
+              <CardContent className="flex flex-col gap-3 text-sm">
                 <p>{plan.summary}</p>
                 <p className="text-muted-foreground">
                   {plan.conversationsPerMonth.toLocaleString('en-NG')} assistant chats a month ·{' '}
                   {plan.channels === 1 ? '1 channel' : 'all channels'}
                 </p>
+                {isOwner && <PlanButtons plan={code} mode={modeFor(code)} planName={plan.name} />}
               </CardContent>
             </Card>
           );
         })}
       </div>
       <p className="text-sm text-muted-foreground">
-        Paying for a plan online is coming in the next update.
+        {isOwner
+          ? 'You pay securely with Paystack (card, bank transfer or USSD). Upgrades start straight away; smaller plans start when your current one ends.'
+          : 'Only the business owner can change the plan.'}
       </p>
 
       <Card>

@@ -55,6 +55,11 @@ export const JOBS = {
     name: 'refresh-channel-tokens',
     data: z.object({}).loose(),
   },
+  /** Worker start: Fulcra's plans exist at Paystack (B1b). */
+  syncBillingPlans: {
+    name: 'sync-billing-plans',
+    data: z.object({}).loose(),
+  },
   /** Store an incoming message (find the customer and chat, route to the assistant or the team). */
   inboundMessage: {
     name: 'inbound-message',
@@ -227,4 +232,9 @@ export async function enqueueOwnerAlertsNow(): Promise<void> {
 export async function enqueueSubmitPlatformTemplates(): Promise<void> {
   const boss = await getSender();
   await boss.send(JOBS.submitPlatformTemplates.name, {}, { ...RETRY, singletonKey: 'platform' });
+}
+
+export async function enqueueSyncBillingPlans(): Promise<void> {
+  const boss = await getSender();
+  await boss.send(JOBS.syncBillingPlans.name, {}, { ...RETRY, singletonKey: 'plans' });
 }

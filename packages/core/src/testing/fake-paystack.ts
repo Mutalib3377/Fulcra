@@ -29,6 +29,26 @@ export class FakePaystack implements PaystackClient {
     { accountNumber: string; subaccount: string; preferredBank: string }
   >();
   failDedicated: string | null = null;
+  /** Fulcra's subscription plans and subscriptions (B1). */
+  plans = new Map<string, { name: string; amount: number; interval: string }>();
+  planCheckouts: {
+    email: string;
+    amount: number;
+    planCode: string;
+    reference: string;
+    metadata: Record<string, unknown>;
+  }[] = [];
+  subscriptions = new Map<
+    string,
+    {
+      customerCode: string;
+      planCode: string;
+      authorizationCode: string;
+      startDate?: Date;
+      disabled: boolean;
+    }
+  >();
+  disabled: string[] = [];
   /** Transfers received into dedicated accounts: reference → details. */
   transfers = new Map<string, { customerCode: string; amount: number; currency: string }>();
 
@@ -123,6 +143,81 @@ export class FakePaystack implements PaystackClient {
       amount,
       channel: 'dedicated_nuban',
       customer: { customer_code: customerCode },
+    });
+  }
+
+  async createPlan(input: { name: string; amount: number; interval: 'monthly' | 'annually' }) {
+    const planCode = `PLN_${this.plans.size + 1}_${Math.random().toString(36).slice(2, 7)}`;
+    this.plans.set(planCode, input);
+    return { planCode };
+  }
+
+  async initializePlanCheckout(input: {
+    email: string;
+    amount: number;
+    planCode: string;
+    reference: string;
+    callbackUrl: string;
+    metadata: Record<string, unknown>;
+  }) {
+    this.planCheckouts.push(input);
+    return {
+      authorizationUrl: `https://checkout.paystack.com/${input.reference}`,
+      reference: input.reference,
+    };
+  }
+
+  async createSubscription(input: {
+    customerCode: string;
+    planCode: string;
+    authorizationCode: string;
+    startDate?: Date;
+  }) {
+    const code = `SUB_${this.subscriptions.size + 1}_${Math.random().toString(36).slice(2, 7)}`;
+    this.subscriptions.set(code, { ...input, disabled: false });
+    return {
+      subscriptionCode: code,
+      emailToken: `tok_${code}`,
+      nextPaymentDate: input.startDate?.toISOString() ?? null,
+    };
+  }
+
+  async disableSubscription(input: { code: string; token: string }) {
+    this.disabled.push(input.code);
+    const sub = this.subscriptions.get(input.code);
+    if (sub) sub.disabled = true;
+  }
+
+  /**
+   * What Paystack sends when a plan is paid (first checkout or a renewal): verify reports the
+   * plan, the card and the customer. Returns the signed webhook.
+   */
+  subscriptionCharge(input: {
+    reference: string;
+    planCode: string;
+    amount: number;
+    customerCode: string;
+    email: string;
+    metadata?: Record<string, unknown>;
+  }) {
+    this.verifyResult.set(input.reference, {
+      amount: input.amount,
+      customerCode: input.customerCode,
+      channel: 'card',
+      raw: {
+        plan: { plan_code: input.planCode },
+        authorization: { authorization_code: `AUTH_${input.customerCode}`, reusable: true },
+        customer: { customer_code: input.customerCode, email: input.email },
+        metadata: input.metadata ?? {},
+      },
+    });
+    return signedWebhook('charge.success', {
+      id: 8_000_000 + Math.floor(Math.random() * 1_000_000),
+      reference: input.reference,
+      amount: input.amount,
+      plan: { plan_code: input.planCode },
+      customer: { customer_code: input.customerCode, email: input.email },
+      metadata: input.metadata ?? {},
     });
   }
 

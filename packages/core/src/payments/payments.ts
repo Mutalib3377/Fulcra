@@ -1,4 +1,5 @@
 import { randomBytes } from 'node:crypto';
+import { isSubscriptionWebhook, processSubscriptionWebhook } from '../billing/subscriptions';
 import { schema, withSystem, withTenant, type Tx } from '@fulcra/db';
 import { and, desc, eq, gt, inArray, sql } from 'drizzle-orm';
 import { z } from 'zod';
@@ -200,6 +201,8 @@ const webhookBody = z.looseObject({
     id: z.union([z.number(), z.string()]).optional(),
     reference: z.string().optional(),
     customer: z.looseObject({ customer_code: z.string().nullish() }).nullish(),
+    subscription_code: z.string().optional(),
+    invoice_code: z.string().optional(),
   }),
 });
 
@@ -229,7 +232,12 @@ export async function recordPaystackWebhook(
   } catch {
     return { status: 'bad_payload' };
   }
-  const key = parsed.data.id ?? parsed.data.reference;
+  // Subscription events carry a subscription or invoice code instead of an id.
+  const key =
+    parsed.data.id ??
+    parsed.data.reference ??
+    parsed.data.invoice_code ??
+    parsed.data.subscription_code;
   if (key === undefined) return { status: 'bad_payload' };
   const eventId = `${parsed.event}:${key}`;
 
@@ -296,6 +304,30 @@ export async function processPaystackWebhook(
         .set({ processedAt: new Date(), lastError: error })
         .where(eq(schema.webhookEvents.id, id)),
     );
+
+  // Fulcra's own subscriptions (B1b) are handled apart from sellers' order payments.
+  const data = (event.payload.data ?? {}) as Record<string, unknown>;
+  if (isSubscriptionWebhook(event.eventType, data)) {
+    const outcome = await processSubscriptionWebhook(event.eventType, data, async (ref) => {
+      try {
+        return await getPaystackClient().verifyTransaction(ref);
+      } catch (error) {
+        await withSystem((tx) =>
+          tx
+            .update(schema.webhookEvents)
+            .set({ lastError: String(error).slice(0, 500) })
+            .where(eq(schema.webhookEvents.id, id)),
+        );
+        throw error; // the job retries
+      }
+    });
+    await finish(outcome === 'needs_review' ? 'Subscription payment needs review' : null);
+    return outcome === 'needs_review'
+      ? 'needs_review'
+      : outcome === 'ignored'
+        ? 'ignored'
+        : 'confirmed';
+  }
 
   if (event.eventType !== 'charge.success') {
     await finish();

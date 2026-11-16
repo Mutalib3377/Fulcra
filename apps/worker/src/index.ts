@@ -1,10 +1,12 @@
 import { APP_NAME } from '@fulcra/config';
 import {
   enqueueSubmitPlatformTemplates,
+  enqueueSyncBillingPlans,
   ensurePlatformTemplates,
   ensureQueues,
   JOBS,
   platformWhatsApp,
+  syncBillingPlans,
 } from '@fulcra/core';
 import { handleAgentReply } from './jobs/agent-reply';
 import { handleCatalogImport } from './jobs/catalog-import';
@@ -48,6 +50,12 @@ async function main(): Promise<void> {
   );
   // Instagram tokens last 60 days; checked once a day (UTC).
   await boss.schedule(JOBS.refreshChannelTokens.name, '23 3 * * *', {}, { singletonKey: 'daily' });
+  // Fulcra's plans at Paystack (created once; only when Paystack is set up).
+  await boss.work(JOBS.syncBillingPlans.name, { localConcurrency: 1 }, async () => {
+    const created = await syncBillingPlans();
+    if (created) console.info(`[worker] ${created} Paystack plan(s) created`);
+  });
+  if (process.env.PAYSTACK_SECRET_KEY) await enqueueSyncBillingPlans();
   // Fulcra's own alert templates go to Meta once (missing ones only).
   await ensurePlatformTemplates();
   if (platformWhatsApp()) await enqueueSubmitPlatformTemplates();

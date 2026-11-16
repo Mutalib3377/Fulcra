@@ -62,6 +62,30 @@ export interface PaystackClient {
     preferredBank: string;
     subaccount: string;
   }): Promise<PaystackDedicatedAccount>;
+  // ─── Fulcra's own subscriptions (B1): money goes to Fulcra's account, never a seller's.
+  createPlan(input: {
+    name: string;
+    amount: number;
+    interval: 'monthly' | 'annually';
+  }): Promise<{ planCode: string }>;
+  /** Checkout for a plan: Paystack charges the card and starts the subscription. */
+  initializePlanCheckout(input: {
+    email: string;
+    amount: number;
+    planCode: string;
+    reference: string;
+    callbackUrl: string;
+    metadata: Record<string, unknown>;
+  }): Promise<{ authorizationUrl: string; reference: string }>;
+  /** Starts a subscription on a saved card, e.g. a downgrade from the end of the paid period. */
+  createSubscription(input: {
+    customerCode: string;
+    planCode: string;
+    authorizationCode: string;
+    startDate?: Date;
+  }): Promise<{ subscriptionCode: string; emailToken: string; nextPaymentDate: string | null }>;
+  /** Stops a subscription from renewing. */
+  disableSubscription(input: { code: string; token: string }): Promise<void>;
 }
 
 /** Bank for dedicated accounts: Paystack's test bank in test mode, Wema Bank in live mode. */
@@ -258,6 +282,76 @@ class HttpPaystackClient implements PaystackClient {
       accountName: data.account_name,
       bankName: data.bank.name,
     };
+  }
+
+  async createPlan(input: { name: string; amount: number; interval: 'monthly' | 'annually' }) {
+    const data = await this.call('POST', '/plan', z.looseObject({ plan_code: z.string() }), {
+      name: input.name,
+      amount: input.amount,
+      interval: input.interval,
+      currency: 'NGN',
+    });
+    return { planCode: data.plan_code };
+  }
+
+  async initializePlanCheckout(input: {
+    email: string;
+    amount: number;
+    planCode: string;
+    reference: string;
+    callbackUrl: string;
+    metadata: Record<string, unknown>;
+  }) {
+    const data = await this.call(
+      'POST',
+      '/transaction/initialize',
+      z.object({ authorization_url: z.url(), reference: z.string() }),
+      {
+        email: input.email,
+        amount: input.amount,
+        currency: 'NGN',
+        plan: input.planCode,
+        reference: input.reference,
+        callback_url: input.callbackUrl,
+        metadata: input.metadata,
+      },
+    );
+    return { authorizationUrl: data.authorization_url, reference: data.reference };
+  }
+
+  async createSubscription(input: {
+    customerCode: string;
+    planCode: string;
+    authorizationCode: string;
+    startDate?: Date;
+  }) {
+    const data = await this.call(
+      'POST',
+      '/subscription',
+      z.looseObject({
+        subscription_code: z.string(),
+        email_token: z.string(),
+        next_payment_date: z.string().nullish(),
+      }),
+      {
+        customer: input.customerCode,
+        plan: input.planCode,
+        authorization: input.authorizationCode,
+        ...(input.startDate ? { start_date: input.startDate.toISOString() } : {}),
+      },
+    );
+    return {
+      subscriptionCode: data.subscription_code,
+      emailToken: data.email_token,
+      nextPaymentDate: data.next_payment_date ?? null,
+    };
+  }
+
+  async disableSubscription(input: { code: string; token: string }) {
+    await this.call('POST', '/subscription/disable', z.unknown(), {
+      code: input.code,
+      token: input.token,
+    });
   }
 
   async verifyTransaction(reference: string) {

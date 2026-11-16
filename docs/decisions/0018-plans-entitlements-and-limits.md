@@ -18,5 +18,5 @@ Rule 6 asks every module and channel action to check `canUse`, and usage-based f
 
 ## Consequences
 
-- B1b adds Paystack subscriptions (checkout, renewals, upgrade, downgrade, cancel, invoices) on these tables.
+- B1b adds Paystack subscriptions on these tables (`docs/decisions/0019`).
 - Limits should be checked against real AI cost (`pnpm --filter @fulcra/agent measure`) before launch.
