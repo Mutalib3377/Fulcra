@@ -19,9 +19,13 @@ function StateLayout({ title, description, action, icon, className }: StateProps
         className,
       )}
     >
-      {icon && <div className="text-muted-foreground [&_svg]:size-10">{icon}</div>}
+      {icon && (
+        <div className="flex size-14 items-center justify-center rounded-full bg-muted text-muted-foreground [&_svg]:size-6">
+          {icon}
+        </div>
+      )}
       <div className="flex max-w-sm flex-col gap-1">
-        <p className="text-base font-semibold">{title}</p>
+        <p className="text-lg font-semibold tracking-[-0.012em]">{title}</p>
         {description && <p className="text-sm text-muted-foreground">{description}</p>}
       </div>
       {action}
@@ -73,5 +77,5 @@ export function LoadingState({
 
 /** Grey placeholder block for skeleton screens. */
 export function Skeleton({ className }: { className?: string }) {
-  return <div aria-hidden className={cn('animate-pulse rounded-md bg-muted', className)} />;
+  return <div aria-hidden className={cn('animate-pulse rounded-sm bg-muted', className)} />;
 }

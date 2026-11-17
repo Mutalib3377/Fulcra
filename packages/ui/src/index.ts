@@ -9,7 +9,7 @@ export {
   CardHeader,
   CardTitle,
 } from './components/card';
-export { FieldMessage, Input, Label } from './components/input';
+export { FieldMessage, fieldClasses, Input, Label } from './components/input';
 export { EmptyState, ErrorState, LoadingState, Skeleton } from './components/states';
 export {
   Table,
@@ -22,3 +22,5 @@ export {
 } from './components/table';
 export { NativeSelect, Textarea } from './components/textarea';
 export { Switch } from './components/switch';
+export { SegmentedControl } from './components/segmented-control';
+export { Sheet } from './components/sheet';

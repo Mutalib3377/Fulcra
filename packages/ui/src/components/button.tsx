@@ -5,26 +5,32 @@ import type { ComponentProps } from 'react';
 import { cn } from '../lib/cn';
 
 export const buttonVariants = cva(
-  'inline-flex shrink-0 items-center justify-center gap-2 rounded-md font-medium whitespace-nowrap transition-colors select-none disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0',
+  [
+    'inline-flex shrink-0 items-center justify-center gap-2 rounded-full font-medium tracking-[-0.005em] whitespace-nowrap select-none',
+    'transition-[background-color,color,box-shadow,transform,opacity] duration-150 ease-out active:scale-[0.98]',
+    'disabled:pointer-events-none disabled:opacity-40 [&_svg]:size-4 [&_svg]:shrink-0',
+  ],
   {
     variants: {
       variant: {
-        primary: 'bg-primary text-primary-foreground hover:bg-primary-hover',
+        primary: 'bg-primary text-primary-foreground shadow-xs hover:bg-primary-hover',
         secondary: 'bg-secondary text-secondary-foreground hover:bg-muted',
-        outline: 'border border-input bg-card hover:bg-muted',
-        ghost: 'hover:bg-muted',
-        danger: 'bg-danger text-primary-foreground hover:opacity-90',
-        link: 'text-primary underline-offset-4 hover:underline',
+        tinted: 'bg-primary-soft text-primary-soft-foreground hover:brightness-[0.97]',
+        outline: 'border border-input bg-card text-foreground hover:bg-muted',
+        ghost: 'text-foreground hover:bg-muted',
+        danger: 'bg-danger text-white shadow-xs hover:brightness-95',
+        link: 'text-primary underline-offset-4 hover:underline active:scale-100',
       },
       size: {
         // Default height is 44px: a comfortable tap target on phones.
-        md: 'h-11 px-4 text-base',
-        sm: 'h-9 px-3 text-sm',
-        lg: 'h-12 px-6 text-base',
+        md: 'h-11 px-5 text-[0.9375rem]',
+        sm: 'h-9 px-3.5 text-sm',
+        lg: 'h-13 px-7 text-base',
         icon: 'size-11',
       },
       fullWidth: { true: 'w-full' },
     },
+    compoundVariants: [{ variant: 'link', className: 'h-auto px-0' }],
     defaultVariants: { variant: 'primary', size: 'md' },
   },
 );

@@ -60,7 +60,7 @@ export function BottomNav() {
   return (
     <nav
       aria-label="Main"
-      className="fixed inset-x-0 bottom-0 z-20 border-t bg-card pb-[env(safe-area-inset-bottom)] md:hidden"
+      className="fixed inset-x-0 bottom-0 z-20 border-t border-border/60 bg-background/80 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl backdrop-saturate-150 md:hidden"
     >
       <ul className="grid grid-cols-5">
         {items.map(({ href, label, icon: Icon }) => {
@@ -73,12 +73,12 @@ export function BottomNav() {
                 href={href}
                 aria-current={active ? 'page' : undefined}
                 className={cn(
-                  'flex h-16 flex-col items-center justify-center gap-1 text-xs',
-                  active ? 'font-semibold text-primary' : 'text-muted-foreground',
+                  'flex h-16 flex-col items-center justify-center gap-1 text-[0.6875rem] font-medium transition-colors',
+                  active ? 'text-primary' : 'text-muted-foreground',
                 )}
               >
                 <span className="relative">
-                  <Icon className="size-5" aria-hidden />
+                  <Icon className="size-6" strokeWidth={active ? 2.2 : 1.8} aria-hidden />
                   {href === '/inbox' && <InboxBadge count={attention} />}
                 </span>
                 {label}
@@ -96,7 +96,7 @@ export function SideNav() {
   const isActive = useActive();
   const attention = useAttentionCount();
   return (
-    <nav aria-label="Main" className="flex flex-col gap-1 p-3">
+    <nav aria-label="Main" className="flex flex-col gap-0.5 px-3 py-2">
       {sideItems.map(({ href, label, icon: Icon }) => {
         const active = isActive(href);
         return (
@@ -105,11 +105,13 @@ export function SideNav() {
             href={href}
             aria-current={active ? 'page' : undefined}
             className={cn(
-              'flex h-10 items-center gap-3 rounded-md px-3 text-sm',
-              active ? 'bg-secondary font-semibold text-primary' : 'text-foreground hover:bg-muted',
+              'flex h-10 items-center gap-3 rounded-md px-3 text-[0.9375rem] transition-colors',
+              active
+                ? 'bg-primary-soft font-medium text-primary-soft-foreground'
+                : 'text-foreground hover:bg-muted',
             )}
           >
-            <Icon className="size-4" aria-hidden />
+            <Icon className="size-[1.125rem]" aria-hidden />
             {label}
             {href === '/inbox' && attention > 0 && (
               <span className="ml-auto rounded-full bg-danger px-1.5 text-xs font-bold text-white">

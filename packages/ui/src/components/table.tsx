@@ -28,7 +28,7 @@ export function TableHead({ className, ...props }: ComponentProps<'th'>) {
   return (
     <th
       className={cn(
-        'h-10 px-3 text-left align-middle font-medium whitespace-nowrap text-muted-foreground',
+        'h-10 px-3 text-left align-middle text-xs font-medium tracking-wide whitespace-nowrap text-muted-foreground uppercase',
         className,
       )}
       {...props}
@@ -37,7 +37,7 @@ export function TableHead({ className, ...props }: ComponentProps<'th'>) {
 }
 
 export function TableCell({ className, ...props }: ComponentProps<'td'>) {
-  return <td className={cn('px-3 py-3 align-middle', className)} {...props} />;
+  return <td className={cn('px-3 py-3.5 align-middle', className)} {...props} />;
 }
 
 export function TableCaption({ className, ...props }: ComponentProps<'caption'>) {

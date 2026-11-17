@@ -18,17 +18,20 @@ export default async function AppShellLayout({ children }: { children: ReactNode
   return (
     <QueryProvider>
       <div className="min-h-dvh md:flex">
-        <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col border-r bg-card md:flex">
-          <div className="flex h-14 items-center border-b px-6 font-bold text-primary">
+        <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r bg-card/60 md:flex">
+          <div className="flex h-16 items-center px-6 text-lg font-semibold tracking-[-0.02em]">
+            <span className="mr-2 inline-block size-2.5 rounded-full bg-primary" aria-hidden />
             {APP_NAME}
           </div>
           <SideNav />
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-10 flex h-14 items-center justify-between gap-3 border-b bg-card px-4">
+          <header className="sticky top-0 z-10 flex h-14 items-center justify-between gap-3 border-b border-border/60 bg-background/80 px-4 backdrop-blur-xl backdrop-saturate-150 md:h-16 md:px-8">
             <div className="flex min-w-0 items-center gap-2">
-              <span className="truncate font-semibold">{membership.businessName}</span>
+              <span className="truncate font-semibold tracking-[-0.01em]">
+                {membership.businessName}
+              </span>
               <Badge tone="neutral">{roleLabels[membership.role]}</Badge>
             </div>
             <ActionButton
@@ -42,7 +45,7 @@ export default async function AppShellLayout({ children }: { children: ReactNode
               <span className="hidden sm:inline">Sign out</span>
             </ActionButton>
           </header>
-          <main className="mx-auto w-full max-w-5xl flex-1 px-4 pt-6 pb-24 md:pb-10">
+          <main className="mx-auto w-full max-w-5xl flex-1 px-4 pt-6 pb-28 sm:px-6 md:px-8 md:pt-8 md:pb-12">
             {membership.role !== 'rider' && <BillingBanner actor={actor} />}
             {children}
           </main>

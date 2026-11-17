@@ -16,7 +16,7 @@ export function Switch({ checked, onCheckedChange, className, disabled, ...props
       disabled={disabled}
       onClick={() => onCheckedChange?.(!checked)}
       className={cn(
-        'relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors disabled:opacity-50',
+        'relative inline-flex h-[31px] w-[51px] shrink-0 items-center rounded-full transition-colors duration-200 disabled:opacity-40',
         checked ? 'bg-primary' : 'bg-input',
         className,
       )}
@@ -25,8 +25,8 @@ export function Switch({ checked, onCheckedChange, className, disabled, ...props
       <span
         aria-hidden
         className={cn(
-          'inline-block size-5 rounded-full bg-card shadow transition-transform',
-          checked ? 'translate-x-6' : 'translate-x-1',
+          'inline-block size-[27px] rounded-full bg-white shadow-[0_3px_8px_rgb(0_0_0/0.15),0_1px_1px_rgb(0_0_0/0.16)] transition-transform duration-200 ease-out',
+          checked ? 'translate-x-[22px]' : 'translate-x-[2px]',
         )}
       />
     </button>
