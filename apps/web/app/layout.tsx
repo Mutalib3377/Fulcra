@@ -12,12 +12,21 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
-  themeColor: '#0f6b55',
+  themeColor: '#f6f6f8',
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en-NG">
+      <head>
+        <link
+          rel="preload"
+          href="/fonts/inter-latin.woff2"
+          as="font"
+          type="font/woff2"
+          crossOrigin=""
+        />
+      </head>
       <body className="min-h-dvh">{children}</body>
     </html>
   );

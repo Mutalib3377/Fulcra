@@ -31,6 +31,11 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
+        // Font files never change in place: a new version gets a new file name.
+        source: '/fonts/:file*',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
+      },
+      {
         source: '/widget.js',
         headers: [
           { key: 'Cache-Control', value: 'public, max-age=600, stale-while-revalidate=86400' },
