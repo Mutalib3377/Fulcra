@@ -28,3 +28,51 @@
   src: url('/fonts/inter-naira.woff2') format('woff2');
   unicode-range: U+20A6;
 }
+
+/*
+ * Storefronts: the seller's brand colours become a small palette. The store layout sets
+ * --store-primary / --store-accent (and the text colours on them) and the heading style from
+ * the brand kit; tints are mixed from them. Phones without color-mix get plain neutrals.
+ */
+.store {
+  --store-tint: #f4f4f5;
+  --store-tint-strong: #e9e9ec;
+  --store-ink: #111827;
+}
+@supports (color: color-mix(in srgb, red, blue)) {
+  .store {
+    --store-tint: color-mix(in srgb, var(--store-primary) 7%, white);
+    --store-tint-strong: color-mix(in srgb, var(--store-primary) 15%, white);
+    /* A deep shade of the brand colour, readable as text on white. */
+    --store-ink: color-mix(in srgb, var(--store-primary) 62%, #0b0b0f);
+    --store-primary-deep: color-mix(in srgb, var(--store-primary) 78%, black);
+  }
+}
+.store-display {
+  font-family: var(--store-display);
+  font-weight: var(--store-display-weight);
+  letter-spacing: var(--store-tracking);
+}
+.store-hero {
+  background-color: var(--store-primary);
+  background-image:
+    radial-gradient(
+      120% 80% at 100% 0%,
+      color-mix(in srgb, var(--store-accent) 45%, transparent),
+      transparent 60%
+    ),
+    radial-gradient(90% 70% at 0% 100%, var(--store-primary-deep, transparent), transparent 70%);
+}
+/* A faint dotted texture over the hero (no image file). */
+.store-dots {
+  background-image: radial-gradient(currentColor 1px, transparent 1.2px);
+  background-size: 18px 18px;
+  opacity: 0.12;
+  mask-image: linear-gradient(to bottom, black, transparent 85%);
+}
+.store-scroll {
+  scrollbar-width: none;
+}
+.store-scroll::-webkit-scrollbar {
+  display: none;
+}

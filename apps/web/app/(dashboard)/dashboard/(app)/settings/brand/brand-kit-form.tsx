@@ -202,7 +202,15 @@ export function BrandKitForm({
                 )}
                 style={{ fontFamily: brandFontOptions[f].stack }}
               >
-                <span className="block text-lg">Aa</span>
+                <span
+                  className="block text-lg"
+                  style={{
+                    fontWeight: brandFontOptions[f].weight,
+                    letterSpacing: brandFontOptions[f].tracking,
+                  }}
+                >
+                  Aa
+                </span>
                 <span className="block text-sm">{brandFontOptions[f].label}</span>
               </button>
             ))}

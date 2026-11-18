@@ -30,6 +30,15 @@ export type StoreInfo = {
     font: schema.BrandFont;
     description: string;
   };
+  /** Facts the store can promise, worked out from the business's setup. */
+  trust: {
+    /** Payouts are set up: customers can pay by card, transfer or USSD through Paystack. */
+    securePayments: boolean;
+    /** Names of the delivery areas (up to 6); empty when only pickup is set up. */
+    deliveryAreas: string[];
+    /** All delivery areas (the list above is cut to 6). */
+    deliveryAreaCount: number;
+  };
 };
 
 export type StoreProductCard = {
@@ -41,6 +50,8 @@ export type StoreProductCard = {
   /** True when options have different prices ("From ₦…"). */
   hasPriceRange: boolean;
   soldOut: boolean;
+  /** How many are left when stock is low (at or under the warning level); otherwise null. */
+  fewLeft: number | null;
 };
 
 export type StoreCategory = { name: string; productCount: number };
@@ -101,6 +112,7 @@ export async function getStoreBySubdomain(subdomain: string): Promise<StoreInfo 
         accentColour: schema.brandKits.accentColour,
         font: schema.brandKits.font,
         description: schema.brandKits.description,
+        subaccount: schema.businesses.paystackSubaccountCode,
       })
       .from(schema.businesses)
       .leftJoin(schema.brandKits, eq(schema.brandKits.businessId, schema.businesses.id))
@@ -118,8 +130,20 @@ export async function getStoreBySubdomain(subdomain: string): Promise<StoreInfo 
         ),
       )
       .limit(1);
+    const zones = await tx
+      .select({ name: schema.deliveryZones.name })
+      .from(schema.deliveryZones)
+      .where(
+        and(eq(schema.deliveryZones.businessId, row.id), isNull(schema.deliveryZones.archivedAt)),
+      )
+      .orderBy(asc(schema.deliveryZones.name));
     return {
       webChatKey: chat?.key ?? null,
+      trust: {
+        securePayments: Boolean(row.subaccount),
+        deliveryAreas: zones.slice(0, 6).map((z) => z.name),
+        deliveryAreaCount: zones.length,
+      },
       businessId: row.id,
       name: row.name,
       subdomain: row.subdomain,
@@ -155,6 +179,7 @@ async function productCards(
       minPrice: sql<number>`min(${price})::int`,
       maxPrice: sql<number>`max(${price})::int`,
       totalStock: sql<number>`coalesce(sum(${v.stock}), 0)::int`,
+      threshold: sql<number>`max(${p.lowStockThreshold})::int`,
     })
     .from(p)
     .innerJoin(v, and(eq(v.productId, p.id), isNull(v.archivedAt)))
@@ -170,6 +195,7 @@ async function productCards(
     price: r.minPrice,
     hasPriceRange: r.minPrice !== r.maxPrice,
     soldOut: r.totalStock <= 0,
+    fewLeft: r.totalStock > 0 && r.totalStock <= r.threshold ? r.totalStock : null,
   }));
 }
 
