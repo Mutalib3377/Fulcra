@@ -14,3 +14,17 @@ export function getDatabaseUrl(env: NodeJS.ProcessEnv = process.env): string {
   }
   return parsed.data.DATABASE_URL;
 }
+
+/**
+ * Connection for the job queue (pg-boss). Defaults to DATABASE_URL. In production DATABASE_URL
+ * points at Supabase's transaction pooler; the queue may use the session pooler instead.
+ */
+export function getQueueDatabaseUrl(env: NodeJS.ProcessEnv = process.env): string {
+  return env.DATABASE_URL_QUEUE || getDatabaseUrl(env);
+}
+
+/** Connections per process (DB_POOL_MAX, default 10). Keep the total under the pooler's limit. */
+export function getPoolSize(env: NodeJS.ProcessEnv = process.env): number {
+  const n = Number(env.DB_POOL_MAX);
+  return Number.isInteger(n) && n > 0 && n <= 100 ? n : 10;
+}

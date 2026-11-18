@@ -2,6 +2,7 @@ import { APP_NAME } from '@fulcra/config';
 import type { Viewport } from 'next';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
+import { Monitoring } from '@/components/monitoring';
 import { dashboardUrl } from '@/lib/urls';
 
 export const viewport: Viewport = { themeColor: '#050f0c' };
@@ -11,6 +12,7 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
   const year = new Date().getFullYear();
   return (
     <>
+      <Monitoring area="marketing" />
       {children}
       <footer className="border-t bg-background">
         <div className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-10 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">

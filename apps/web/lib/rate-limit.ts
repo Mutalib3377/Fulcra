@@ -1,6 +1,7 @@
 /**
- * A simple in-memory limit (sliding window) for public endpoints such as the website chat.
- * Per web process: enough for one instance; with several instances each counts on its own.
+ * A light in-memory limit (sliding window), per web process. Only for cheap reads such as the
+ * website chat polling for replies. Anything that costs money (sending a message) uses Core's
+ * `consumeRateLimit`, which is shared by every instance through the database.
  */
 const hits = new Map<string, number[]>();
 let sweeps = 0;

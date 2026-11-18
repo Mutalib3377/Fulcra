@@ -249,8 +249,8 @@ Goal: the agent sells on WhatsApp end to end, the owner can watch and take over,
 - [x] Onboarding flow polished end to end (business → brand → store/website → products → delivery → payments → channels → test chat) (sign-up → store or website → first product, then a "Get set up" checklist on the home page that ticks each step from real data; can be hidden and shown again)
 - [x] Dashboard home: today's sales, orders by status, chats needing attention, low stock
 - [x] Marketing landing page with pricing and sign-up (three.js shader hero, GSAP scroll story of a sale, channels, features, how it works, pricing from `PLANS`, FAQ)
-- [ ] Deploy to Render (web + worker, Starter, EU); Cloudflare wildcard DNS
-- [ ] Sentry and PostHog in production; uptime check on webhooks
+- [ ] Deploy to Render (web + worker, Starter, EU); Cloudflare wildcard DNS (owner) (`render.yaml` Blueprint, migrations on deploy, pooled connections and `docs/DEPLOY.md` are ready)
+- [x] Sentry and PostHog in production; uptime check on webhooks (turn on by adding their keys; `/api/health?deep=1` for an uptime monitor checks database, worker backlog and webhook processing)
 - [ ] Switch Paystack to live mode (owner)
 - [ ] Privacy policy and terms (needed for Meta reviews) (owner) (plain-language drafts at /privacy and /terms, marked as drafts; a lawyer must check them)
 

@@ -1,4 +1,4 @@
-import { getDatabaseUrl } from '@fulcra/db';
+import { getQueueDatabaseUrl } from '@fulcra/db';
 import { PgBoss } from 'pg-boss';
 import { z } from 'zod';
 
@@ -94,7 +94,7 @@ let sender: Promise<PgBoss> | undefined;
 function getSender(): Promise<PgBoss> {
   sender ??= (async () => {
     const boss = new PgBoss({
-      connectionString: getDatabaseUrl(),
+      connectionString: getQueueDatabaseUrl(),
       schema: 'pgboss',
       application_name: 'fulcra-web',
       supervise: false,

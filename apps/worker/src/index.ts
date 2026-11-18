@@ -17,44 +17,97 @@ import { handleCustomerNotifications, handleSubmitTemplates } from './jobs/templ
 import { handleInboundMessage, handleSendMessage } from './jobs/messages';
 import { handlePaystackWebhook } from './jobs/paystack-webhook';
 import { handleShopifyWebhook } from './jobs/shopify-webhook';
+import { getQueueDatabaseUrl } from '@fulcra/db';
 import { loadEnv } from './env';
+import { initMonitoring, reported } from './monitoring';
 import { createQueue } from './queue';
 
 async function main(): Promise<void> {
-  const env = loadEnv();
-  const boss = createQueue(env.DATABASE_URL);
+  loadEnv(); // fails fast with a clear message if the environment is incomplete
+  initMonitoring();
+  const boss = createQueue(getQueueDatabaseUrl());
 
   await boss.start();
   await ensureQueues(boss);
   // Job handlers, one per queue (more arrive with later phases: agent replies, imports…).
-  await boss.work(JOBS.paystackWebhook.name, { localConcurrency: 2 }, handlePaystackWebhook);
-  // Imports download photos one by one; one at a time keeps memory low on a small server.
-  await boss.work(JOBS.catalogImport.name, { localConcurrency: 1 }, handleCatalogImport);
-  await boss.work(JOBS.shopifyWebhook.name, { localConcurrency: 1 }, handleShopifyWebhook);
-  await boss.work(JOBS.inboundMessage.name, { localConcurrency: 4 }, handleInboundMessage);
-  await boss.work(JOBS.sendMessage.name, { localConcurrency: 4 }, handleSendMessage);
-  await boss.work(JOBS.agentReply.name, { localConcurrency: 4 }, handleAgentReply);
-  await boss.work(JOBS.channelWebhook.name, { localConcurrency: 2 }, handleChannelWebhook);
-  await boss.work(JOBS.messageStatus.name, { localConcurrency: 4 }, handleMessageStatus);
-  await boss.work(JOBS.submitTemplates.name, { localConcurrency: 1 }, handleSubmitTemplates);
-  await boss.work(JOBS.customerNotifications.name, { localConcurrency: 1 }, () =>
-    handleCustomerNotifications(),
+  await boss.work(
+    JOBS.paystackWebhook.name,
+    { localConcurrency: 2 },
+    reported(JOBS.paystackWebhook.name, handlePaystackWebhook),
   );
-  await boss.work(JOBS.ownerAlerts.name, { localConcurrency: 1 }, () => handleOwnerAlerts());
-  await boss.work(JOBS.submitPlatformTemplates.name, { localConcurrency: 1 }, () =>
-    handleSubmitPlatformTemplates(),
+  // Imports download photos one by one; one at a time keeps memory low on a small server.
+  await boss.work(
+    JOBS.catalogImport.name,
+    { localConcurrency: 1 },
+    reported(JOBS.catalogImport.name, handleCatalogImport),
+  );
+  await boss.work(
+    JOBS.shopifyWebhook.name,
+    { localConcurrency: 1 },
+    reported(JOBS.shopifyWebhook.name, handleShopifyWebhook),
+  );
+  await boss.work(
+    JOBS.inboundMessage.name,
+    { localConcurrency: 4 },
+    reported(JOBS.inboundMessage.name, handleInboundMessage),
+  );
+  await boss.work(
+    JOBS.sendMessage.name,
+    { localConcurrency: 4 },
+    reported(JOBS.sendMessage.name, handleSendMessage),
+  );
+  await boss.work(
+    JOBS.agentReply.name,
+    { localConcurrency: 4 },
+    reported(JOBS.agentReply.name, handleAgentReply),
+  );
+  await boss.work(
+    JOBS.channelWebhook.name,
+    { localConcurrency: 2 },
+    reported(JOBS.channelWebhook.name, handleChannelWebhook),
+  );
+  await boss.work(
+    JOBS.messageStatus.name,
+    { localConcurrency: 4 },
+    reported(JOBS.messageStatus.name, handleMessageStatus),
+  );
+  await boss.work(
+    JOBS.submitTemplates.name,
+    { localConcurrency: 1 },
+    reported(JOBS.submitTemplates.name, handleSubmitTemplates),
+  );
+  await boss.work(
+    JOBS.customerNotifications.name,
+    { localConcurrency: 1 },
+    reported(JOBS.customerNotifications.name, () => handleCustomerNotifications()),
+  );
+  await boss.work(
+    JOBS.ownerAlerts.name,
+    { localConcurrency: 1 },
+    reported(JOBS.ownerAlerts.name, () => handleOwnerAlerts()),
+  );
+  await boss.work(
+    JOBS.submitPlatformTemplates.name,
+    { localConcurrency: 1 },
+    reported(JOBS.submitPlatformTemplates.name, () => handleSubmitPlatformTemplates()),
   );
   await boss.schedule(JOBS.ownerAlerts.name, '* * * * *', {}, { singletonKey: 'tick' });
-  await boss.work(JOBS.refreshChannelTokens.name, { localConcurrency: 1 }, () =>
-    handleRefreshChannelTokens(),
+  await boss.work(
+    JOBS.refreshChannelTokens.name,
+    { localConcurrency: 1 },
+    reported(JOBS.refreshChannelTokens.name, () => handleRefreshChannelTokens()),
   );
   // Instagram tokens last 60 days; checked once a day (UTC).
   await boss.schedule(JOBS.refreshChannelTokens.name, '23 3 * * *', {}, { singletonKey: 'daily' });
   // Fulcra's plans at Paystack (created once; only when Paystack is set up).
-  await boss.work(JOBS.syncBillingPlans.name, { localConcurrency: 1 }, async () => {
-    const created = await syncBillingPlans();
-    if (created) console.info(`[worker] ${created} Paystack plan(s) created`);
-  });
+  await boss.work(
+    JOBS.syncBillingPlans.name,
+    { localConcurrency: 1 },
+    reported(JOBS.syncBillingPlans.name, async () => {
+      const created = await syncBillingPlans();
+      if (created) console.info(`[worker] ${created} Paystack plan(s) created`);
+    }),
+  );
   if (process.env.PAYSTACK_SECRET_KEY) await enqueueSyncBillingPlans();
   // Fulcra's own alert templates go to Meta once (missing ones only).
   await ensurePlatformTemplates();

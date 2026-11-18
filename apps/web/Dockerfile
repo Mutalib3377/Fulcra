@@ -11,6 +11,19 @@ RUN pnpm dlx turbo@2.11.10 prune @fulcra/web --docker
 
 # 2. Install dependencies, then build.
 FROM base AS build
+# Baked into the build (static landing page and browser code). Render passes the service's
+# environment variables as build arguments.
+ARG ROOT_DOMAIN
+ARG NEXT_PUBLIC_SENTRY_DSN
+ARG NEXT_PUBLIC_SENTRY_ENVIRONMENT
+ARG NEXT_PUBLIC_POSTHOG_KEY
+ARG NEXT_PUBLIC_POSTHOG_HOST
+ENV ROOT_DOMAIN=$ROOT_DOMAIN \
+    NEXT_PUBLIC_SENTRY_DSN=$NEXT_PUBLIC_SENTRY_DSN \
+    NEXT_PUBLIC_SENTRY_ENVIRONMENT=$NEXT_PUBLIC_SENTRY_ENVIRONMENT \
+    NEXT_PUBLIC_POSTHOG_KEY=$NEXT_PUBLIC_POSTHOG_KEY \
+    NEXT_PUBLIC_POSTHOG_HOST=$NEXT_PUBLIC_POSTHOG_HOST \
+    NEXT_TELEMETRY_DISABLED=1
 COPY --from=prune /app/out/json/ .
 RUN pnpm install --frozen-lockfile
 COPY --from=prune /app/out/full/ .

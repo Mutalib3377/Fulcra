@@ -1,6 +1,6 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
-import { getDatabaseUrl } from './env';
+import { getDatabaseUrl, getPoolSize } from './env';
 import * as schema from './schema';
 
 export type Database = ReturnType<typeof createDb>;
@@ -14,7 +14,7 @@ export function createDb(
   options: postgres.Options<Record<string, postgres.PostgresType>> = {},
 ) {
   // `prepare: false` keeps us compatible with Supabase's transaction pooler.
-  const sql = postgres(url, { prepare: false, max: 10, ...options });
+  const sql = postgres(url, { prepare: false, max: getPoolSize(), ...options });
   return drizzle(sql, { schema });
 }
 

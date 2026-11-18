@@ -95,3 +95,5 @@ export * from './agent/settings';
 export * from './agent/assistant';
 export * from './agent/photos';
 export { isAssistant, type AssistantActor, type Performer } from './members/access';
+export * from './system/rate-limit';
+export * from './system/health';

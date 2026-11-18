@@ -1,10 +1,17 @@
-import { getWidgetMessages, sendWidgetMessage, widgetMessageInput } from '@fulcra/core';
+import {
+  consumeRateLimit,
+  getWidgetMessages,
+  sendWidgetMessage,
+  widgetMessageInput,
+} from '@fulcra/core';
 import { allow, clientIp } from '@/lib/rate-limit';
 import { corsHeaders, json, widgetConfig } from '@/lib/widget';
 
 /**
  * The website chat: visitors send messages and fetch replies. Public, so every call checks
- * the key and the website, and is rate limited (AI replies cost money).
+ * the key and the website, and is rate limited (AI replies cost money). Sending is limited
+ * in the database, shared by every web instance; polling for replies (cheap reads, every few
+ * seconds) keeps a per-instance limit in memory to spare the database.
  */
 
 async function cors(request: Request, key: string) {
@@ -55,8 +62,8 @@ export async function POST(request: Request) {
     return json({ error: parsed.error.issues[0]?.message ?? 'Bad request' }, 400, headers);
   // Limits: a visitor can't flood the chat, nor one address many chats.
   if (
-    !allow(`widget-visitor:${parsed.data.visitorId}`, 15, 60_000) ||
-    !allow(`widget-ip:${clientIp(request)}`, 40, 60_000)
+    !(await consumeRateLimit(`widget-visitor:${parsed.data.visitorId}`, 15, 60_000)) ||
+    !(await consumeRateLimit(`widget-ip:${clientIp(request)}`, 40, 60_000))
   )
     return json(
       { error: 'You are sending messages too fast. Please wait a moment.' },
