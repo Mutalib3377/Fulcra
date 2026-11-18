@@ -30,7 +30,7 @@ const ALERTS: { key: Toggle; label: string; hint: string }[] = [
   {
     key: 'alertUnmatchedPayments',
     label: 'Payment to check',
-    hint: 'Money arrived that Fulcra could not match to an order.',
+    hint: 'Money arrived that Fulcra could not match to an order, or a customer said they paid but nothing arrived.',
   },
   {
     key: 'alertWaitingCustomers',

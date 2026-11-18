@@ -266,7 +266,7 @@ Goal: the agent sells on WhatsApp end to end, the owner can watch and take over,
 - [x] Payment claims: a customer's transfer screenshot (amount, bank, sender, reference, time read from it) or "I've paid" is saved as a claim and checked against the money that arrived; never marks anything paid (F1a)
 - [x] Every minute: money arrived → confirmed; nothing after 20 minutes → "not received" event; money later → cleared. Red flags: amount differs, dated before the order or in the future, receipt reference reused (F1a)
 - [x] The customer assistant uses the claim (`checkPaymentStatus` with `customerSaysPaid`) and never calls an unconfirmed payment paid (F1a)
-- [ ] Owner WhatsApp alert "nothing arrived, don't send the goods" (paid plans), Payments → claims view with the screenshot next to what arrived, "any fake alerts?" in Ask Fulcra (F1b)
+- [x] Owner WhatsApp alert "nothing arrived, don't send the goods" (paid plans), Payments → Payment checks with the screenshot next to what arrived (close after checking), home page warning, "any fake alerts?" in Ask Fulcra (F1b) (the alert template needs Meta's approval on Fulcra's number)
 
 ### Launch gate
 

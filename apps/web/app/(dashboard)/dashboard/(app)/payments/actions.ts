@@ -1,6 +1,6 @@
 'use server';
 
-import { assignPayment, dismissPayment } from '@fulcra/core';
+import { assignPayment, dismissPayment, dismissPaymentClaim } from '@fulcra/core';
 import { revalidatePath } from 'next/cache';
 import { toActionError, type ActionResult } from '@/lib/action-result';
 import { getActionContext, SESSION_ENDED } from '@/lib/auth';
@@ -31,6 +31,18 @@ export async function dismissPaymentAction(paymentId: string, note: string): Pro
   if (!context) return SESSION_ENDED;
   try {
     await dismissPayment(context.actor, paymentId, note);
+    refresh();
+    return { ok: true, data: undefined };
+  } catch (error) {
+    return toActionError(error);
+  }
+}
+
+export async function dismissPaymentClaimAction(claimId: string): Promise<ActionResult> {
+  const context = await getActionContext();
+  if (!context) return SESSION_ENDED;
+  try {
+    await dismissPaymentClaim(context.actor, claimId);
     refresh();
     return { ok: true, data: undefined };
   } catch (error) {

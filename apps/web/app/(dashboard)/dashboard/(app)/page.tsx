@@ -1,5 +1,6 @@
 import {
   countOrdersByStatus,
+  countOpenPaymentClaims,
   countPaymentsNeedingAttention,
   getHomeSummary,
   listEvents,
@@ -17,7 +18,7 @@ import {
   EmptyState,
 } from '@fulcra/ui';
 import { formatNaira } from '@fulcra/config';
-import { ExternalLink, MessageCircle, Plus, Sparkles } from 'lucide-react';
+import { AlertTriangle, ExternalLink, MessageCircle, Plus, Sparkles } from 'lucide-react';
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import Link from 'next/link';
@@ -34,12 +35,13 @@ export const metadata: Metadata = { title: 'Home' };
 export default async function DashboardHome() {
   const { actor, membership } = await getDashboardContext();
   const isEditor = membership.role !== 'rider';
-  const [summary, counts, events, lowStock, attention, cookieStore] = await Promise.all([
+  const [summary, counts, events, lowStock, attention, claims, cookieStore] = await Promise.all([
     getHomeSummary(actor),
     countOrdersByStatus(actor),
     listEvents(actor, { limit: 15 }),
     listLowStock(actor),
     isEditor ? countPaymentsNeedingAttention(actor) : Promise.resolve({ unmatched: 0, review: 0 }),
+    isEditor ? countOpenPaymentClaims(actor) : Promise.resolve({ waiting: 0, notReceived: 0 }),
     cookies(),
   ]);
   const setup = summary.setup;
@@ -81,6 +83,23 @@ export default async function DashboardHome() {
           )}
         </div>
       </div>
+
+      {claims.notReceived > 0 && (
+        <Link
+          href="/payments?show=checks"
+          className="flex items-start gap-3 rounded-xl bg-danger-soft p-3 text-danger"
+        >
+          <AlertTriangle className="mt-0.5 size-5 shrink-0" aria-hidden />
+          <span className="text-sm">
+            <strong className="block">
+              {claims.notReceived === 1
+                ? 'A customer said they paid, but no money arrived'
+                : `${claims.notReceived} customers said they paid, but no money arrived`}
+            </strong>
+            Don&apos;t send the goods yet. Tap to see the screenshots.
+          </span>
+        </Link>
+      )}
 
       {setupUnfinished && !setupHidden && (
         <SetupChecklist setup={setup} hasExternalWebsite={summary.hasExternalWebsite} />

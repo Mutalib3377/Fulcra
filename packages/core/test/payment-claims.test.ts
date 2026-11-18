@@ -20,8 +20,13 @@ const { markOrderPaid, cancelOrder } = await import('../src/orders/orders');
 const { businessesWithOpenClaims, sweepPaymentClaims } = await import('../src/payments/claims');
 const { claimFlags, normalizeReference, parseReceiptTime } =
   await import('../src/payments/claim-rules');
+const { listPaymentClaims, countOpenPaymentClaims, dismissPaymentClaim } =
+  await import('../src/payments/claims');
+const { createPendingAlerts } = await import('../src/alerts/alerts');
+const { saveOwnerAlertSettings } = await import('../src/alerts/settings');
+const { setBusinessEntitlement } = await import('../src/billing/entitlements');
 const { FakePaystack } = await import('../src/testing/fake-paystack');
-const { shopWithStock } = await import('./helpers');
+const { addMember, shopWithStock } = await import('./helpers');
 
 beforeEach(() => setPaystackClient(new FakePaystack()));
 afterEach(() => setPaystackClient(null));
@@ -322,5 +327,68 @@ describe('payment claims', () => {
       closed: 0,
     });
     expect((await s.claims())[0]!.status).toBe('waiting');
+  });
+});
+
+describe('payment checks for the owner (F1b)', () => {
+  it('lists open checks ("nothing arrived" first), counts them, and the owner can close one', async () => {
+    const s = await shop();
+    const { conversationId } = await s.say('I want it');
+    await s.order(conversationId);
+    await s.screenshot({ amountNaira: 12_000, reference: 'S-200004261118' });
+    await sweepPaymentClaims(s.b, later(21));
+    const other = await s.say('me too', '2348030000002');
+    await s.order(other.conversationId);
+    await a.assistantOrderStatus(s.b, other.conversationId, 1002, true);
+
+    expect(await countOpenPaymentClaims(s.actor)).toEqual({ waiting: 1, notReceived: 1 });
+    const open = await listPaymentClaims(s.actor);
+    expect(open.map((c) => [c.status, c.orderNumber, c.source])).toEqual([
+      ['not_received', 1001, 'screenshot'],
+      ['waiting', 1002, 'customer_said'],
+    ]);
+    expect(open[0]).toMatchObject({
+      customerName: 'Chioma',
+      claimedAmount: 1_200_000,
+      receivedAmount: 0,
+      orderTotal: 1_500_000,
+      flags: ['amount_mismatch'],
+      conversationId,
+    });
+
+    const rider = await addMember(s.actor, 'rider');
+    await expect(listPaymentClaims(rider)).rejects.toThrow();
+    await expect(dismissPaymentClaim(rider, open[0]!.id)).rejects.toThrow();
+    const staff = await addMember(s.actor, 'staff');
+    await dismissPaymentClaim(staff, open[0]!.id);
+    await expect(dismissPaymentClaim(s.actor, open[0]!.id)).rejects.toThrow('already closed');
+    expect(await countOpenPaymentClaims(s.actor)).toEqual({ waiting: 1, notReceived: 0 });
+    expect((await listPaymentClaims(s.actor, { show: 'recent' })).map((c) => c.status)).toEqual([
+      'waiting',
+      'dismissed',
+    ]);
+    expect((await listEvents(s.actor)).map((e) => e.type)).toContain('payment.claim_dismissed');
+    // A closed check is no longer looked at.
+    expect(await sweepPaymentClaims(s.b, later(40))).toMatchObject({ notReceived: 1 });
+    expect(await countOpenPaymentClaims(s.actor)).toEqual({ waiting: 0, notReceived: 1 });
+
+    const elsewhere = await shop();
+    await expect(dismissPaymentClaim(elsewhere.actor, open[1]!.id)).rejects.toThrow('not found');
+  });
+
+  it('nothing arrived: the owner gets a WhatsApp alert with the warning signs', async () => {
+    const s = await shop();
+    await saveOwnerAlertSettings(s.actor, { ownerWhatsapp: '08031234567' });
+    await setBusinessEntitlement(s.b, 'owner_alerts', { enabled: true, note: 'test' });
+    const { conversationId } = await s.say('I want it');
+    await s.order(conversationId);
+    await s.screenshot({ amountNaira: 12_000 });
+    await sweepPaymentClaims(s.b, later(21));
+    expect(await createPendingAlerts(s.b, later(21))).toBe(1);
+    const [alert] = await withTenant(s.b, (tx) => tx.select().from(schema.ownerAlerts));
+    expect(alert).toMatchObject({ kind: 'payment_claim', toPhone: '+2348031234567' });
+    expect(alert!.text).toMatch(
+      /^Payment check at .+: Chioma says they paid ₦12,000\.00 at .+, but no money has arrived\. Please do not send the goods until it does\. Warning: the amount on the screenshot isn't what the order costs\. See it here: https?:\/\/app\..+\/payments\?show=checks \(Fulcra alert\)$/,
+    );
   });
 });
