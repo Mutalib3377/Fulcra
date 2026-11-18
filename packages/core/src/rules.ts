@@ -43,3 +43,5 @@ export type { OwnerAlertSettingsInput, OwnerAlertSettingsView } from './alerts/s
 export * from './conversations/web-chat-rules';
 export * from './billing/rules';
 export * from './owner-chat/rules';
+export * from './payments/claim-rules';
+export type { PaymentClaimFlag, PaymentClaimStatus, PaymentClaimSource } from '@fulcra/db/schema';

@@ -114,9 +114,13 @@ export const TOOLS: Anthropic.Beta.BetaTool[] = [
   ),
   tool(
     'checkPaymentStatus',
-    'Check whether an order is paid (from the bank, never from what the customer says).',
+    'Check whether an order is paid (from the bank, never from what the customer says). Set customerSaysPaid when the customer says they have paid or sent a payment screenshot: the payment is then watched and the owner told if it never arrives. Follow the note it returns.',
     object({
       orderNumber: int('The order number'),
+      customerSaysPaid: {
+        type: 'boolean',
+        description: 'True if the customer says they paid or sent a payment screenshot',
+      },
     }),
   ),
   tool(
@@ -169,7 +173,10 @@ const inputs = {
   }),
   sendPaymentLink: orderNumber,
   sendAccountDetails: orderNumber,
-  checkPaymentStatus: orderNumber,
+  checkPaymentStatus: z.object({
+    orderNumber: z.number().int().positive(),
+    customerSaysPaid: z.boolean().default(false),
+  }),
   getOrderStatus: z.object({ orderNumber: z.number().int().positive().nullable() }),
   tagCustomer: z.object({ tag: z.string() }),
   saveCustomerDetails: z.object({ name: z.string(), phone: z.string() }),
@@ -235,14 +242,12 @@ export async function runTool(
           inputs.sendAccountDetails.parse(rawInput).orderNumber,
         ),
       };
-    case 'checkPaymentStatus':
+    case 'checkPaymentStatus': {
+      const input = inputs.checkPaymentStatus.parse(rawInput);
       return {
-        output: await assistantOrderStatus(
-          b,
-          cv,
-          inputs.checkPaymentStatus.parse(rawInput).orderNumber,
-        ),
+        output: await assistantOrderStatus(b, cv, input.orderNumber, input.customerSaysPaid),
       };
+    }
     case 'getOrderStatus':
       return {
         output: await assistantOrderStatus(

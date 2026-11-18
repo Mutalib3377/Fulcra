@@ -64,6 +64,7 @@ export * from './payments/payments';
 export * from './payments/receipts';
 export * from './payments/dedicated-accounts';
 export * from './payments/transfers';
+export * from './payments/claims';
 export { receiptUrl, storeUrl } from './payments/urls';
 
 export * from './storefront/rules';

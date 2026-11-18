@@ -2,12 +2,34 @@ import { schema, withTenant } from '@fulcra/db';
 import { and, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { imageUrl, type StoredImage } from '../media/images';
+import { recordScreenshotClaimInTx } from '../payments/claims';
 
 const clip = (max: number) =>
   z
     .string()
     .default('')
     .transform((s) => s.trim().slice(0, max));
+
+/**
+ * What a payment screenshot says (F1). Read by the photo step; never proof on its own:
+ * the claim it creates is checked against the money that arrives.
+ */
+export const paymentProof = z.object({
+  /** The amount in naira, as written (null when not readable). */
+  amountNaira: z
+    .number()
+    .nullable()
+    .default(null)
+    .transform((n) => (n !== null && Number.isFinite(n) && n > 0 && n < 100_000_000 ? n : null))
+    .catch(null),
+  bank: clip(80).catch(''),
+  senderName: clip(120).catch(''),
+  /** Session id, transaction reference or similar. */
+  reference: clip(80).catch(''),
+  /** "YYYY-MM-DD" or "YYYY-MM-DDTHH:MM" (Lagos time), or "" when not shown. */
+  dateTime: clip(20).catch(''),
+});
+export type PaymentProof = z.output<typeof paymentProof>;
 
 /**
  * What a customer's photo shows, written once by the assistant (a cheap vision call) and
@@ -30,19 +52,26 @@ export const photoDescription = z.object({
         8,
       ),
     ),
+  /** For payment proofs: the details on the receipt. */
+  payment: paymentProof.nullable().default(null).catch(null),
 });
 export type PhotoDescription = z.output<typeof photoDescription>;
 export type PhotoDescriptionInput = z.input<typeof photoDescription>;
 
-/** Saves what a customer's photo shows on its message. */
+/**
+ * Saves what a customer's photo shows on its message. A payment screenshot also becomes a
+ * payment claim (F1), checked against the money that arrives.
+ */
 export async function savePhotoDescription(
   businessId: string,
   messageId: string,
   input: PhotoDescriptionInput,
+  now = new Date(),
 ): Promise<PhotoDescription> {
   const photo = photoDescription.parse(input);
-  await withTenant(businessId, (tx) =>
-    tx
+  if (photo.kind !== 'payment_proof') photo.payment = null;
+  await withTenant(businessId, async (tx) => {
+    const [message] = await tx
       .update(schema.messages)
       .set({
         payload: sql`${schema.messages.payload} || jsonb_build_object('photo', ${JSON.stringify(photo)}::jsonb)`,
@@ -52,8 +81,12 @@ export async function savePhotoDescription(
           eq(schema.messages.id, z.uuid().parse(messageId)),
           eq(schema.messages.direction, 'inbound'),
         ),
-      ),
-  );
+      )
+      .returning();
+    if (message && photo.kind === 'payment_proof') {
+      await recordScreenshotClaimInTx(tx, businessId, message, photo.payment, now);
+    }
+  });
   return photo;
 }
 

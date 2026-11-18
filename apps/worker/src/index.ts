@@ -18,6 +18,7 @@ import { handleOwnerAlerts, handleSubmitPlatformTemplates } from './jobs/owner-a
 import { handleRefreshChannelTokens } from './jobs/refresh-tokens';
 import { handleCustomerNotifications, handleSubmitTemplates } from './jobs/templates';
 import { handleInboundMessage, handleSendMessage } from './jobs/messages';
+import { handlePaymentClaims } from './jobs/payment-claims';
 import { handlePaystackWebhook } from './jobs/paystack-webhook';
 import { handleShopifyWebhook } from './jobs/shopify-webhook';
 import { getQueueDatabaseUrl } from '@fulcra/db';
@@ -105,6 +106,13 @@ async function main(): Promise<void> {
     reported(JOBS.submitPlatformTemplates.name, () => handleSubmitPlatformTemplates()),
   );
   await boss.schedule(JOBS.ownerAlerts.name, '* * * * *', {}, { singletonKey: 'tick' });
+  // Fake alert protection: payment claims checked against the money every minute.
+  await boss.work(
+    JOBS.paymentClaims.name,
+    { localConcurrency: 1 },
+    reported(JOBS.paymentClaims.name, () => handlePaymentClaims()),
+  );
+  await boss.schedule(JOBS.paymentClaims.name, '* * * * *', {}, { singletonKey: 'tick' });
   await boss.work(
     JOBS.refreshChannelTokens.name,
     { localConcurrency: 1 },

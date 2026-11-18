@@ -21,3 +21,4 @@ export * from './alerts';
 export * from './billing';
 export * from './system';
 export * from './owner-chat';
+export * from './payment-claims';
