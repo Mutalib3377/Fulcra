@@ -9,6 +9,7 @@ import {
   syncBillingPlans,
 } from '@fulcra/core';
 import { handleAgentReply } from './jobs/agent-reply';
+import { handleDatabaseBackup } from './jobs/backup';
 import { handleCatalogImport } from './jobs/catalog-import';
 import { handleChannelWebhook, handleMessageStatus } from './jobs/channel-webhook';
 import { handleOwnerAlerts, handleSubmitPlatformTemplates } from './jobs/owner-alerts';
@@ -99,6 +100,13 @@ async function main(): Promise<void> {
   );
   // Instagram tokens last 60 days; checked once a day (UTC).
   await boss.schedule(JOBS.refreshChannelTokens.name, '23 3 * * *', {}, { singletonKey: 'daily' });
+  // Weekly database backup to a private bucket, Sundays 02:17 UTC (only when BACKUP_BUCKET is set).
+  await boss.work(
+    JOBS.databaseBackup.name,
+    { localConcurrency: 1 },
+    reported(JOBS.databaseBackup.name, () => handleDatabaseBackup()),
+  );
+  await boss.schedule(JOBS.databaseBackup.name, '17 2 * * 0', {}, { singletonKey: 'weekly' });
   // Fulcra's plans at Paystack (created once; only when Paystack is set up).
   await boss.work(
     JOBS.syncBillingPlans.name,

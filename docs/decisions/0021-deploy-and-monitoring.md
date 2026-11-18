@@ -1,6 +1,6 @@
 # 0021 — Deploying, pooling, limits and monitoring
 
-Status: accepted (L1c)
+Status: accepted (L1c). Launch starts on the free setup of `docs/decisions/0022`; this two-service setup (`render.paid.yaml`) is the upgrade.
 
 ## Context
 

@@ -118,8 +118,8 @@ export function Pricing({ plans, signUpUrl }: { plans: PricingPlan[]; signUpUrl:
         })}
       </div>
       <p className="text-center text-sm text-muted-foreground">
-        Every plan starts with 14 days of Growth, free. No card needed. Prices in naira; cancel any
-        time.
+        Start with a 14-day free trial of Growth (up to 100 customer chats). No card needed. Prices
+        in naira; cancel any time.
       </p>
     </div>
   );

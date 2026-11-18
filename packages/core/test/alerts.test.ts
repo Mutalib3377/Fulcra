@@ -20,6 +20,10 @@ const st = await import('../src/alerts/settings');
 const { recordEvent } = await import('../src/events/events');
 const { createOrder, markOrderPaid } = await import('../src/orders/orders');
 const { addMember, newBusiness, shopWithStock } = await import('./helpers');
+const { setBusinessEntitlement } = await import('../src/billing/entitlements');
+/** Alerts are not part of the free trial; these shops have them switched on by Fulcra. */
+const alertsOn = (businessId: string) =>
+  setBusinessEntitlement(businessId, 'owner_alerts', { enabled: true, note: 'test' });
 
 const PLATFORM = {
   FULCRA_WHATSAPP_PHONE_NUMBER_ID: '999000111222333',
@@ -92,6 +96,7 @@ describe('alert settings', () => {
 describe('alerts from events', () => {
   it('paid order, low stock, payment to check and a chat passed by the assistant: once each', async () => {
     const shop = await shopWithStock(4);
+    await alertsOn(shop.business.id);
     // Nothing before the owner set up alerts.
     await recordEventNow(shop.business.id, 'payment.unmatched', { amount: 500_000 });
     await new Promise((r) => setTimeout(r, 20));
@@ -235,6 +240,7 @@ describe('sending alerts', () => {
 describe('daily briefing', () => {
   it('once a day after the chosen time: yesterday’s sales and what is waiting now', async () => {
     const shop = await shopWithStock(2);
+    await alertsOn(shop.business.id);
     await st.saveOwnerAlertSettings(shop.actor, {
       ownerWhatsapp: '0803 123 4567',
       briefingTime: '08:00',

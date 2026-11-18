@@ -2,13 +2,28 @@
 
 How to put Fulcra online: Supabase (database and login), Cloudflare (domain and photo storage), Render (web app and worker), then payments, WhatsApp, Instagram, monitoring and a final check. Follow it in order the first time. Replace `yourdomain.com` with the real domain everywhere.
 
+**Start free, upgrade when sellers pay.** The default setup (`render.yaml`) runs everything on free plans: one free Render web service running both the web app and the worker (`deploy/free/`), Supabase Free, Cloudflare R2's free allowance. The only fixed cost is the domain (about $10 a year); AI is paid per use, with a limit you set. When paying customers arrive, switch to the paid setup (section 8).
+
 Never paste keys into chat, commits or issues. Type them only into the dashboards named below.
 
 ## 0. Before you start
 
 Accounts you need: Render, Supabase, Cloudflare (with the domain added), Paystack, Meta for Developers, Anthropic, Sentry and PostHog. Sentry and PostHog are optional; the app runs without them.
 
-Costs at launch, roughly: Render Starter for web and worker (about $7 a month each), Supabase (the free plan pauses inactive projects, so use Pro, about $25 a month, for real sellers), Cloudflare R2 (free up to 10 GB), plus AI usage (Anthropic) and WhatsApp fees (billed to each seller's WhatsApp account when they connect through Embedded Signup).
+What it costs on the free setup:
+
+| Item | Cost | Notes |
+| --- | --- | --- |
+| Render | free | One free web service (512 MB memory) runs the web app and worker. Kept awake by the uptime monitor (section 6); 750 free hours a month covers it. Render may restart free services now and then; webhooks are retried, so nothing is lost. Don't create other free Render services: the hours are shared. |
+| Supabase | free | 500 MB database, 50,000 users a month. Pauses after a week without activity (the always-on worker keeps it busy). **No automatic backups**: the weekly backup (section 2) covers that. |
+| Cloudflare | free | DNS, and R2 up to 10 GB of photos and backups. |
+| Paystack | no monthly fee | Its fee is taken from each payment. |
+| Sentry, PostHog, UptimeRobot, Resend | free plans | Plenty at launch. |
+| WhatsApp | mostly free | Replies to customers inside 24 hours are free, and sellers' messages are billed to their own WhatsApp account. Owner alerts from Fulcra's number cost a little, so they are only in paid plans (not the free trial). |
+| Domain | about $10 a year | Needed for `store.yourdomain.com` addresses. |
+| AI (Anthropic) | pay per use | Set a **monthly spending limit** in the Anthropic console (e.g. $10). Free trials are capped at 100 assistant chats each. |
+
+Free plans change: check each provider's current limits when you sign up.
 
 Set the domain in code once: `DEFAULT_ROOT_DOMAIN` in `packages/config/src/app.ts`. The running app reads `ROOT_DOMAIN` from the environment.
 
@@ -35,21 +50,41 @@ Connections: each process opens up to `DB_POOL_MAX` (default 10). Keep web + wor
 3. **R2 → Manage API tokens → Create token** with *Object Read & Write* on that bucket. Copy the key pair → `STORAGE_ACCESS_KEY_ID`, `STORAGE_SECRET_ACCESS_KEY`.
 4. `STORAGE_ENDPOINT` = `https://<account-id>.r2.cloudflarestorage.com`, `STORAGE_REGION` = `auto`, `STORAGE_BUCKET` = the bucket name.
 
+### Backups bucket (private)
+
+Supabase's free plan keeps no backups, so the app saves one every Sunday to a separate, **private** bucket.
+
+1. **R2 → Create bucket**, e.g. `fulcra-backups`. Do **not** connect a domain or turn on public access.
+2. Give the R2 API token from above access to this bucket too (Object Read & Write).
+3. Set `BACKUP_BUCKET` to its name. The last 8 weekly backups are kept; older ones are deleted.
+
+Each backup is two files with the same date: `…-business.dump` (all business data) and `…-accounts.dump` (sign-in accounts). To restore into a new Supabase project, on your computer with Postgres 17 tools:
+
+```bash
+pg_restore --no-owner --dbname "<new direct connection string>" fulcra-<date>-business.dump
+```
+
+```bash
+pg_restore --no-owner --data-only --dbname "<new direct connection string>" fulcra-<date>-accounts.dump
+```
+
+Run one backup at any time from the Render shell: `cd apps/worker && node --import tsx src/backup-now.ts`.
+
 ### DNS
 
 Done after Render gives you its address (step 3.5). You will add:
 
 | Type | Name | Target | Proxy |
 | --- | --- | --- | --- |
-| CNAME | `@` (yourdomain.com) | `fulcra-web.onrender.com` | DNS only |
-| CNAME | `app` | `fulcra-web.onrender.com` | DNS only |
-| CNAME | `*` (every store) | `fulcra-web.onrender.com` | DNS only |
+| CNAME | `@` (yourdomain.com) | your Render address, e.g. `fulcra.onrender.com` | DNS only |
+| CNAME | `app` | the same | DNS only |
+| CNAME | `*` (every store) | the same | DNS only |
 
 plus any verification records Render shows for the wildcard certificate (an `_acme-challenge` CNAME). Keep the records **DNS only** (grey cloud) so Render can issue and renew certificates.
 
 ## 3. Render (web app and worker)
 
-1. **New → Blueprint**, pick the repository. Render reads `render.yaml`: a web service and a background worker, both in Frankfurt.
+1. **New → Blueprint**, pick the repository. Render reads `render.yaml`: one free web service in Frankfurt that runs the web app and the worker together (`deploy/free/Dockerfile`, `deploy/free/start.sh`).
 2. Fill in the values it asks for. Use the same `ENCRYPTION_KEY` on both services; generate it once on your computer:
 
    ```bash
@@ -58,8 +93,8 @@ plus any verification records Render shows for the wildcard certificate (an `_ac
 
    Never change it later: it decrypts sellers' saved channel tokens and shop keys.
 3. `ROOT_DOMAIN` = `yourdomain.com` (no `https://`). It is also baked into the build (the landing page is static), so set it **before** the first deploy, and redeploy the web service if it ever changes. The same applies to the `NEXT_PUBLIC_*` values.
-4. Deploy. The worker runs the database migrations first (`preDeployCommand`). If they fail, the deploy stops and the old version keeps running.
-5. **fulcra-web → Settings → Custom Domains:** add `yourdomain.com`, `app.yourdomain.com` and `*.yourdomain.com`, then add the DNS records from step 2 in Cloudflare. Wait until Render shows the certificates as issued.
+4. Deploy. The service applies database migrations when it starts; if they fail it doesn't start, and Render keeps the old version running.
+5. **fulcra → Settings → Custom Domains:** add `yourdomain.com`, `app.yourdomain.com` and `*.yourdomain.com`, then add the DNS records from step 2 in Cloudflare. Wait until Render shows the certificates as issued.
 
 To roll back, use **Rollback** on the service in Render. Migrations only move forward, so a rollback keeps the newer database tables (they are always added in a backward-compatible way).
 
@@ -81,7 +116,7 @@ To roll back, use **Rollback** on the service in Render. Migrations only move fo
 
 - **Sentry** (errors): create a project (EU data region), copy the DSN into `SENTRY_DSN` and `NEXT_PUBLIC_SENTRY_DSN` (same value). Personal data is switched off (`apps/web/lib/sentry-privacy.ts`, `apps/worker/src/monitoring.ts`).
 - **PostHog** (analytics): create an EU project, copy the project key into `NEXT_PUBLIC_POSTHOG_KEY`. It runs only on the landing page (no cookies) and the dashboard (owners known by user id, never email); never on sellers' stores.
-- **Uptime check:** in a free uptime service (UptimeRobot or Better Stack), add an HTTP monitor for `https://app.yourdomain.com/api/health?deep=1` every 5 minutes, alerting your email or phone. It answers 503 when the database is unreachable, the worker has fallen behind (jobs waiting over 5 minutes) or webhooks are not being processed. Render's own check uses the light `/api/health`.
+- **Uptime check (also keeps the free service awake):** in a free uptime service (UptimeRobot or Better Stack), add an HTTP monitor for `https://app.yourdomain.com/api/health?deep=1` **every 5 minutes**, alerting your email or phone. The visits stop Render's free service from going to sleep, so webhooks arrive instantly and the every-minute jobs keep running. It answers 503 when the database is unreachable, the worker has fallen behind (jobs waiting over 5 minutes) or webhooks are not being processed. Render's own check uses the light `/api/health`.
 
 ## 7. Final check
 
@@ -94,3 +129,11 @@ To roll back, use **Rollback** on the service in Render. Migrations only move fo
 7. Sentry: errors appear after a test error; PostHog: page views appear.
 
 Then switch Paystack to live, publish the reviewed privacy policy and terms, and invite the first sellers.
+
+## 8. Upgrading when sellers pay
+
+Signs it's time: the service restarts because it runs out of memory (Render's events show it), pages feel slow at busy times, or the database nears 500 MB.
+
+1. **Render:** rename `render.paid.yaml` to `render.yaml` (replacing the free one), push, and sync the Blueprint in Render. That gives a Starter web service and a separate Starter worker (about $7 a month each); migrations then run before each worker deploy. Point the custom domains at the new web service and delete the free one.
+2. **Supabase:** upgrade to Pro (about $25 a month) for daily backups and no pausing. The weekly backup can stay on as an extra copy (it needs `pg_dump`, which only the free image has; leave `BACKUP_BUCKET` empty on the paid worker otherwise).
+3. Remove the 5-minute keep-awake need (the monitor can stay as an uptime check).

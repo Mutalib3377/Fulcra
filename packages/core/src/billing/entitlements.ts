@@ -10,7 +10,9 @@ import {
   isActiveStatus,
   planFor,
   PLANS,
+  TRIAL_CONVERSATIONS,
   TRIAL_DAYS,
+  TRIAL_EXCLUDED_FEATURES,
   TRIAL_PLAN,
   type EffectiveStatus,
   type FeatureKey,
@@ -53,9 +55,11 @@ export async function planStateInTx(tx: Tx, now = new Date()): Promise<PlanState
   const status = effectiveStatus(row, now);
   const active = isActiveStatus(status);
   const plan = PLANS[status === 'trialing' ? TRIAL_PLAN : asPlan(row.planCode)];
+  const trialing = status === 'trialing';
   const features = new Set<FeatureKey>(active ? plan.features : INACTIVE_FEATURES);
+  if (trialing) for (const f of TRIAL_EXCLUDED_FEATURES) features.delete(f);
   const overrides = await tx.select().from(schema.entitlements);
-  let conversationLimit = plan.conversationsPerMonth;
+  let conversationLimit = trialing ? TRIAL_CONVERSATIONS : plan.conversationsPerMonth;
   for (const o of overrides) {
     if (o.featureKey === 'agent.conversations' && o.limitValue !== null)
       conversationLimit = o.limitValue;
@@ -120,6 +124,12 @@ export async function featureAccessInTx(tx: Tx, feature: FeatureKey): Promise<Fe
         allowed: false,
         message:
           'Your Fulcra plan has ended. Choose a plan in Settings → Billing to turn this back on.',
+      };
+    if (state.status === 'trialing' && TRIAL_EXCLUDED_FEATURES.includes(feature))
+      return {
+        allowed: false,
+        message:
+          'WhatsApp alerts start when you choose a plan. During your free trial, new orders, low stock and chats waiting all show on your dashboard.',
       };
     const needed = planFor(feature);
     return {

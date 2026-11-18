@@ -55,6 +55,11 @@ export const JOBS = {
     name: 'refresh-channel-tokens',
     data: z.object({}).loose(),
   },
+  /** Weekly database backup to a private bucket (free hosting has no automatic backups). */
+  databaseBackup: {
+    name: 'database-backup',
+    data: z.object({}).loose(),
+  },
   /** Worker start: Fulcra's plans exist at Paystack (B1b). */
   syncBillingPlans: {
     name: 'sync-billing-plans',

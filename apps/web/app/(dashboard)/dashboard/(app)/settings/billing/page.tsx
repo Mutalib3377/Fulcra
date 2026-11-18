@@ -73,7 +73,7 @@ export default async function BillingPage({
           </div>
           <CardDescription>
             {billing.status === 'trialing' && billing.trialEndsAt
-              ? `${daysLeft} day${daysLeft === 1 ? '' : 's'} left — your trial ends on ${date(billing.trialEndsAt)}. It includes everything in Growth.`
+              ? `${daysLeft} day${daysLeft === 1 ? '' : 's'} left — your trial ends on ${date(billing.trialEndsAt)}. It includes Growth with up to 100 assistant chats; WhatsApp alerts start when you choose a plan.`
               : billing.status === 'expired'
                 ? 'Your store, orders and payments still work. The assistant, alerts and automatic customer messages are paused until you choose a plan.'
                 : billing.currentPeriodEnd

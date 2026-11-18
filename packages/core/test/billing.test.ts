@@ -66,14 +66,22 @@ describe('plan status from dates', () => {
 });
 
 describe('what a business can use', () => {
-  it('a new business is on a 14-day trial with everything in Growth', async () => {
+  it('a new business is on a 14-day trial of Growth with 100 chats and no WhatsApp alerts', async () => {
     const shop = await newBusiness('bill');
     const summary = await getBillingSummary(shop.actor);
     expect(summary).toMatchObject({ planCode: 'growth', status: 'trialing', active: true });
     expect(summary.trialEndsAt!.getTime()).toBeGreaterThan(Date.now() + 13 * day);
-    expect(summary.usage).toMatchObject({ used: 0, limit: 500 });
-    for (const f of ['agent', 'owner_alerts', 'catalog_import.shops', 'channel.instagram'] as const)
+    expect(summary.usage).toMatchObject({ used: 0, limit: 100 });
+    for (const f of ['agent', 'catalog_import.shops', 'channel.instagram'] as const)
       expect(await ent.canUse(shop.business.id, f)).toBe(true);
+    // Alerts are sent from Fulcra's number (a cost to Fulcra): paid plans only.
+    expect(await ent.featureAccess(shop.business.id, 'owner_alerts')).toEqual({
+      allowed: false,
+      message: expect.stringContaining('WhatsApp alerts start when you choose a plan'),
+    });
+    // Fulcra can switch them on for one business (e.g. a design partner).
+    await ent.setBusinessEntitlement(shop.business.id, 'owner_alerts', { enabled: true });
+    expect(await ent.canUse(shop.business.id, 'owner_alerts')).toBe(true);
     const rider = await addMember(shop.actor, 'rider');
     await expect(getBillingSummary(rider)).rejects.toThrow();
   });

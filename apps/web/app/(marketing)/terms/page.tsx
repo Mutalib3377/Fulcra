@@ -58,7 +58,10 @@ export default function TermsPage() {
 
       <h2>Plans, trial and billing</h2>
       <ul>
-        <li>New accounts get a 14-day free trial of the Growth plan. No card is needed.</li>
+        <li>
+          New accounts get a 14-day free trial of the Growth plan, with up to 100 assistant chats.
+          WhatsApp alerts start with a paid plan. No card is needed.
+        </li>
         <li>
           Paid plans renew automatically each month or year until cancelled. You can cancel any
           time; your plan works until the end of the period you paid for.

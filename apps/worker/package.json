@@ -10,7 +10,8 @@
     "build": "tsc --noEmit",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "backup": "tsx --env-file-if-exists=../../.env src/backup-now.ts"
   },
   "dependencies": {
     "@fulcra/agent": "workspace:*",
