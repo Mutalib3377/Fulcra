@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { getDashboardContext } from '@/lib/auth';
 import { toFormValues } from '../form-data';
 import { ProductForm } from '../product-form';
+import { BackLink } from '@/components/page-header';
 
 export const metadata: Metadata = { title: 'Edit product' };
 
@@ -40,12 +41,10 @@ export default async function EditProductPage({ params }: Props) {
   const categories = await listCategories(actor);
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-4">
+    <div className="mx-auto flex max-w-2xl flex-col gap-6">
       <div>
-        <Link href="/catalog" className="text-sm text-primary">
-          ← Catalog
-        </Link>
-        <h1 className="truncate text-2xl font-bold">{product.product.name}</h1>
+        <BackLink href="/catalog">Catalog</BackLink>
+        <h1 className="truncate text-3xl font-semibold">{product.product.name}</h1>
       </div>
       <ProductForm
         mode="edit"

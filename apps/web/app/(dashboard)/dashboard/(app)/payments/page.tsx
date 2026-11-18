@@ -64,8 +64,8 @@ export default async function PaymentsPage({ searchParams }: Props) {
   ] as const;
 
   return (
-    <div className="flex flex-col gap-4">
-      <h1 className="text-2xl font-bold">Payments</h1>
+    <div className="flex flex-col gap-6">
+      <h1 className="text-3xl font-semibold">Payments</h1>
       <OrdersCustomersTabs active="payments" />
       <nav aria-label="Filter payments" className="flex gap-2 overflow-x-auto">
         {tabs.map((t) => (

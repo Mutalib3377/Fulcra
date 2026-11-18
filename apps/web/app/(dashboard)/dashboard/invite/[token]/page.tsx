@@ -32,7 +32,7 @@ export default async function InvitePage({ params }: Props) {
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-sm flex-col justify-center gap-6 px-4 py-10">
-      <p className="text-center text-lg font-bold text-primary">{APP_NAME}</p>
+      <p className="text-center text-lg font-semibold text-primary">{APP_NAME}</p>
       {!invite ? (
         <EmptyState title="Invite not found" description="Check that you opened the full link." />
       ) : invite.status !== 'pending' ? (

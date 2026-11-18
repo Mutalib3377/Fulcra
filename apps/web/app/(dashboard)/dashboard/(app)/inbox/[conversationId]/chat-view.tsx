@@ -10,6 +10,7 @@ import { sendReplyAction, setHandlerAction } from '../actions';
 import { ChatBubble } from '../chat-bubble';
 import { TemplatePicker } from './template-picker';
 import { fetchJson, type ChatView as View } from '../types';
+import { BackLink } from '@/components/page-header';
 
 /** One chat, checked every 5 seconds while open. */
 export function ChatView({ conversationId }: { conversationId: string }) {
@@ -72,11 +73,11 @@ export function ChatView({ conversationId }: { conversationId: string }) {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-1">
-        <Link href="/inbox" className="text-sm text-primary">
-          ← Inbox
-        </Link>
+        <BackLink href="/inbox">Inbox</BackLink>
         <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-xl font-bold">{customer.name || customer.phone || 'Customer'}</h1>
+          <h1 className="truncate text-lg font-semibold">
+            {customer.name || customer.phone || 'Customer'}
+          </h1>
           {connection.mode === 'test' && <Badge tone="info">Test</Badge>}
         </div>
         <p className="text-sm text-muted-foreground">

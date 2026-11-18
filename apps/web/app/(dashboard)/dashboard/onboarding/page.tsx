@@ -19,7 +19,7 @@ export default async function OnboardingPage({ searchParams }: Props) {
     <main className="mx-auto flex min-h-dvh w-full max-w-lg flex-col gap-6 px-4 py-8">
       <div className="flex flex-col gap-1">
         <p className="text-sm font-medium text-primary">Step 1 of 1</p>
-        <h1 className="text-2xl font-bold">Tell us about your business</h1>
+        <h1 className="text-3xl font-semibold">Tell us about your business</h1>
         <p className="text-muted-foreground">You can change these later in Settings.</p>
       </div>
       <OnboardingForm storeDomain={getRootDomain().replace(/:\d+$/, '')} />

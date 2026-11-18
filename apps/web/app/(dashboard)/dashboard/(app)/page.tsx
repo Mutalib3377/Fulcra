@@ -58,10 +58,10 @@ export default async function DashboardHome() {
   ];
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Welcome</h1>
+          <h1 className="text-3xl font-semibold">Welcome</h1>
           <p className="text-muted-foreground">Here is how {membership.businessName} is doing.</p>
         </div>
         {membership.role !== 'rider' && (
@@ -80,7 +80,7 @@ export default async function DashboardHome() {
       <div className="grid grid-cols-2 gap-2">
         <Card className="p-3">
           <p className="text-sm text-muted-foreground">Today&apos;s sales</p>
-          <p className="text-2xl font-bold">{formatNaira(summary.today.amount)}</p>
+          <p className="text-2xl font-semibold">{formatNaira(summary.today.amount)}</p>
           <p className="text-sm text-muted-foreground">
             {summary.today.orders} paid order{summary.today.orders === 1 ? '' : 's'}
           </p>
@@ -97,7 +97,7 @@ export default async function DashboardHome() {
               <p className="flex items-center gap-1 text-sm text-muted-foreground">
                 <MessageCircle className="size-4" aria-hidden /> Chats waiting
               </p>
-              <p className="text-2xl font-bold">{summary.chatsWaiting}</p>
+              <p className="text-2xl font-semibold">{summary.chatsWaiting}</p>
               <p className="text-sm text-muted-foreground">
                 {summary.chatsWaiting > 0 ? 'Customers need you' : 'All answered'}
               </p>
@@ -107,7 +107,7 @@ export default async function DashboardHome() {
           <Link href="/orders?status=paid">
             <Card className="h-full p-3 transition-colors hover:bg-muted/50">
               <p className="text-sm text-muted-foreground">To deliver</p>
-              <p className="text-2xl font-bold">{counts.paid + counts.dispatched}</p>
+              <p className="text-2xl font-semibold">{counts.paid + counts.dispatched}</p>
             </Card>
           </Link>
         )}
@@ -126,7 +126,7 @@ export default async function DashboardHome() {
         {tiles.map((t) => (
           <Link key={t.label} href={t.href}>
             <Card className="p-3 transition-colors hover:bg-muted/50">
-              <p className="text-2xl font-bold">{t.count}</p>
+              <p className="text-2xl font-semibold">{t.count}</p>
               <p className="text-sm text-muted-foreground">{t.label}</p>
             </Card>
           </Link>

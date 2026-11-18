@@ -39,9 +39,9 @@ export default async function OrdersPage({ searchParams }: Props) {
   const now = new Date();
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold">Orders</h1>
+        <h1 className="text-3xl font-semibold">Orders</h1>
         {canCreate && (
           <Button asChild>
             <Link href="/orders/new">

@@ -34,7 +34,7 @@ export default async function ReceiptPage({ params }: Props) {
           style={{ color: brand.primaryColour }}
           aria-hidden
         />
-        <h1 className="text-xl font-bold">Confirming your payment…</h1>
+        <h1 className="text-2xl font-semibold">Confirming your payment…</h1>
         <p className="text-muted-foreground">
           Order #{order.orderNumber} from {business.name}. This page updates by itself. If you have
           paid, there is nothing else to do.
@@ -95,7 +95,7 @@ export default async function ReceiptPage({ params }: Props) {
             {order.discount > 0 && (
               <Row label="Discount" value={`−${formatNaira(order.discount)}`} />
             )}
-            <div className="flex justify-between text-base font-bold">
+            <div className="flex justify-between text-base font-semibold">
               <span>Total</span>
               <span>{formatNaira(order.total)}</span>
             </div>

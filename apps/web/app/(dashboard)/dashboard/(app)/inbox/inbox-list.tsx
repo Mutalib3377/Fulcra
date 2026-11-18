@@ -96,7 +96,10 @@ export function InboxList() {
                 <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                   <span className="flex items-center gap-2">
                     <span
-                      className={cn('truncate', item.unreadCount > 0 ? 'font-bold' : 'font-medium')}
+                      className={cn(
+                        'truncate',
+                        item.unreadCount > 0 ? 'font-semibold' : 'font-medium',
+                      )}
                     >
                       {item.customerName || item.customerPhone || 'Customer'}
                     </span>
@@ -130,7 +133,7 @@ export function InboxList() {
                       <Badge tone="warning">{item.attentionReason ?? 'Needs you'}</Badge>
                     )}
                     {item.unreadCount > 0 && (
-                      <span className="rounded-full bg-primary px-1.5 text-[11px] font-bold text-primary-foreground">
+                      <span className="rounded-full bg-primary px-1.5 text-[11px] font-semibold text-primary-foreground">
                         {item.unreadCount}
                         <span className="sr-only"> unread</span>
                       </span>

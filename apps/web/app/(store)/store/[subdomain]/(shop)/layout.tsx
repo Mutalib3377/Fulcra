@@ -29,7 +29,7 @@ export default async function ShopLayout({ children, params }: Props) {
               />
             ) : (
               <span
-                className="flex size-8 items-center justify-center rounded text-sm font-bold"
+                className="flex size-8 items-center justify-center rounded text-sm font-semibold"
                 style={{
                   backgroundColor: 'var(--store-primary)',
                   color: 'var(--store-on-primary)',

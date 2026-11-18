@@ -1,9 +1,9 @@
 import { listMembers, listPendingInvites } from '@fulcra/core';
 import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle } from '@fulcra/ui';
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { getDashboardContext } from '@/lib/auth';
 import { InviteForm, RevokeInviteButton } from './team-forms';
+import { BackLink } from '@/components/page-header';
 
 export const metadata: Metadata = { title: 'Team' };
 
@@ -20,12 +20,10 @@ export default async function TeamPage() {
   ]);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-6">
       <div>
-        <Link href="/settings" className="text-sm text-primary">
-          ← Settings
-        </Link>
-        <h1 className="text-2xl font-bold">Team</h1>
+        <BackLink href="/settings">Settings</BackLink>
+        <h1 className="text-3xl font-semibold">Team</h1>
       </div>
 
       {isOwner && (

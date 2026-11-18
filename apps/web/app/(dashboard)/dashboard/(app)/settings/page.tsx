@@ -1,13 +1,5 @@
 import { getBusiness } from '@fulcra/core';
-import {
-  Badge,
-  Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@fulcra/ui';
+import { Badge, ListGroup, ListRow, ListRowContent } from '@fulcra/ui';
 import {
   Bell,
   Camera,
@@ -15,7 +7,6 @@ import {
   MessagesSquare,
   Bot,
   Smartphone,
-  ChevronRight,
   Globe,
   Landmark,
   MapPin,
@@ -25,8 +16,10 @@ import {
   Users,
 } from 'lucide-react';
 import type { Metadata } from 'next';
+import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { ActionButton } from '@/components/action-button';
+import { PageHeader } from '@/components/page-header';
 import { getDashboardContext } from '@/lib/auth';
 import { storeHost } from '@/lib/urls';
 import { switchBusinessAction } from './actions';
@@ -52,256 +45,132 @@ export default async function SettingsPage() {
     ['Store address', storeHost(business.subdomain)],
   ] as const;
 
+  const link = (href: string, icon: ReactNode, title: string, description: string) => (
+    <ListRow asChild>
+      <Link href={href}>
+        <ListRowContent icon={icon} title={title} description={description} chevron />
+      </Link>
+    </ListRow>
+  );
+
   return (
-    <div className="flex flex-col gap-4">
-      <h1 className="text-2xl font-bold">Settings</h1>
+    <div className="flex flex-col gap-8">
+      <PageHeader title="Settings" />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Business details</CardTitle>
-          <CardDescription>From your sign-up details.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <dl className="flex flex-col gap-3">
-            {details.map(([label, value]) => (
-              <div key={label} className="flex flex-col sm:flex-row sm:gap-4">
-                <dt className="text-sm text-muted-foreground sm:w-40">{label}</dt>
-                <dd className="font-medium break-all">{value}</dd>
-              </div>
-            ))}
-          </dl>
-        </CardContent>
-      </Card>
+      <ListGroup title="Business" footer="From your sign-up details.">
+        {details.map(([label, value]) => (
+          <ListRow key={label} title={label} trailing={<span className="truncate">{value}</span>} />
+        ))}
+      </ListGroup>
 
-      <Link href="/settings/billing" className="block">
-        <Card className="transition-colors hover:bg-muted/50">
-          <CardHeader className="flex-row items-center justify-between">
-            <div className="flex items-center gap-3">
-              <CreditCard className="size-5 text-primary" aria-hidden />
-              <div>
-                <CardTitle>Plans and billing</CardTitle>
-                <CardDescription>
-                  Your plan, free trial and assistant chats this month.
-                </CardDescription>
-              </div>
-            </div>
-            <ChevronRight className="size-5 text-muted-foreground" aria-hidden />
-          </CardHeader>
-        </Card>
-      </Link>
+      <ListGroup title="Selling">
+        {link(
+          '/settings/store',
+          <Globe aria-hidden />,
+          'Store or website',
+          business.hasExternalWebsite && business.websiteUrl
+            ? `Your website: ${business.websiteUrl.replace(/^https?:\/\//, '')}`
+            : 'Customers shop on your Fulcra store.',
+        )}
+        {link(
+          '/settings/assistant',
+          <Bot aria-hidden />,
+          'Assistant',
+          'Switch it on, opening hours, policies, what to pass to you.',
+        )}
+        {link(
+          '/settings/payments',
+          <Landmark aria-hidden />,
+          'Get paid',
+          'Your bank account for online payments.',
+        )}
+        {link(
+          '/settings/delivery',
+          <MapPin aria-hidden />,
+          'Delivery areas',
+          'Where you deliver and how much it costs.',
+        )}
+        {link(
+          '/settings/brand',
+          <Palette aria-hidden />,
+          'Brand kit',
+          'Logo, colours, font and how your assistant talks.',
+        )}
+      </ListGroup>
 
-      <Link href="/settings/assistant" className="block">
-        <Card className="transition-colors hover:bg-muted/50">
-          <CardHeader className="flex-row items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Bot className="size-5 text-primary" aria-hidden />
-              <div>
-                <CardTitle>Assistant</CardTitle>
-                <CardDescription>
-                  Switch it on, opening hours, policies, what to pass to you.
-                </CardDescription>
-              </div>
-            </div>
-            <ChevronRight className="size-5 text-muted-foreground" aria-hidden />
-          </CardHeader>
-        </Card>
-      </Link>
+      <ListGroup title="Chats">
+        {link(
+          '/settings/whatsapp',
+          <Smartphone aria-hidden />,
+          'WhatsApp number',
+          'Connect your number so chats arrive in your inbox.',
+        )}
+        {link(
+          '/settings/instagram',
+          <Camera aria-hidden />,
+          'Instagram',
+          'Connect your account so DMs arrive in your inbox.',
+        )}
+        {link(
+          '/settings/website-chat',
+          <MessagesSquare aria-hidden />,
+          'Website chat',
+          'A chat bubble for your website and store.',
+        )}
+        {link(
+          '/settings/whatsapp-buttons',
+          <MessageCircle aria-hidden />,
+          'WhatsApp buttons',
+          'Links and buttons for your website, Instagram bio and flyers.',
+        )}
+        {link(
+          '/settings/alerts',
+          <Bell aria-hidden />,
+          'Alerts',
+          'WhatsApp alerts, daily briefing and automatic customer messages.',
+        )}
+      </ListGroup>
 
-      <Link href="/settings/store" className="block">
-        <Card className="transition-colors hover:bg-muted/50">
-          <CardHeader className="flex-row items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Globe className="size-5 text-primary" aria-hidden />
-              <div>
-                <CardTitle>Store or website</CardTitle>
-                <CardDescription>
-                  {business.hasExternalWebsite && business.websiteUrl
-                    ? `Your website: ${business.websiteUrl.replace(/^https?:\/\//, '')}`
-                    : 'Customers shop on your Fulcra store.'}
-                </CardDescription>
-              </div>
-            </div>
-            <ChevronRight className="size-5 text-muted-foreground" aria-hidden />
-          </CardHeader>
-        </Card>
-      </Link>
+      <ListGroup title="Account">
+        {link(
+          '/settings/billing',
+          <CreditCard aria-hidden />,
+          'Plans and billing',
+          'Your plan, free trial and assistant chats this month.',
+        )}
+        {link('/settings/team', <Users aria-hidden />, 'Team', 'Invite staff and riders.')}
+      </ListGroup>
 
-      <Link href="/settings/instagram" className="block">
-        <Card className="transition-colors hover:bg-muted/50">
-          <CardHeader className="flex-row items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Camera className="size-5 text-primary" aria-hidden />
-              <div>
-                <CardTitle>Instagram</CardTitle>
-                <CardDescription>Connect your account so DMs arrive in your inbox.</CardDescription>
-              </div>
-            </div>
-            <ChevronRight className="size-5 text-muted-foreground" aria-hidden />
-          </CardHeader>
-        </Card>
-      </Link>
-
-      <Link href="/settings/website-chat" className="block">
-        <Card className="transition-colors hover:bg-muted/50">
-          <CardHeader className="flex-row items-center justify-between">
-            <div className="flex items-center gap-3">
-              <MessagesSquare className="size-5 text-primary" aria-hidden />
-              <div>
-                <CardTitle>Website chat</CardTitle>
-                <CardDescription>A chat bubble for your website and store.</CardDescription>
-              </div>
-            </div>
-            <ChevronRight className="size-5 text-muted-foreground" aria-hidden />
-          </CardHeader>
-        </Card>
-      </Link>
-
-      <Link href="/settings/alerts" className="block">
-        <Card className="transition-colors hover:bg-muted/50">
-          <CardHeader className="flex-row items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Bell className="size-5 text-primary" aria-hidden />
-              <div>
-                <CardTitle>Alerts</CardTitle>
-                <CardDescription>
-                  WhatsApp alerts, daily briefing and automatic customer messages.
-                </CardDescription>
-              </div>
-            </div>
-            <ChevronRight className="size-5 text-muted-foreground" aria-hidden />
-          </CardHeader>
-        </Card>
-      </Link>
-
-      <Link href="/settings/whatsapp" className="block">
-        <Card className="transition-colors hover:bg-muted/50">
-          <CardHeader className="flex-row items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Smartphone className="size-5 text-primary" aria-hidden />
-              <div>
-                <CardTitle>WhatsApp number</CardTitle>
-                <CardDescription>
-                  Connect your number so chats arrive in your inbox.
-                </CardDescription>
-              </div>
-            </div>
-            <ChevronRight className="size-5 text-muted-foreground" aria-hidden />
-          </CardHeader>
-        </Card>
-      </Link>
-
-      <Link href="/settings/whatsapp-buttons" className="block">
-        <Card className="transition-colors hover:bg-muted/50">
-          <CardHeader className="flex-row items-center justify-between">
-            <div className="flex items-center gap-3">
-              <MessageCircle className="size-5 text-primary" aria-hidden />
-              <div>
-                <CardTitle>WhatsApp buttons</CardTitle>
-                <CardDescription>
-                  Links and buttons for your website, Instagram bio and flyers.
-                </CardDescription>
-              </div>
-            </div>
-            <ChevronRight className="size-5 text-muted-foreground" aria-hidden />
-          </CardHeader>
-        </Card>
-      </Link>
-
-      <Link href="/settings/brand" className="block">
-        <Card className="transition-colors hover:bg-muted/50">
-          <CardHeader className="flex-row items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Palette className="size-5 text-primary" aria-hidden />
-              <div>
-                <CardTitle>Brand kit</CardTitle>
-                <CardDescription>Logo, colours, font and how your assistant talks.</CardDescription>
-              </div>
-            </div>
-            <ChevronRight className="size-5 text-muted-foreground" aria-hidden />
-          </CardHeader>
-        </Card>
-      </Link>
-
-      <Link href="/settings/payments" className="block">
-        <Card className="transition-colors hover:bg-muted/50">
-          <CardHeader className="flex-row items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Landmark className="size-5 text-primary" aria-hidden />
-              <div>
-                <CardTitle>Get paid</CardTitle>
-                <CardDescription>Your bank account for online payments.</CardDescription>
-              </div>
-            </div>
-            <ChevronRight className="size-5 text-muted-foreground" aria-hidden />
-          </CardHeader>
-        </Card>
-      </Link>
-
-      <Link href="/settings/delivery" className="block">
-        <Card className="transition-colors hover:bg-muted/50">
-          <CardHeader className="flex-row items-center justify-between">
-            <div className="flex items-center gap-3">
-              <MapPin className="size-5 text-primary" aria-hidden />
-              <div>
-                <CardTitle>Delivery areas</CardTitle>
-                <CardDescription>Where you deliver and how much it costs.</CardDescription>
-              </div>
-            </div>
-            <ChevronRight className="size-5 text-muted-foreground" aria-hidden />
-          </CardHeader>
-        </Card>
-      </Link>
-
-      <Link href="/settings/team" className="block">
-        <Card className="transition-colors hover:bg-muted/50">
-          <CardHeader className="flex-row items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Users className="size-5 text-primary" aria-hidden />
-              <div>
-                <CardTitle>Team</CardTitle>
-                <CardDescription>Invite staff and riders.</CardDescription>
-              </div>
-            </div>
-            <ChevronRight className="size-5 text-muted-foreground" aria-hidden />
-          </CardHeader>
-        </Card>
-      </Link>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Your businesses</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-2">
-          {memberships.map((m) => {
-            const current = m.businessId === membership.businessId;
-            return (
-              <div
-                key={m.businessId}
-                className="flex items-center justify-between gap-3 rounded-md border px-3 py-2"
-              >
-                <span className="truncate font-medium">{m.businessName}</span>
-                {current ? (
+      <ListGroup title="Your businesses">
+        {memberships.map((m) => {
+          const current = m.businessId === membership.businessId;
+          return (
+            <ListRow
+              key={m.businessId}
+              title={m.businessName}
+              trailing={
+                current ? (
                   <Badge tone="success">Current</Badge>
                 ) : (
                   <ActionButton
                     action={switchBusinessAction.bind(null, m.businessId)}
                     redirectTo="/"
-                    variant="outline"
+                    variant="secondary"
                     size="sm"
                   >
                     Switch
                   </ActionButton>
-                )}
-              </div>
-            );
-          })}
-          <Button asChild variant="ghost" className="justify-start">
-            <Link href="/onboarding?new=1">
-              <Plus aria-hidden /> Add another business
-            </Link>
-          </Button>
-        </CardContent>
-      </Card>
+                )
+              }
+            />
+          );
+        })}
+        <ListRow asChild>
+          <Link href="/onboarding?new=1">
+            <ListRowContent icon={<Plus aria-hidden />} title="Add another business" />
+          </Link>
+        </ListRow>
+      </ListGroup>
     </div>
   );
 }

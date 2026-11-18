@@ -14,6 +14,7 @@ import { z } from 'zod';
 import { getDashboardContext } from '@/lib/auth';
 import { describeEvent, ORDER_STATUS_TONES, orderStatusLabel, timeAgo } from '@/lib/orders';
 import { CustomerForm } from './customer-form';
+import { BackLink } from '@/components/page-header';
 
 export const metadata: Metadata = { title: 'Customer' };
 
@@ -56,12 +57,10 @@ export default async function CustomerPage({ params }: Props) {
   const now = new Date();
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-4">
+    <div className="mx-auto flex max-w-2xl flex-col gap-6">
       <div>
-        <Link href="/customers" className="text-sm text-primary">
-          ← Customers
-        </Link>
-        <h1 className="truncate text-2xl font-bold">{customer.name || 'No name'}</h1>
+        <BackLink href="/customers">Customers</BackLink>
+        <h1 className="truncate text-3xl font-semibold">{customer.name || 'No name'}</h1>
         <div className="mt-1 flex flex-wrap gap-1">
           <Badge tone={detail.kind === 'repeat' ? 'success' : 'info'}>
             {detail.kind === 'repeat' ? 'Repeat customer' : 'New customer'}
@@ -106,13 +105,13 @@ export default async function CustomerPage({ params }: Props) {
         <CardContent className="grid grid-cols-2 gap-3 pt-4 sm:pt-6">
           <div>
             <p className="text-sm text-muted-foreground">Orders</p>
-            <p className="text-xl font-bold">
+            <p className="text-xl font-semibold">
               {orders.filter((o) => o.status !== 'cancelled').length}
             </p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Total spent</p>
-            <p className="text-xl font-bold">{formatNaira(detail.totalSpent)}</p>
+            <p className="text-xl font-semibold">{formatNaira(detail.totalSpent)}</p>
           </div>
         </CardContent>
       </Card>

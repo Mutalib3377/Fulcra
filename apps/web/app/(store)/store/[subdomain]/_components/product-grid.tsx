@@ -24,7 +24,7 @@ export function ProductGrid({ products }: { products: StoreProductCard[] }) {
                     className="size-full object-cover transition-transform group-hover:scale-[1.02]"
                   />
                 ) : (
-                  <div className="flex size-full items-center justify-center text-3xl font-bold text-muted-foreground/40">
+                  <div className="flex size-full items-center justify-center text-3xl font-semibold text-muted-foreground/40">
                     {product.name.slice(0, 1).toUpperCase()}
                   </div>
                 )}

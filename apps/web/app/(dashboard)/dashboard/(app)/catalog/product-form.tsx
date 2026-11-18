@@ -383,7 +383,7 @@ export function ProductForm({ mode, productId, initial, categories }: Props) {
         </p>
       )}
 
-      <div className="sticky bottom-16 z-10 -mx-4 flex flex-col gap-2 border-t bg-background/95 px-4 py-3 backdrop-blur md:bottom-0 sm:flex-row">
+      <div className="sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] z-10 -mx-4 flex flex-col gap-2 border-t border-border/60 bg-background/85 px-4 py-3 backdrop-blur-xl backdrop-saturate-150 sm:-mx-6 sm:flex-row sm:px-6 md:bottom-0">
         <Button type="submit" size="lg" loading={pending} className="sm:flex-1">
           {mode === 'create' ? 'Save product' : 'Save changes'}
         </Button>

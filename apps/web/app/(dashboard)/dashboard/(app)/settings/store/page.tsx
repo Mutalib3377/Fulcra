@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getDashboardContext } from '@/lib/auth';
 import { StoreChoiceForm } from './store-choice-form';
+import { BackLink } from '@/components/page-header';
 
 export const metadata: Metadata = { title: 'Store or website' };
 
@@ -14,16 +15,14 @@ export default async function StoreChoicePage({ searchParams }: Props) {
   const business = await getBusiness(actor);
   const welcome = (await searchParams).welcome === '1';
   return (
-    <div className="mx-auto flex w-full max-w-xl flex-col gap-4">
+    <div className="mx-auto flex w-full max-w-xl flex-col gap-6">
       <div className="flex flex-col gap-1">
         {welcome ? (
           <p className="text-sm font-medium text-success">Your business is ready.</p>
         ) : (
-          <Link href="/settings" className="text-sm text-primary">
-            ← Settings
-          </Link>
+          <BackLink href="/settings">Settings</BackLink>
         )}
-        <h1 className="text-2xl font-bold">How will customers shop with you?</h1>
+        <h1 className="text-3xl font-semibold">How will customers shop with you?</h1>
         <p className="text-muted-foreground">You can change this any time in Settings.</p>
       </div>
       <StoreChoiceForm

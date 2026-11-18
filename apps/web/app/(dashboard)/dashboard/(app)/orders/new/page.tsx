@@ -1,10 +1,10 @@
 import { listCustomers, listDeliveryZones, listOrderableProducts } from '@fulcra/core';
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getDashboardContext } from '@/lib/auth';
 import { imageUrls } from '@/lib/images';
 import { NewOrderForm } from './new-order-form';
+import { BackLink } from '@/components/page-header';
 
 export const metadata: Metadata = { title: 'New order' };
 
@@ -21,12 +21,10 @@ export default async function NewOrderPage({ searchParams }: Props) {
   ]);
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-4">
+    <div className="mx-auto flex max-w-2xl flex-col gap-6">
       <div>
-        <Link href="/orders" className="text-sm text-primary">
-          ← Orders
-        </Link>
-        <h1 className="text-2xl font-bold">New order</h1>
+        <BackLink href="/orders">Orders</BackLink>
+        <h1 className="text-3xl font-semibold">New order</h1>
       </div>
       <NewOrderForm
         preselectedCustomerId={preselected ?? null}

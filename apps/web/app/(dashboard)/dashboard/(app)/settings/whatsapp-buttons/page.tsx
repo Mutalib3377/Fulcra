@@ -1,8 +1,8 @@
 import { getBrandKit, getBusiness, listProducts } from '@fulcra/core';
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { getDashboardContext } from '@/lib/auth';
 import { WhatsAppButtons } from './whatsapp-buttons';
+import { BackLink } from '@/components/page-header';
 
 export const metadata: Metadata = { title: 'WhatsApp buttons' };
 
@@ -15,12 +15,10 @@ export default async function WhatsAppButtonsPage() {
     listProducts(actor),
   ]);
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
       <div>
-        <Link href="/settings" className="text-sm text-primary">
-          ← Settings
-        </Link>
-        <h1 className="text-2xl font-bold">WhatsApp buttons</h1>
+        <BackLink href="/settings">Settings</BackLink>
+        <h1 className="text-3xl font-semibold">WhatsApp buttons</h1>
         <p className="text-muted-foreground">
           Let customers on your website, Instagram or flyers start a WhatsApp chat with you in one
           tap. Copy a link or a button and paste it where you want it.

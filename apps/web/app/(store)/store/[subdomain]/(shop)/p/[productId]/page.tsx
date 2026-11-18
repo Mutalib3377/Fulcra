@@ -86,7 +86,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
         </nav>
 
         <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-bold text-balance">{product.name}</h1>
+          <h1 className="text-3xl font-semibold text-balance">{product.name}</h1>
           <p className="text-xl font-semibold">
             {!chosen && product.hasPriceRange ? 'From ' : ''}
             {formatNaira(price)}
@@ -219,7 +219,7 @@ function Gallery({
 }) {
   if (photos.length === 0) {
     return (
-      <div className="flex aspect-square items-center justify-center rounded-lg bg-muted text-5xl font-bold text-muted-foreground/40">
+      <div className="flex aspect-square items-center justify-center rounded-lg bg-muted text-5xl font-semibold text-muted-foreground/40">
         {name.slice(0, 1).toUpperCase()}
       </div>
     );

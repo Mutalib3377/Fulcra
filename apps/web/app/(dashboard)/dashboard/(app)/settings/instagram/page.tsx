@@ -3,11 +3,11 @@ import { featureAccess, listChannelConnections } from '@fulcra/core';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@fulcra/ui';
 import { AlertTriangle, CheckCircle2 } from 'lucide-react';
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { ActionButton } from '@/components/action-button';
 import { PlanNotice } from '@/components/plan-notice';
 import { getDashboardContext } from '@/lib/auth';
 import { disconnectInstagramAction } from './actions';
+import { BackLink } from '@/components/page-header';
 
 export const metadata: Metadata = { title: 'Instagram' };
 
@@ -35,12 +35,10 @@ export default async function InstagramSettingsPage({
   const access = await featureAccess(actor.businessId, 'channel.instagram');
   const isOwner = membership.role === 'owner';
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
       <div>
-        <Link href="/settings" className="text-sm text-primary">
-          ← Settings
-        </Link>
-        <h1 className="text-2xl font-bold">Instagram</h1>
+        <BackLink href="/settings">Settings</BackLink>
+        <h1 className="text-3xl font-semibold">Instagram</h1>
         <p className="text-muted-foreground">
           Connect your Instagram account so DMs arrive in your inbox and your assistant can answer
           them.

@@ -39,7 +39,7 @@ function useAttentionCount(): number {
 function InboxBadge({ count }: { count: number }) {
   if (count === 0) return null;
   return (
-    <span className="absolute -top-1.5 -right-2.5 min-w-4.5 rounded-full bg-danger px-1 text-center text-[10px] leading-4.5 font-bold text-white">
+    <span className="absolute -top-1.5 -right-2.5 min-w-4.5 rounded-full bg-danger px-1 text-center text-[10px] leading-4.5 font-semibold text-white">
       {count > 99 ? '99+' : count}
       <span className="sr-only"> waiting</span>
     </span>
@@ -114,7 +114,7 @@ export function SideNav() {
             <Icon className="size-[1.125rem]" aria-hidden />
             {label}
             {href === '/inbox' && attention > 0 && (
-              <span className="ml-auto rounded-full bg-danger px-1.5 text-xs font-bold text-white">
+              <span className="ml-auto rounded-full bg-danger px-1.5 text-xs font-semibold text-white">
                 {attention}
               </span>
             )}

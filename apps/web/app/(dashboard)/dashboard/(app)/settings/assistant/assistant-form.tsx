@@ -16,6 +16,7 @@ import {
 import Link from 'next/link';
 import { useState, useTransition } from 'react';
 import { saveAgentSettingsAction } from './actions';
+import { StickyActions } from '@/components/page-header';
 
 const DAY_LABEL = {
   mon: 'Monday',
@@ -291,12 +292,15 @@ export function AssistantForm({
           {message.text}
         </p>
       )}
-      <div className="flex flex-wrap items-center gap-3">
-        {canEdit ? (
-          <Button type="submit" loading={pending}>
+      {canEdit && (
+        <StickyActions>
+          <Button type="submit" size="lg" loading={pending}>
             Save
           </Button>
-        ) : (
+        </StickyActions>
+      )}
+      <div className="flex flex-wrap items-center gap-3">
+        {!canEdit && (
           <p className="text-sm text-muted-foreground">Only the owner can change these settings.</p>
         )}
         <Link

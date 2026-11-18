@@ -24,6 +24,7 @@ import {
 } from '@/lib/orders';
 import { OrderActions } from './order-actions';
 import { PaymentCard } from './payment-card';
+import { BackLink } from '@/components/page-header';
 
 export const metadata: Metadata = { title: 'Order' };
 
@@ -63,13 +64,11 @@ export default async function OrderPage({ params }: Props) {
   const waNumber = customer.phone?.replace(/^\+/, '');
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-4">
+    <div className="mx-auto flex max-w-2xl flex-col gap-6">
       <div>
-        <Link href="/orders" className="text-sm text-primary">
-          ← Orders
-        </Link>
+        <BackLink href="/orders">Orders</BackLink>
         <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-2xl font-bold">Order #{order.orderNumber}</h1>
+          <h1 className="text-3xl font-semibold">Order #{order.orderNumber}</h1>
           <Badge tone={ORDER_STATUS_TONES[order.status]}>{orderStatusLabel(order.status)}</Badge>
         </div>
         <p className="text-sm text-muted-foreground">{formatDateTime(order.createdAt)}</p>
@@ -166,7 +165,7 @@ export default async function OrderPage({ params }: Props) {
             {order.discount > 0 && (
               <Row label="Discount" value={`−${formatNaira(order.discount)}`} />
             )}
-            <div className="flex justify-between text-base font-bold">
+            <div className="flex justify-between text-base font-semibold">
               <span>Total</span>
               <span>{formatNaira(order.total)}</span>
             </div>

@@ -6,10 +6,10 @@ import {
 } from '@fulcra/core';
 import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle } from '@fulcra/ui';
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { PlanNotice } from '@/components/plan-notice';
 import { getDashboardContext } from '@/lib/auth';
 import { AlertsForm } from './alerts-form';
+import { BackLink } from '@/components/page-header';
 
 export const metadata: Metadata = { title: 'Alerts' };
 
@@ -52,12 +52,10 @@ export default async function AlertsSettingsPage() {
       minute: '2-digit',
     });
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
       <div>
-        <Link href="/settings" className="text-sm text-primary">
-          ← Settings
-        </Link>
-        <h1 className="text-2xl font-bold">Alerts</h1>
+        <BackLink href="/settings">Settings</BackLink>
+        <h1 className="text-3xl font-semibold">Alerts</h1>
         <p className="text-muted-foreground">
           Fulcra tells you on WhatsApp when something needs you, and sends a short summary every
           morning.
