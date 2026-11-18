@@ -1,4 +1,10 @@
-import { DeleteObjectsCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import type { Readable } from 'node:stream';
+import {
+  DeleteObjectsCommand,
+  ListObjectsV2Command,
+  PutObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
 import { z } from 'zod';
 
 /**
@@ -76,4 +82,48 @@ export async function deleteFiles(keys: string[]): Promise<void> {
 /** Public URL of a stored file. */
 export function publicFileUrl(key: string, env: NodeJS.ProcessEnv = process.env): string {
   return `${getStorageConfig(env).STORAGE_PUBLIC_URL}/${key}`;
+}
+
+// ─── Private files (database backups) ───────────────────────────────────────
+// Same storage account, but a separate bucket with no public access (BACKUP_BUCKET).
+
+/** Uploads a file to a private bucket from a stream of known length. */
+export async function putPrivateFile(
+  bucket: string,
+  key: string,
+  body: Readable,
+  contentLength: number,
+): Promise<void> {
+  const { s3 } = getClient();
+  await s3.send(
+    new PutObjectCommand({
+      Bucket: bucket,
+      Key: key,
+      Body: body,
+      ContentLength: contentLength,
+      ContentType: 'application/octet-stream',
+    }),
+  );
+}
+
+/** Keys in a private bucket under a prefix (up to 1,000, oldest name first). */
+export async function listPrivateFiles(bucket: string, prefix: string): Promise<string[]> {
+  const { s3 } = getClient();
+  const result = await s3.send(new ListObjectsV2Command({ Bucket: bucket, Prefix: prefix }));
+  return (result.Contents ?? [])
+    .map((o) => o.Key)
+    .filter((k): k is string => Boolean(k))
+    .sort();
+}
+
+/** Deletes files from a private bucket. */
+export async function deletePrivateFiles(bucket: string, keys: string[]): Promise<void> {
+  if (keys.length === 0) return;
+  const { s3 } = getClient();
+  await s3.send(
+    new DeleteObjectsCommand({
+      Bucket: bucket,
+      Delete: { Objects: keys.map((Key) => ({ Key })), Quiet: true },
+    }),
+  );
 }

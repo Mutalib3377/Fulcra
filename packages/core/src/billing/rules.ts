@@ -85,8 +85,16 @@ export const PLANS: Record<PlanCode, PlanDefinition> = {
 };
 
 export const TRIAL_DAYS = 14;
-/** The trial includes everything in this plan. */
+/** The trial includes this plan's features (minus TRIAL_EXCLUDED_FEATURES)… */
 export const TRIAL_PLAN: PlanCode = 'growth';
+/** …with fewer assistant chats, so free trials can't run up a large AI bill. */
+export const TRIAL_CONVERSATIONS = 100;
+/**
+ * Not in the trial because each one costs Fulcra money: owner alerts and briefings are sent from
+ * Fulcra's own WhatsApp number. During the trial everything still shows on the dashboard.
+ * Fulcra staff can switch them on for one business (`setBusinessEntitlement`).
+ */
+export const TRIAL_EXCLUDED_FEATURES: FeatureKey[] = ['owner_alerts'];
 /** After a failed renewal, features keep working this long. */
 export const GRACE_DAYS = 7;
 /** What still works without a paid plan: sales and data never stop, the AI does. */

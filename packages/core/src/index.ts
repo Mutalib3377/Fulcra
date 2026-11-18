@@ -50,6 +50,7 @@ export {
   type StoredImage,
 } from './media/images';
 export { uploadImage } from './media/upload';
+export { deletePrivateFiles, listPrivateFiles, putPrivateFile } from './media/storage';
 
 export * from './events/events';
 export * from './delivery/zones';

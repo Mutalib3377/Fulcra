@@ -1,21 +1,21 @@
-# Render Blueprint: the web app and the background worker, in Frankfurt (EU).
+# Render Blueprint — FREE setup: one free web service runs the web app AND the worker.
 # Create it from the Render dashboard: New → Blueprint → pick this repository.
 # Values marked `sync: false` are asked for when the Blueprint is created (never commit them).
-# Step-by-step guide, including Supabase, R2, Cloudflare and webhooks: docs/DEPLOY.md
+# Keep it awake with a free uptime monitor on /api/health every 5 minutes (docs/DEPLOY.md).
+# When paying customers arrive, switch to render.paid.yaml (web + worker on paid plans).
+# Step-by-step guide: docs/DEPLOY.md
 
 services:
-  # ── Web: marketing site, dashboard, stores, API and webhooks ───────────────
   - type: web
-    name: fulcra-web
+    name: fulcra
     runtime: docker
-    dockerfilePath: ./apps/web/Dockerfile
+    dockerfilePath: ./deploy/free/Dockerfile
     dockerContext: .
     region: frankfurt
-    plan: starter
+    plan: free
     healthCheckPath: /api/health
     autoDeploy: true
     envVars:
-      # Baked in at build time too (the landing page is static): set before the first deploy.
       - key: ROOT_DOMAIN
         sync: false
       - key: DATABASE_URL # Supabase transaction pooler (port 6543)
@@ -28,12 +28,12 @@ services:
         sync: false
       - key: SUPABASE_PUBLISHABLE_KEY
         sync: false
-      - key: ENCRYPTION_KEY # same value on web and worker
+      - key: ENCRYPTION_KEY # generate once, never change
         sync: false
       - key: STORAGE_ENDPOINT
         sync: false
       - key: STORAGE_REGION
-        value: auto
+        value: 'auto'
       - key: STORAGE_BUCKET
         sync: false
       - key: STORAGE_ACCESS_KEY_ID
@@ -65,68 +65,16 @@ services:
       - key: SENTRY_DSN
         sync: false
       - key: SENTRY_ENVIRONMENT
-        value: production
-      # Browser values, baked in at build time.
+        value: 'production'
       - key: NEXT_PUBLIC_SENTRY_DSN
         sync: false
       - key: NEXT_PUBLIC_SENTRY_ENVIRONMENT
-        value: production
+        value: 'production'
       - key: NEXT_PUBLIC_POSTHOG_KEY
         sync: false
       - key: NEXT_PUBLIC_POSTHOG_HOST
-        value: https://eu.i.posthog.com
-
-  # ── Worker: AI replies, webhooks processing, imports, alerts, renewals ─────
-  - type: worker
-    name: fulcra-worker
-    runtime: docker
-    dockerfilePath: ./apps/worker/Dockerfile
-    dockerContext: .
-    region: frankfurt
-    plan: starter
-    autoDeploy: true
-    # Applies database migrations before the new worker starts (direct connection).
-    preDeployCommand: node_modules/.bin/tsx ../../packages/db/src/migrate.ts
-    envVars:
-      - key: ROOT_DOMAIN
-        sync: false
-      - key: DATABASE_URL # Supabase transaction pooler (port 6543)
-        sync: false
-      - key: DATABASE_URL_QUEUE # Supabase session pooler (port 5432 on the pooler host)
-        sync: false
-      - key: DATABASE_URL_MIGRATIONS # Supabase direct connection (database owner)
-        sync: false
-      - key: DB_POOL_MAX
-        value: '10'
-      - key: ENCRYPTION_KEY # same value on web and worker
-        sync: false
-      - key: STORAGE_ENDPOINT
-        sync: false
-      - key: STORAGE_REGION
-        value: auto
-      - key: STORAGE_BUCKET
-        sync: false
-      - key: STORAGE_ACCESS_KEY_ID
-        sync: false
-      - key: STORAGE_SECRET_ACCESS_KEY
-        sync: false
-      - key: STORAGE_PUBLIC_URL
-        sync: false
-      - key: PAYSTACK_SECRET_KEY
-        sync: false
-      - key: ANTHROPIC_API_KEY
-        sync: false
-      - key: META_APP_ID
-        sync: false
-      - key: META_APP_SECRET
-        sync: false
-      - key: INSTAGRAM_APP_ID
-        sync: false
-      - key: INSTAGRAM_APP_SECRET
-        sync: false
-      - key: SHOPIFY_API_KEY
-        sync: false
-      - key: SHOPIFY_API_SECRET
+        value: 'https://eu.i.posthog.com'
+      - key: DATABASE_URL_MIGRATIONS # Supabase direct connection: migrations and backups
         sync: false
       - key: FULCRA_WHATSAPP_PHONE_NUMBER_ID
         sync: false
@@ -134,7 +82,6 @@ services:
         sync: false
       - key: FULCRA_WHATSAPP_ACCESS_TOKEN
         sync: false
-      - key: SENTRY_DSN
+      # Weekly database backup (free Supabase has none): a PRIVATE R2 bucket.
+      - key: BACKUP_BUCKET
         sync: false
-      - key: SENTRY_ENVIRONMENT
-        value: production
