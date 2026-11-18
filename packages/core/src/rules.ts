@@ -42,3 +42,4 @@ export type { BusinessHours } from '@fulcra/db/schema';
 export type { OwnerAlertSettingsInput, OwnerAlertSettingsView } from './alerts/settings';
 export * from './conversations/web-chat-rules';
 export * from './billing/rules';
+export * from './owner-chat/rules';

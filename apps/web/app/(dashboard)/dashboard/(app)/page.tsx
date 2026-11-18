@@ -17,7 +17,7 @@ import {
   EmptyState,
 } from '@fulcra/ui';
 import { formatNaira } from '@fulcra/config';
-import { ExternalLink, MessageCircle, Plus } from 'lucide-react';
+import { ExternalLink, MessageCircle, Plus, Sparkles } from 'lucide-react';
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import Link from 'next/link';
@@ -64,13 +64,22 @@ export default async function DashboardHome() {
           <h1 className="text-3xl font-semibold">Welcome</h1>
           <p className="text-muted-foreground">Here is how {membership.businessName} is doing.</p>
         </div>
-        {membership.role !== 'rider' && (
-          <Button asChild className="shrink-0">
-            <Link href="/orders/new">
-              <Plus aria-hidden /> Order
-            </Link>
-          </Button>
-        )}
+        <div className="flex shrink-0 gap-2">
+          {membership.role === 'owner' && (
+            <Button asChild variant="tinted" size="icon" aria-label="Ask Fulcra">
+              <Link href="/ask">
+                <Sparkles aria-hidden />
+              </Link>
+            </Button>
+          )}
+          {membership.role !== 'rider' && (
+            <Button asChild className="shrink-0">
+              <Link href="/orders/new">
+                <Plus aria-hidden /> Order
+              </Link>
+            </Button>
+          )}
+        </div>
       </div>
 
       {setupUnfinished && !setupHidden && (
