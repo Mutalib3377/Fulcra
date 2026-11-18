@@ -5,7 +5,7 @@ import { recordEvent, type EventActorRef } from '../events/events';
 /**
  * Moves everything of one customer onto another (same business), e.g. an anonymous website
  * visitor who turns out to be a known WhatsApp customer: chats, channel identities, orders,
- * payments and events. The emptied customer is deleted, unless it still owns a dedicated
+ * payments, payment claims and events. The emptied customer is deleted, unless it still owns a dedicated
  * transfer account and the other customer has one too (then both are kept).
  */
 export async function mergeCustomerIntoInTx(
@@ -47,6 +47,10 @@ export async function mergeCustomerIntoInTx(
     .update(schema.payments)
     .set({ customerId: intoId })
     .where(eq(schema.payments.customerId, fromId));
+  await tx
+    .update(schema.paymentClaims)
+    .set({ customerId: intoId })
+    .where(eq(schema.paymentClaims.customerId, fromId));
   await tx
     .update(schema.events)
     .set({ customerId: intoId })

@@ -15,6 +15,8 @@ export const EVENT_TYPES = [
   'payment.confirmed',
   'payment.needs_review',
   'payment.unmatched',
+  'payment.claim_unverified',
+  'payment.claim_cleared',
   'catalog.imported',
   'conversation.started',
   'conversation.handoff',

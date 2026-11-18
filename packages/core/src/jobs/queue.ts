@@ -45,6 +45,11 @@ export const JOBS = {
     name: 'owner-alerts',
     data: z.object({}).loose(),
   },
+  /** Every minute: check customers' payment claims against the money that arrived (F1). */
+  paymentClaims: {
+    name: 'payment-claims',
+    data: z.object({}).loose(),
+  },
   /** Send the templates of Fulcra's own WhatsApp number to Meta (worker start). */
   submitPlatformTemplates: {
     name: 'submit-platform-templates',

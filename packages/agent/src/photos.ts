@@ -13,6 +13,15 @@ const photoOutput = z.object({
   description: z.string(),
   textInPhoto: z.string(),
   searchTerms: z.array(z.string()),
+  payment: z
+    .object({
+      amountNaira: z.number().nullable(),
+      bank: z.string(),
+      senderName: z.string(),
+      reference: z.string(),
+      dateTime: z.string(),
+    })
+    .nullable(),
 });
 
 const SYSTEM = `You look at photos customers send to a small online shop in Nigeria (fashion, beauty, food, gadgets) and describe them for the shop's sales assistant, who cannot see images.
@@ -20,6 +29,7 @@ const SYSTEM = `You look at photos customers send to a small online shop in Nige
 - description: one or two plain sentences: what it is, colour, pattern, style, material, and anything that tells products apart.
 - textInPhoto: words written on the photo exactly as seen (prices, names, amounts, bank, date), or "" if none.
 - searchTerms: 3 to 6 short words a shop would use in product names or descriptions, most important first (for example "ankara", "gown", "maxi", "blue"). Empty for payment proofs.
+- payment: only for payment proofs, otherwise null. Copy what the receipt shows: amountNaira (the amount sent, as a number, e.g. 17000 for "NGN 17,000.00"; null if not readable), bank (the sending bank or app), senderName, reference (session ID, transaction reference or similar, exactly as written), dateTime ("YYYY-MM-DDTHH:MM" in 24-hour time, or "YYYY-MM-DD" if only the date shows). Use "" for anything not shown. Don't judge whether it is real.
 Describe only what you see. Never guess a price that is not written.`;
 
 /**
@@ -99,6 +109,8 @@ export function photoNote(photo: NonNullable<AgentTurn['history'][number]['photo
   if (photo.kind === 'product' && photo.searchTerms.length)
     parts.push(`Search words: ${photo.searchTerms.join(', ')}`);
   if (photo.kind === 'payment_proof')
-    parts.push('This looks like a payment screenshot: not proof. Check with checkPaymentStatus');
+    parts.push(
+      'This looks like a payment screenshot: not proof. Call checkPaymentStatus with customerSaysPaid true',
+    );
   return `${parts.join('. ')}.]`;
 }

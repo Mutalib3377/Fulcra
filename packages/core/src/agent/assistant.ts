@@ -11,6 +11,8 @@ import { enqueueSendMessage } from '../jobs/queue';
 import type { AssistantActor } from '../members/access';
 import { createOrderInTx } from '../orders/orders';
 import { ORDER_STATUS_LABELS, unitPriceFor } from '../orders/rules';
+import { CLAIM_WAIT_MINUTES } from '../payments/claim-rules';
+import { latestClaimForOrderInTx, recordSaidPaidClaimInTx } from '../payments/claims';
 import { prepareAccountDetails } from '../payments/dedicated-accounts';
 import { createPaymentLink } from '../payments/payments';
 import { storeUrl } from '../payments/urls';
@@ -561,11 +563,38 @@ export async function assistantAccountDetails(
   return { orderNumber: n, total: naira(order.total), ...account, messageToSend: message };
 }
 
-/** Whether an order is paid, from our records (Paystack confirms payments, never the customer). */
+/** What the assistant should know about a payment claim on an unpaid order (F1). */
+function claimNote(claim: schema.PaymentClaim, order: schema.Order) {
+  const owed = order.total - order.amountPaid;
+  const screenshotAmount = claim.claimedAmount !== null ? naira(claim.claimedAmount) : null;
+  const mismatch = claim.flags.includes('amount_mismatch') && screenshotAmount !== null;
+  const notes: Record<string, string> = {
+    waiting:
+      'The customer says they paid, but nothing has arrived yet. Do not say it is paid. Say kindly that payments are confirmed automatically once the money lands, usually within minutes, and they will get a receipt.',
+    not_received: `Still nothing has arrived after ${CLAIM_WAIT_MINUTES} minutes and the owner has been told. Do not say it is paid. Say kindly the team will check and get back to them, then hand off.`,
+    confirmed: 'The money arrived.',
+    dismissed: 'The owner has looked at this.',
+  };
+  return {
+    status: claim.status,
+    screenshotAmount,
+    amountStillOwed: naira(owed),
+    note: mismatch
+      ? `${notes[claim.status]} The screenshot shows ${screenshotAmount}, but the order still needs ${naira(owed)}: mention this gently.`
+      : notes[claim.status],
+  };
+}
+
+/**
+ * Whether an order is paid, from our records (Paystack confirms payments, never the customer).
+ * When the customer says they paid an unpaid order, a payment claim is saved (F1) so the
+ * owner hears if the money never arrives.
+ */
 export async function assistantOrderStatus(
   businessId: string,
   conversationId: string,
   orderNumber: number | null,
+  customerSaysPaid = false,
 ) {
   return withTenant(businessId, async (tx) => {
     const conversation = await requireAssistantChat(tx, conversationId);
@@ -577,16 +606,34 @@ export async function assistantOrderStatus(
           .where(eq(schema.orders.customerId, conversation.customerId))
           .orderBy(desc(schema.orders.createdAt))
           .limit(3);
-    return {
-      orders: orders.map((o) => ({
+    const isPaidStatus = (status: schema.OrderStatus) =>
+      ['paid', 'dispatched', 'delivered'].includes(status);
+    if (customerSaysPaid) {
+      const target = orders.find((o) => !isPaidStatus(o.status) && o.status !== 'cancelled');
+      if (target) {
+        await recordSaidPaidClaimInTx(tx, businessId, {
+          customerId: conversation.customerId,
+          conversationId,
+          orderId: target.id,
+        });
+      }
+    }
+    const result = [];
+    for (const o of orders) {
+      const paid = isPaidStatus(o.status);
+      const claim =
+        paid || o.status === 'cancelled' ? null : await latestClaimForOrderInTx(tx, o.id);
+      result.push({
         orderNumber: o.orderNumber,
         status: ORDER_STATUS_LABELS[o.status],
-        paid: ['paid', 'dispatched', 'delivered'].includes(o.status),
+        paid,
         total: naira(o.total),
         amountPaid: naira(o.amountPaid),
         createdAt: o.createdAt.toISOString().slice(0, 10),
-      })),
-    };
+        ...(claim && claim.status !== 'dismissed' ? { paymentClaim: claimNote(claim, o) } : {}),
+      });
+    }
+    return { orders: result };
   });
 }
 

@@ -347,9 +347,13 @@ describe('assistant scenarios', () => {
     await s.turn();
     await s.say("I've sent the money");
     script = [
-      () => ({ tool: 'checkPaymentStatus', input: { orderNumber: 1001 } }),
+      () => ({ tool: 'checkPaymentStatus', input: { orderNumber: 1001, customerSaysPaid: true } }),
       (body) => {
-        const status = (lastToolResult(body).orders as { paid: boolean }[])[0]!;
+        const status = (
+          lastToolResult(body).orders as { paid: boolean; paymentClaim?: { status: string } }[]
+        )[0]!;
+        // The claim is saved and the assistant is told nothing arrived yet.
+        expect(status.paymentClaim?.status).toBe('waiting');
         return {
           text: status.paid
             ? 'Payment received, thank you!'
@@ -465,6 +469,7 @@ describe('assistant scenarios', () => {
           description: 'A blue ankara maxi gown with puff sleeves.',
           textInPhoto: '₦35,000 @otherboutique',
           searchTerms: ['Ankara', 'gown', 'maxi', 'blue'],
+          payment: null,
         },
       }),
       () => ({ tool: 'searchProducts', input: { query: 'ankara gown maxi blue', category: null } }),
@@ -527,6 +532,7 @@ describe('assistant scenarios', () => {
           description: 'A blue ankara maxi gown.',
           textInPhoto: '₦35,000',
           searchTerms: ['ankara', 'gown'],
+          payment: null,
         },
       }),
       () => ({ text: 'It is ₦35,000.' }),
@@ -547,10 +553,19 @@ describe('assistant scenarios', () => {
           description: 'A bank app screenshot of a successful transfer.',
           textInPhoto: 'Transfer successful ₦15,000 to Ada Styles',
           searchTerms: [],
+          payment: {
+            amountNaira: 15000,
+            bank: 'Opay',
+            senderName: 'Chioma Obi',
+            reference: '100004261118154200',
+            dateTime: '2026-11-18T15:42',
+          },
         },
       }),
       (body) => {
-        expect(JSON.stringify(body)).toContain('not proof. Check with checkPaymentStatus');
+        expect(JSON.stringify(body)).toContain(
+          'not proof. Call checkPaymentStatus with customerSaysPaid true',
+        );
         return { tool: 'getOrderStatus', input: { orderNumber: null } };
       },
       () => ({
@@ -559,6 +574,17 @@ describe('assistant scenarios', () => {
     ];
     expect(await s.turn()).toMatchObject({ status: 'replied' });
     expect((await s.actions()).map((a) => [a.tool, a.ok])).toEqual([['getOrderStatus', true]]);
+    // The screenshot became a payment claim with what it says (checked against the money).
+    const claims = await withTenant(s.business.id, (tx) => tx.select().from(schema.paymentClaims));
+    expect(claims).toMatchObject([
+      {
+        source: 'screenshot',
+        status: 'waiting',
+        claimedAmount: 1_500_000,
+        bank: 'Opay',
+        reference: '100004261118154200',
+      },
+    ]);
   });
 
   it('a photo that cannot be loaded: the assistant is told it could not see it', async () => {

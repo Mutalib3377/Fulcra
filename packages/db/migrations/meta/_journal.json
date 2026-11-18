@@ -127,6 +127,13 @@
       "when": 1795039011771,
       "tag": "0017_owner-chat",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1795042609046,
+      "tag": "0018_payment-claims",
+      "breakpoints": true
     }
   ]
 }

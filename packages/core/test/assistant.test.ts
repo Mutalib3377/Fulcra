@@ -324,6 +324,7 @@ describe('photos and search', () => {
       description: 'A red dress.',
       textInPhoto: '',
       searchTerms: ['red', 'dress'],
+      payment: null,
     });
     const turn = await a.claimAgentTurn(shop.business.id, r.conversationId, r.messageId);
     expect(turn!.history.at(-1)).toMatchObject({ id: r.messageId, photo: saved, image: null });
