@@ -9,6 +9,7 @@ import { AutoRefresh } from '@/components/auto-refresh';
 import { getDashboardContext } from '@/lib/auth';
 import { IMPORT_KIND_LABEL, IMPORT_STATUS } from '../status';
 import { ImportReview, type ReviewItem } from './import-review';
+import { BackLink } from '@/components/page-header';
 
 export const metadata: Metadata = { title: 'Import' };
 
@@ -70,13 +71,11 @@ export default async function ImportDetailPage({ params }: Props) {
   const status = IMPORT_STATUS[run.status];
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
       <div>
-        <Link href="/catalog/import" className="text-sm text-primary">
-          ← Imports
-        </Link>
+        <BackLink href="/catalog/import">Imports</BackLink>
         <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-2xl font-bold break-all">
+          <h1 className="text-3xl font-semibold break-all">
             {run.label || IMPORT_KIND_LABEL[run.kind]}
           </h1>
           <Badge tone={status.tone}>{status.label}</Badge>

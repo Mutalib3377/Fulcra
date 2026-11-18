@@ -41,9 +41,9 @@ export default async function CatalogPage({ searchParams }: Props) {
   };
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold">Catalog</h1>
+        <h1 className="text-3xl font-semibold">Catalog</h1>
         {canEdit && (
           <div className="flex gap-2">
             <Button asChild variant="outline">

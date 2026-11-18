@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { getDashboardContext } from '@/lib/auth';
 import { TestChat } from './test-chat';
+import { BackLink } from '@/components/page-header';
 
 export const metadata: Metadata = { title: 'Test chat' };
 
@@ -12,12 +12,10 @@ export default async function TestChatPage() {
     return <p className="text-muted-foreground">The inbox is for the owner and staff.</p>;
   }
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
       <div>
-        <Link href="/inbox" className="text-sm text-primary">
-          ← Inbox
-        </Link>
-        <h1 className="text-2xl font-bold">Test chat</h1>
+        <BackLink href="/inbox">Inbox</BackLink>
+        <h1 className="text-3xl font-semibold">Test chat</h1>
         <p className="text-muted-foreground">
           Pretend to be a customer. Your messages arrive in your inbox like real ones (marked
           “Test”), so you can see how chats work before connecting WhatsApp. Real customers never

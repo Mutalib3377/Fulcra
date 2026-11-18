@@ -2,9 +2,9 @@ import { getPayoutSettings, isCoreError, listBanks, type PaystackBank } from '@f
 import { Card, CardContent, ErrorState } from '@fulcra/ui';
 import { Landmark } from 'lucide-react';
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { getDashboardContext } from '@/lib/auth';
 import { PayoutForm } from './payout-form';
+import { BackLink } from '@/components/page-header';
 
 export const metadata: Metadata = { title: 'Get paid' };
 
@@ -20,12 +20,10 @@ export default async function PaymentsSettingsPage() {
   }
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-4">
+    <div className="mx-auto flex max-w-2xl flex-col gap-6">
       <div>
-        <Link href="/settings" className="text-sm text-primary">
-          ← Settings
-        </Link>
-        <h1 className="text-2xl font-bold">Get paid</h1>
+        <BackLink href="/settings">Settings</BackLink>
+        <h1 className="text-3xl font-semibold">Get paid</h1>
         <p className="text-muted-foreground">
           Where money from online payments goes. Paystack sends it straight to this account; Fulcra
           never holds your money. Paystack&apos;s fee is taken from each payment.

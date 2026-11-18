@@ -17,5 +17,5 @@ Before launch the app needed one clear visual language: calm, premium and readab
 
 ## Consequences
 
-- Restyling a component restyles every page; pages are moved to the new spacing in a follow-up.
+- Restyling a component restyles every page. Pages use shared page pieces (`PageHeader`, `BackLink`, `StickyActions`, `ListGroup`), 24px between sections and semibold (not bold) headings.
 - Any new colour must be added as a token with a dark value.

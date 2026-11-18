@@ -8,6 +8,7 @@ import { getDashboardContext } from '@/lib/auth';
 import { dashboardUrl, storeUrl } from '@/lib/urls';
 import { setWebChatAction } from './actions';
 import { CopyCode } from './copy-code';
+import { BackLink } from '@/components/page-header';
 
 export const metadata: Metadata = { title: 'Website chat' };
 
@@ -21,12 +22,10 @@ export default async function WebsiteChatPage() {
   const on = chat?.enabled ?? false;
   const access = await featureAccess(actor.businessId, 'channel.web_widget');
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
       <div>
-        <Link href="/settings" className="text-sm text-primary">
-          ← Settings
-        </Link>
-        <h1 className="text-2xl font-bold">Website chat</h1>
+        <BackLink href="/settings">Settings</BackLink>
+        <h1 className="text-3xl font-semibold">Website chat</h1>
         <p className="text-muted-foreground">
           A chat bubble on your website. Visitors chat with your assistant, and the chats appear in
           your inbox. It also shows on your Fulcra store.

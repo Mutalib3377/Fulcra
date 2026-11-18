@@ -62,7 +62,7 @@ export function OptionsEditor({ control, register, errors }: Props) {
   const variantErrors = errors.variants;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-3 rounded-md bg-muted/60 p-3">
         <p className="text-sm font-medium">
           Quick add: type sizes and colours, then create every combination.

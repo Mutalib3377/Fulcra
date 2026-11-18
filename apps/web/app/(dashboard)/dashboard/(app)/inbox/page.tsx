@@ -13,9 +13,9 @@ export default async function InboxPage() {
     return <p className="text-muted-foreground">The inbox is for the owner and staff.</p>;
   }
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold">Inbox</h1>
+        <h1 className="text-3xl font-semibold">Inbox</h1>
         <Button asChild variant="outline" size="sm">
           <Link href="/inbox/test">
             <FlaskConical aria-hidden /> Test chat

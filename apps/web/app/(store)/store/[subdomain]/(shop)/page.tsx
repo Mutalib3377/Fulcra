@@ -50,7 +50,7 @@ export default async function StoreHome({ params }: Props) {
               className="size-18 rounded-lg bg-white object-contain p-1"
             />
           ) : null}
-          <h1 className="text-3xl font-bold text-balance">{store.name}</h1>
+          <h1 className="text-4xl font-semibold text-balance">{store.name}</h1>
           {store.brand.description ? (
             <p className="max-w-xl text-base opacity-90 whitespace-pre-line">
               {store.brand.description}

@@ -24,7 +24,7 @@ export function ProductListPage({
         </a>{' '}
         / <span className="text-foreground">{title}</span>
       </nav>
-      <h1 className="text-2xl font-bold">{title}</h1>
+      <h1 className="text-3xl font-semibold">{title}</h1>
       {products.length === 0 ? (
         <EmptyState
           title="Nothing here yet"

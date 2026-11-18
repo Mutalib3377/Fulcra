@@ -18,6 +18,7 @@ import { useRef, useState, useTransition, type ReactNode } from 'react';
 import { uploadImage, type UploadedImage } from '@/components/upload-image';
 import { saveBrandKitAction } from './actions';
 import { brandFontOptions } from '@/lib/brand-fonts';
+import { StickyActions } from '@/components/page-header';
 
 type Values = {
   logo: UploadedImage | null;
@@ -84,7 +85,7 @@ export function BrandKitForm({
   const font = brandFontOptions[values.font].stack;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-6">
       {!canEdit && (
         <p className="rounded-md bg-info-soft px-3 py-2 text-sm text-info">
           Only the business owner can change the brand kit.
@@ -105,7 +106,7 @@ export function BrandKitForm({
               className="size-10 rounded-md bg-white object-contain"
             />
           ) : (
-            <span className="flex size-10 items-center justify-center rounded-md bg-white/20 text-lg font-bold">
+            <span className="flex size-10 items-center justify-center rounded-md bg-white/20 text-lg font-semibold">
               {businessName.charAt(0)}
             </span>
           )}
@@ -273,9 +274,11 @@ export function BrandKitForm({
         </p>
       )}
       {canEdit && (
-        <Button type="button" size="lg" loading={pending} disabled={uploading} onClick={save}>
-          Save brand kit
-        </Button>
+        <StickyActions>
+          <Button type="button" size="lg" loading={pending} disabled={uploading} onClick={save}>
+            Save brand kit
+          </Button>
+        </StickyActions>
       )}
     </div>
   );

@@ -28,6 +28,7 @@ import { timeAgo } from '@/lib/orders';
 import { CsvUpload } from './csv-upload';
 import { ShopButtons, UrlImportForm, WooConnectForm } from './shop-actions';
 import { IMPORT_KIND_LABEL, IMPORT_STATUS } from './status';
+import { BackLink } from '@/components/page-header';
 
 export const metadata: Metadata = { title: 'Import products' };
 
@@ -66,12 +67,10 @@ export default async function ImportPage({ searchParams }: Props) {
   const problem = params.error ? (MESSAGES[params.error] ?? MESSAGES.shopify_failed) : null;
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
       <div>
-        <Link href="/catalog" className="text-sm text-primary">
-          ← Catalog
-        </Link>
-        <h1 className="text-2xl font-bold">Import products</h1>
+        <BackLink href="/catalog">Catalog</BackLink>
+        <h1 className="text-3xl font-semibold">Import products</h1>
         <p className="text-muted-foreground">
           Bring in the products you already have, instead of adding them one by one.
         </p>

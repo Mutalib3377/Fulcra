@@ -1,8 +1,8 @@
 import { getAgentSettings } from '@fulcra/core';
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { getDashboardContext } from '@/lib/auth';
 import { AssistantForm } from './assistant-form';
+import { BackLink } from '@/components/page-header';
 
 export const metadata: Metadata = { title: 'Assistant' };
 
@@ -14,12 +14,10 @@ export default async function AssistantSettingsPage() {
   const settings = await getAgentSettings(actor);
   const aiReady = Boolean(process.env.ANTHROPIC_API_KEY);
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
       <div>
-        <Link href="/settings" className="text-sm text-primary">
-          ← Settings
-        </Link>
-        <h1 className="text-2xl font-bold">Your assistant</h1>
+        <BackLink href="/settings">Settings</BackLink>
+        <h1 className="text-3xl font-semibold">Your assistant</h1>
         <p className="text-muted-foreground">
           It answers customers, finds products, takes orders and sends payment links, and passes
           chats to your team when it isn’t sure.

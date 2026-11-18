@@ -192,7 +192,7 @@ export function NewOrderForm({ products, customers, zones, preselectedCustomerId
     error?.field === field ? <FieldMessage error>{error.message}</FieldMessage> : null;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-6">
       <Section title="Customer">
         {customer ? (
           <div className="flex items-center justify-between gap-3 rounded-md border p-3">
@@ -544,7 +544,7 @@ export function NewOrderForm({ products, customers, zones, preselectedCustomerId
           {(discountKobo ?? 0) > 0 && (
             <Row label="Discount" value={`−${formatNaira(discountKobo ?? 0)}`} />
           )}
-          <div className="mt-1 flex justify-between border-t pt-2 text-lg font-bold">
+          <div className="mt-1 flex justify-between border-t pt-2 text-lg font-semibold">
             <span>Total</span>
             <span>{formatNaira(Math.max(total, 0))}</span>
           </div>

@@ -1,10 +1,10 @@
 import { featureAccess, listChannelConnections, listMessageTemplates } from '@fulcra/core';
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { getDashboardContext } from '@/lib/auth';
 import { TemplateList } from './template-list';
 import { PlanNotice } from '@/components/plan-notice';
 import { WhatsAppConnection } from './whatsapp-connection';
+import { BackLink } from '@/components/page-header';
 
 export const metadata: Metadata = { title: 'WhatsApp' };
 
@@ -24,12 +24,10 @@ export default async function WhatsAppSettingsPage() {
       ? { appId, configId, version: process.env.WHATSAPP_GRAPH_VERSION || 'v26.0' }
       : null;
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
       <div>
-        <Link href="/settings" className="text-sm text-primary">
-          ← Settings
-        </Link>
-        <h1 className="text-2xl font-bold">WhatsApp</h1>
+        <BackLink href="/settings">Settings</BackLink>
+        <h1 className="text-3xl font-semibold">WhatsApp</h1>
         <p className="text-muted-foreground">
           Connect your business WhatsApp number so customers’ messages arrive in your inbox and your
           assistant can answer them.

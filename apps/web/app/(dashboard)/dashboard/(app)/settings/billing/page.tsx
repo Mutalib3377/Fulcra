@@ -2,9 +2,9 @@ import { formatNaira } from '@fulcra/config';
 import { getBillingSummary, PLAN_CODES, PLANS, STATUS_LABELS } from '@fulcra/core';
 import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle } from '@fulcra/ui';
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { getDashboardContext } from '@/lib/auth';
 import { CancelPlanButton, PlanButtons } from './plan-actions';
+import { BackLink } from '@/components/page-header';
 
 export const metadata: Metadata = { title: 'Plans and billing' };
 
@@ -49,10 +49,8 @@ export default async function BillingPage({
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
       <div>
-        <Link href="/settings" className="text-sm text-primary">
-          ← Settings
-        </Link>
-        <h1 className="text-2xl font-bold">Plans and billing</h1>
+        <BackLink href="/settings">Settings</BackLink>
+        <h1 className="text-3xl font-semibold">Plans and billing</h1>
       </div>
       {paid && (
         <p role="status" className="rounded-md bg-success-soft px-3 py-2 text-sm text-success">
@@ -129,7 +127,7 @@ export default async function BillingPage({
                   <CardTitle className="text-base">{plan.name}</CardTitle>
                   {current && <Badge tone="success">Your plan</Badge>}
                 </div>
-                <p className="text-xl font-bold">
+                <p className="text-xl font-semibold">
                   {formatNaira(plan.monthlyPrice)}
                   <span className="text-sm font-normal text-muted-foreground"> / month</span>
                 </p>

@@ -18,8 +18,8 @@ export default async function CustomersPage({ searchParams }: Props) {
   const customers = await listCustomers(actor, search ? { search } : {});
 
   return (
-    <div className="flex flex-col gap-4">
-      <h1 className="text-2xl font-bold">Customers</h1>
+    <div className="flex flex-col gap-6">
+      <h1 className="text-3xl font-semibold">Customers</h1>
       <OrdersCustomersTabs active="customers" />
       <form action="/customers" method="get" className="flex gap-2">
         <div className="relative flex-1">
