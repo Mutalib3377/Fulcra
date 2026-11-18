@@ -258,7 +258,7 @@ Goal: the agent sells on WhatsApp end to end, the owner can watch and take over,
 
 - [x] Owner chat in the dashboard ("Ask Fulcra"): sales, best sellers, orders, one order, products and stock, chats waiting (owner only; fair use 300 messages a month, 50 in the trial)
 - [x] Changes only after the owner's YES: add product (with photo), stock, price, hide/show, mark paid, dispatched/delivered, cancel; checked when proposed, run by Core, expire after 10 minutes
-- [ ] Owner chat on WhatsApp through Fulcra's number (recognised by the alert number), photos for new products (O1b)
+- [x] Owner chat on WhatsApp through Fulcra's number (recognised by the alert number), photos for new products (O1b) (several businesses on one number: "switch to <name>"; unknown numbers get one explanation a day; works for real once Fulcra's number is approved by Meta)
 - [ ] Voice notes (after launch: needs a speech-to-text service)
 
 ### Launch gate

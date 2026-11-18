@@ -82,6 +82,8 @@ services:
         sync: false
       - key: FULCRA_WHATSAPP_ACCESS_TOKEN
         sync: false
+      - key: FULCRA_WHATSAPP_DISPLAY_NUMBER # Fulcra's number as dialled, for WhatsApp links
+        sync: false
       # Weekly database backup (free Supabase has none): a PRIVATE R2 bucket.
       - key: BACKUP_BUCKET
         sync: false

@@ -84,6 +84,11 @@ export const JOBS = {
     name: 'owner-message',
     data: z.object({ businessId: z.uuid(), chatId: z.uuid(), messageId: z.uuid() }),
   },
+  /** Send an owner-chat reply from Fulcra's WhatsApp number (O1b). */
+  ownerWhatsAppSend: {
+    name: 'owner-whatsapp-send',
+    data: z.object({ businessId: z.uuid(), messageId: z.uuid() }),
+  },
   /** Send a queued outgoing message through its channel. */
   sendMessage: {
     name: 'send-message',
@@ -262,5 +267,20 @@ export async function enqueueOwnerMessage(
     singletonKey: messageId,
     retryLimit: 2,
     retryDelay: 10,
+  });
+}
+
+/** Sends an owner-chat reply on WhatsApp (retried; the message may not be committed yet). */
+export async function enqueueOwnerWhatsAppSend(
+  businessId: string,
+  messageId: string,
+): Promise<void> {
+  const data = JOBS.ownerWhatsAppSend.data.parse({ businessId, messageId });
+  const boss = await getSender();
+  await boss.send(JOBS.ownerWhatsAppSend.name, data, {
+    singletonKey: messageId,
+    retryLimit: 5,
+    retryDelay: 5,
+    retryBackoff: true,
   });
 }

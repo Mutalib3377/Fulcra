@@ -55,6 +55,8 @@ services:
         sync: false
       - key: WHATSAPP_EMBEDDED_SIGNUP_CONFIG_ID
         sync: false
+      - key: FULCRA_WHATSAPP_DISPLAY_NUMBER # Fulcra's number as dialled, for WhatsApp links
+        sync: false
       - key: INSTAGRAM_APP_ID
         sync: false
       - key: INSTAGRAM_APP_SECRET

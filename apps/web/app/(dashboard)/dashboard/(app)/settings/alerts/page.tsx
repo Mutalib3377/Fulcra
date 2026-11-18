@@ -73,6 +73,10 @@ export default async function AlertsSettingsPage() {
         </p>
       ) : null}
       <AlertsForm initial={settings} canEdit={membership.role === 'owner'} />
+      <p className="-mt-3 px-1 text-sm text-muted-foreground">
+        This number is also how Fulcra knows it&apos;s you on WhatsApp: message Fulcra from it to
+        ask about your shop or make changes (see Ask Fulcra).
+      </p>
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Recent alerts</CardTitle>
