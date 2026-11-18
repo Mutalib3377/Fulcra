@@ -79,6 +79,11 @@ export const JOBS = {
     name: 'agent-reply',
     data: z.object({ businessId: z.uuid(), conversationId: z.uuid(), messageId: z.uuid() }),
   },
+  /** The owner's assistant answers an owner message (O1). */
+  ownerMessage: {
+    name: 'owner-message',
+    data: z.object({ businessId: z.uuid(), chatId: z.uuid(), messageId: z.uuid() }),
+  },
   /** Send a queued outgoing message through its channel. */
   sendMessage: {
     name: 'send-message',
@@ -242,4 +247,20 @@ export async function enqueueSubmitPlatformTemplates(): Promise<void> {
 export async function enqueueSyncBillingPlans(): Promise<void> {
   const boss = await getSender();
   await boss.send(JOBS.syncBillingPlans.name, {}, { ...RETRY, singletonKey: 'plans' });
+}
+
+/** Queues the owner's assistant for an owner message (answers only if it is still the newest). */
+export async function enqueueOwnerMessage(
+  businessId: string,
+  chatId: string,
+  messageId: string,
+): Promise<void> {
+  const data = JOBS.ownerMessage.data.parse({ businessId, chatId, messageId });
+  const boss = await getSender();
+  await boss.send(JOBS.ownerMessage.name, data, {
+    startAfter: 1,
+    singletonKey: messageId,
+    retryLimit: 2,
+    retryDelay: 10,
+  });
 }

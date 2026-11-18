@@ -13,3 +13,4 @@ export {
   type AgentModels,
 } from './models';
 export { describeNewPhotos, photoNote } from './photos';
+export { buildOwnerPrompt, OWNER_TOOLS, runOwnerTurn, type OwnerTurnResult } from './owner';

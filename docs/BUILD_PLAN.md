@@ -254,6 +254,13 @@ Goal: the agent sells on WhatsApp end to end, the owner can watch and take over,
 - [ ] Switch Paystack to live mode (owner)
 - [ ] Privacy policy and terms (needed for Meta reviews) (owner) (plain-language drafts at /privacy and /terms, marked as drafts; a lawyer must check them)
 
+### O1 — The owner's assistant (moved before launch)
+
+- [x] Owner chat in the dashboard ("Ask Fulcra"): sales, best sellers, orders, one order, products and stock, chats waiting (owner only; fair use 300 messages a month, 50 in the trial)
+- [x] Changes only after the owner's YES: add product (with photo), stock, price, hide/show, mark paid, dispatched/delivered, cancel; checked when proposed, run by Core, expire after 10 minutes
+- [ ] Owner chat on WhatsApp through Fulcra's number (recognised by the alert number), photos for new products (O1b)
+- [ ] Voice notes (after launch: needs a speech-to-text service)
+
 ### Launch gate
 
 - [ ] WhatsApp live for real sellers (Business Verification approved)

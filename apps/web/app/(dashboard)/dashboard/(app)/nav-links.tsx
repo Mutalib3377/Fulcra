@@ -2,7 +2,16 @@
 
 import { cn } from '@fulcra/ui';
 import { useQuery } from '@tanstack/react-query';
-import { House, MessageCircle, Package, Settings, ShoppingBag, Users, Wallet } from 'lucide-react';
+import {
+  House,
+  MessageCircle,
+  Package,
+  Settings,
+  ShoppingBag,
+  Sparkles,
+  Users,
+  Wallet,
+} from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -19,7 +28,9 @@ const sideItems = [
   ...items.slice(0, 3),
   { href: '/customers', label: 'Customers', icon: Users },
   { href: '/payments', label: 'Payments', icon: Wallet },
-  ...items.slice(3),
+  ...items.slice(3, 4),
+  { href: '/ask', label: 'Ask Fulcra', icon: Sparkles },
+  ...items.slice(4),
 ] as const;
 
 /** Chats waiting for the team, checked every 30 seconds. Riders have no inbox: no badge. */

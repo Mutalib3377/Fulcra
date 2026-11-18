@@ -9,6 +9,7 @@ import {
   syncBillingPlans,
 } from '@fulcra/core';
 import { handleAgentReply } from './jobs/agent-reply';
+import { handleOwnerMessage } from './jobs/owner-message';
 import { handleDatabaseBackup } from './jobs/backup';
 import { handleCatalogImport } from './jobs/catalog-import';
 import { handleChannelWebhook, handleMessageStatus } from './jobs/channel-webhook';
@@ -61,6 +62,11 @@ async function main(): Promise<void> {
     JOBS.agentReply.name,
     { localConcurrency: 4 },
     reported(JOBS.agentReply.name, handleAgentReply),
+  );
+  await boss.work(
+    JOBS.ownerMessage.name,
+    { localConcurrency: 2 },
+    reported(JOBS.ownerMessage.name, handleOwnerMessage),
   );
   await boss.work(
     JOBS.channelWebhook.name,

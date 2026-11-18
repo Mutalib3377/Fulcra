@@ -12,6 +12,7 @@ export const FEATURE_KEYS = [
   'catalog_import.shops',
   'owner_alerts',
   'customer_messages',
+  'owner_assistant',
 ] as const;
 export type FeatureKey = (typeof FEATURE_KEYS)[number];
 
@@ -44,6 +45,7 @@ const CORE: FeatureKey[] = [
   'payments',
   'catalog_import',
   'customer_messages',
+  'owner_assistant',
 ];
 const ALL_CHANNELS: FeatureKey[] = [...CHANNEL_FEATURES];
 

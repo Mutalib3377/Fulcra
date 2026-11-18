@@ -413,6 +413,41 @@ export async function setProductActive(
   });
 }
 
+/**
+ * Changes only the retail price (e.g. from the owner's chat), with the same rules as the
+ * product form: the wholesale and lowest accepted prices may not be higher than it.
+ * Options with their own price keep it.
+ */
+export async function setProductPrice(
+  actor: ActorContext,
+  productId: string,
+  retailPrice: number,
+): Promise<{ name: string; retailPrice: number }> {
+  const id = z.uuid().parse(productId);
+  const price = kobo.min(1, 'Enter the price.').parse(retailPrice);
+  return withTenant(actor.businessId, async (tx) => {
+    await requireMember(tx, actor, EDITORS);
+    const [current] = await tx
+      .select()
+      .from(schema.products)
+      .where(and(eq(schema.products.id, id), isNull(schema.products.archivedAt)))
+      .limit(1);
+    if (!current) throw new CoreError('not_found', 'This product no longer exists.');
+    if (current.wholesalePrice !== null && current.wholesalePrice > price)
+      throw new CoreError(
+        'validation',
+        'The wholesale price is higher than this. Change the wholesale price in the product page first.',
+      );
+    if (current.minPrice !== null && current.minPrice > price)
+      throw new CoreError(
+        'validation',
+        'Your lowest accepted price is higher than this. Change it in the product page first.',
+      );
+    await tx.update(schema.products).set({ retailPrice: price }).where(eq(schema.products.id, id));
+    return { name: current.name, retailPrice: price };
+  });
+}
+
 /** "Delete" in the app: archives the product so past orders and receipts keep working. */
 export async function archiveProduct(actor: ActorContext, productId: string): Promise<void> {
   const id = z.uuid().parse(productId);
