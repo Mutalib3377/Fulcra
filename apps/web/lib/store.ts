@@ -16,20 +16,26 @@ import { cache } from 'react';
  * also expire after a minute. Orders always re-check prices and stock in Core.
  */
 const STORE_REVALIDATE_SECONDS = 60;
+/** Bump when the shape of cached store data changes, so old entries are never read. */
+const CACHE_VERSION = 'v2';
 
 const businessTag = (businessId: string) => `store:${businessId}`;
 const subdomainTag = (subdomain: string) => `store-address:${subdomain}`;
 
 /** The store for an address, or null. Shared by metadata and the page in one request. */
 export const loadStore = cache((subdomain: string) =>
-  unstable_cache(() => getStoreBySubdomain(subdomain), ['store-info', subdomain.toLowerCase()], {
-    revalidate: STORE_REVALIDATE_SECONDS,
-    tags: [subdomainTag(subdomain.toLowerCase())],
-  })(),
+  unstable_cache(
+    () => getStoreBySubdomain(subdomain),
+    ['store-info', CACHE_VERSION, subdomain.toLowerCase()],
+    {
+      revalidate: STORE_REVALIDATE_SECONDS,
+      tags: [subdomainTag(subdomain.toLowerCase())],
+    },
+  )(),
 );
 
 export const loadStoreHome = cache((businessId: string) =>
-  unstable_cache(() => getStoreHome(businessId), ['store-home', businessId], {
+  unstable_cache(() => getStoreHome(businessId), ['store-home', CACHE_VERSION, businessId], {
     revalidate: STORE_REVALIDATE_SECONDS,
     tags: [businessTag(businessId)],
   })(),
@@ -38,7 +44,7 @@ export const loadStoreHome = cache((businessId: string) =>
 export const loadStoreProduct = cache((businessId: string, productId: string) =>
   unstable_cache(
     () => getStoreProduct(businessId, productId),
-    ['store-product', businessId, productId],
+    ['store-product', CACHE_VERSION, businessId, productId],
     {
       revalidate: STORE_REVALIDATE_SECONDS,
       tags: [businessTag(businessId)],
@@ -50,7 +56,7 @@ export const loadStoreProducts = cache(
   (businessId: string, category: string | null, page: number) =>
     unstable_cache(
       () => listStoreProducts(businessId, { category: category ?? undefined, page }),
-      ['store-products', businessId, category ?? '', String(page)],
+      ['store-products', CACHE_VERSION, businessId, category ?? '', String(page)],
       { revalidate: STORE_REVALIDATE_SECONDS, tags: [businessTag(businessId)] },
     )(),
 );

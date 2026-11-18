@@ -7,22 +7,20 @@ import {
   type StoreVariant,
 } from '@fulcra/core';
 import { cn } from '@fulcra/ui';
+import { Package } from 'lucide-react';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { imageUrls } from '@/lib/images';
-import { loadStore, loadStoreProduct } from '@/lib/store';
+import { loadStore, loadStoreProduct, loadStoreProducts } from '@/lib/store';
+import { ProductGrid } from '../../../_components/product-grid';
 import { shareMetadata } from '../../../_components/share';
+import { ShareButton } from '../../../_components/share-button';
+import { TrustList } from '../../../_components/trust';
 import { WhatsAppButton } from '../../../_components/whatsapp-button';
 
 type Props = {
   params: Promise<{ subdomain: string; productId: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
-};
-
-const STOCK_COLOURS: Record<StoreVariant['stock']['state'], string> = {
-  in_stock: 'text-success',
-  low: 'text-warning',
-  sold_out: 'text-muted-foreground',
 };
 
 function firstValue(value: string | string[] | undefined): string | undefined {
@@ -62,105 +60,209 @@ export default async function ProductPage({ params, searchParams }: Props) {
     : (product.variants[0] ?? null);
   const productUrl = storeUrl(store.subdomain, `/p/${product.id}`);
   const price = chosen ? chosen.price : product.price;
+  const priceText = `${!chosen && product.hasPriceRange ? 'From ' : ''}${formatNaira(price)}`;
+  const related = await relatedProducts(store.businessId, product.id, product.category);
+  const order = (
+    <OrderButton
+      whatsappNumber={store.whatsappNumber}
+      productName={product.name}
+      productUrl={productUrl}
+      chosen={chosen}
+      soldOut={product.soldOut}
+    />
+  );
 
   return (
-    <main className="mx-auto grid w-full max-w-5xl flex-1 gap-6 px-4 py-6 md:grid-cols-2 md:gap-10">
-      <Gallery name={product.name} photos={product.photos.map((photo) => imageUrls(photo))} />
+    <main className="flex flex-1 flex-col pb-24 md:pb-0">
+      <div className="mx-auto grid w-full max-w-6xl gap-6 md:grid-cols-2 md:gap-12 md:px-4 md:py-8">
+        <Gallery name={product.name} photos={product.photos.map((photo) => imageUrls(photo))} />
 
-      <div className="flex flex-col gap-5">
-        <nav className="text-sm text-muted-foreground">
-          <a href="/" className="hover:text-foreground">
-            Home
-          </a>
-          {product.category ? (
-            <>
-              {' / '}
-              <a
-                href={`/c/${encodeURIComponent(product.category)}`}
-                className="hover:text-foreground"
-              >
-                {product.category}
+        <div className="flex flex-col gap-6 px-4 md:px-0">
+          <div className="flex flex-col gap-3">
+            <nav className="flex items-center gap-1.5 text-sm text-[#6b7280]">
+              <a href="/" className="hover:text-[#111827]">
+                Home
               </a>
-            </>
-          ) : null}
-        </nav>
+              {product.category ? (
+                <>
+                  <span aria-hidden>/</span>
+                  <a
+                    href={`/c/${encodeURIComponent(product.category)}`}
+                    className="hover:text-[#111827]"
+                  >
+                    {product.category}
+                  </a>
+                </>
+              ) : null}
+            </nav>
+            <h1 className="store-display text-[2rem] leading-tight text-balance md:text-4xl">
+              {product.name}
+            </h1>
+            <div className="flex flex-wrap items-center gap-3">
+              <p className="text-2xl font-semibold tracking-tight">{priceText}</p>
+              {chosen ? (
+                <StockPill state={chosen.stock.state} label={chosen.stock.label} />
+              ) : product.soldOut ? (
+                <StockPill state="sold_out" label="Sold out" />
+              ) : null}
+            </div>
+            {product.wholesale ? (
+              <p className="flex items-center gap-2 rounded-[var(--store-radius)] bg-[var(--store-tint)] px-3 py-2.5 text-sm">
+                <Package className="size-4 shrink-0 text-[var(--store-ink)]" aria-hidden />
+                <span>
+                  <span className="font-semibold">Buying in bulk?</span>{' '}
+                  {formatNaira(product.wholesale.price)} each from {product.wholesale.minQty} pieces
+                </span>
+              </p>
+            ) : null}
+          </div>
 
-        <div className="flex flex-col gap-1">
-          <h1 className="text-3xl font-semibold text-balance">{product.name}</h1>
-          <p className="text-xl font-semibold">
-            {!chosen && product.hasPriceRange ? 'From ' : ''}
-            {formatNaira(price)}
-          </p>
-          {product.wholesale ? (
-            <p className="text-sm text-muted-foreground">
-              Wholesale: {formatNaira(product.wholesale.price)} each when you buy{' '}
-              {product.wholesale.minQty} or more
-            </p>
+          {product.hasOptions ? (
+            <section
+              id="options"
+              aria-labelledby="options-title"
+              className="flex scroll-mt-20 flex-col gap-3"
+            >
+              <h2 id="options-title" className="text-sm font-semibold">
+                {chosen ? (
+                  <>
+                    Chosen: <span className="font-normal">{chosen.label}</span>
+                  </>
+                ) : (
+                  'Choose an option'
+                )}
+              </h2>
+              <ul className="flex flex-wrap gap-2">
+                {product.variants.map((variant) => {
+                  const selected = chosen?.id === variant.id;
+                  const soldOut = variant.stock.state === 'sold_out';
+                  return (
+                    <li key={variant.id}>
+                      <a
+                        href={`?v=${variant.id}#options`}
+                        aria-current={selected ? 'true' : undefined}
+                        className={cn(
+                          'inline-flex min-h-11 min-w-12 items-center justify-center px-4 text-sm font-medium ring-1 transition-colors',
+                          selected
+                            ? 'ring-transparent'
+                            : 'ring-black/10 hover:bg-[var(--store-tint)]',
+                          soldOut && !selected && 'text-[#9ca3af] line-through',
+                        )}
+                        style={{
+                          borderRadius: 'calc(var(--store-radius) * 0.75)',
+                          ...(selected
+                            ? {
+                                backgroundColor: 'var(--store-primary)',
+                                color: 'var(--store-on-primary)',
+                              }
+                            : {}),
+                        }}
+                      >
+                        {variant.label}
+                      </a>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ) : null}
+
+          <div className="flex flex-col gap-3">
+            {order}
+            <ShareButton
+              url={productUrl}
+              title={product.name}
+              text={`${product.name} – ${priceText} at ${store.name}`}
+              label="Share with a friend"
+              className="min-h-11 rounded-full text-sm text-[#374151] ring-1 ring-black/10 hover:bg-[var(--store-tint)]"
+            />
+          </div>
+
+          <TrustList store={store} />
+
+          {product.description ? (
+            <section aria-labelledby="about" className="flex flex-col gap-2">
+              <h2 id="about" className="store-display text-lg">
+                About this product
+              </h2>
+              <p className="leading-relaxed whitespace-pre-line text-[#4b5563]">
+                {product.description}
+              </p>
+            </section>
           ) : null}
         </div>
+      </div>
 
-        {product.hasOptions ? (
-          <section
-            id="options"
-            aria-labelledby="options-title"
-            className="flex scroll-mt-20 flex-col gap-2"
-          >
-            <h2 id="options-title" className="text-sm font-semibold">
-              {chosen ? `Chosen: ${chosen.label}` : 'Choose an option'}
-            </h2>
-            <ul className="flex flex-wrap gap-2">
-              {product.variants.map((variant) => {
-                const selected = chosen?.id === variant.id;
-                const soldOut = variant.stock.state === 'sold_out';
-                return (
-                  <li key={variant.id}>
-                    <a
-                      href={`?v=${variant.id}#options`}
-                      aria-current={selected ? 'true' : undefined}
-                      className={cn(
-                        'inline-flex min-h-11 min-w-11 items-center justify-center rounded-md border px-3 text-sm font-medium',
-                        selected ? 'border-2' : 'hover:bg-muted',
-                        soldOut && 'text-muted-foreground line-through',
-                      )}
-                      style={selected ? { borderColor: 'var(--store-primary)' } : undefined}
-                    >
-                      {variant.label}
-                    </a>
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
-        ) : null}
+      {related.length > 0 ? (
+        <section
+          aria-labelledby="related"
+          className="mx-auto mt-14 flex w-full max-w-6xl flex-col gap-5 px-4"
+        >
+          <h2 id="related" className="store-display text-2xl">
+            You may also like
+          </h2>
+          <ProductGrid products={related} eager={0} />
+        </section>
+      ) : null}
 
-        {chosen ? (
-          <p className={cn('text-sm font-semibold', STOCK_COLOURS[chosen.stock.state])}>
-            {chosen.stock.label}
-          </p>
-        ) : product.soldOut ? (
-          <p className="text-sm font-semibold text-muted-foreground">Sold out</p>
-        ) : null}
-
-        <OrderButton
-          whatsappNumber={store.whatsappNumber}
-          productName={product.name}
-          productUrl={productUrl}
-          chosen={chosen}
-          soldOut={product.soldOut}
-        />
-
-        {product.description ? (
-          <section aria-labelledby="about" className="flex flex-col gap-2 border-t pt-5">
-            <h2 id="about" className="text-sm font-semibold">
-              About this product
-            </h2>
-            <p className="text-sm leading-relaxed whitespace-pre-line text-muted-foreground">
-              {product.description}
-            </p>
-          </section>
-        ) : null}
+      {/* Phones: the price and the order button stay in reach while scrolling. */}
+      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-black/5 bg-white/90 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-md md:hidden">
+        <div className="flex items-center gap-3">
+          <div className="flex min-w-0 flex-col">
+            <span className="truncate text-xs text-[#6b7280]">{product.name}</span>
+            <span className="font-semibold">{priceText}</span>
+          </div>
+          <div className="ml-auto shrink-0 [&_a]:min-h-11 [&_a]:px-5 [&_a]:text-sm [&_p]:min-h-11 [&_p]:text-xs">
+            {chosen || product.soldOut ? (
+              order
+            ) : (
+              <a
+                href="#options"
+                className="inline-flex items-center justify-center rounded-full font-semibold"
+                style={{
+                  backgroundColor: 'var(--store-primary)',
+                  color: 'var(--store-on-primary)',
+                }}
+              >
+                Choose an option
+              </a>
+            )}
+          </div>
+        </div>
       </div>
     </main>
+  );
+}
+
+/** Other products from the same category (or the newest), up to four. */
+async function relatedProducts(businessId: string, productId: string, category: string | null) {
+  const same = category ? (await loadStoreProducts(businessId, category, 1)).products : [];
+  let picks = same.filter((p) => p.id !== productId);
+  if (picks.length < 4) {
+    const newest = (await loadStoreProducts(businessId, null, 1)).products;
+    for (const p of newest)
+      if (p.id !== productId && !picks.some((x) => x.id === p.id)) picks.push(p);
+  }
+  picks = picks.filter((p) => !p.soldOut).slice(0, 4);
+  return picks;
+}
+
+function StockPill({ state, label }: { state: StoreVariant['stock']['state']; label: string }) {
+  const tone = {
+    in_stock: 'bg-[#dcfce7] text-[#166534]',
+    low: 'bg-[#fef3c7] text-[#92400e]',
+    sold_out: 'bg-[#f3f4f6] text-[#6b7280]',
+  }[state];
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold',
+        tone,
+      )}
+    >
+      <span className="size-1.5 rounded-full bg-current" aria-hidden />
+      {label}
+    </span>
   );
 }
 
@@ -209,7 +311,10 @@ function OrderButton({
   );
 }
 
-/** Swipeable photos (CSS scroll-snap, no JavaScript). */
+/**
+ * Swipeable photos (CSS scroll-snap, no JavaScript): edge to edge on phones, with small
+ * thumbnails that jump to each photo.
+ */
 function Gallery({
   name,
   photos,
@@ -219,16 +324,16 @@ function Gallery({
 }) {
   if (photos.length === 0) {
     return (
-      <div className="flex aspect-square items-center justify-center rounded-lg bg-muted text-5xl font-semibold text-muted-foreground/40">
+      <div className="store-display flex aspect-[4/5] items-center justify-center bg-[var(--store-tint)] text-7xl text-[var(--store-ink)] opacity-40 md:rounded-[var(--store-radius)]">
         {name.slice(0, 1).toUpperCase()}
       </div>
     );
   }
   return (
-    <div className="flex flex-col gap-2">
-      <ul className="flex snap-x snap-mandatory overflow-x-auto rounded-lg [scrollbar-width:none]">
+    <div className="flex flex-col gap-3 md:sticky md:top-20 md:self-start">
+      <ul className="store-scroll flex snap-x snap-mandatory overflow-x-auto scroll-smooth md:rounded-[var(--store-radius)]">
         {photos.map((urls, i) => (
-          <li key={urls.md} id={`photo-${i + 1}`} className="w-full shrink-0 snap-center">
+          <li key={urls.md} id={`photo-${i + 1}`} className="relative w-full shrink-0 snap-center">
             {/* eslint-disable-next-line @next/next/no-img-element -- pre-sized storage image */}
             <img
               src={urls.md}
@@ -238,15 +343,32 @@ function Gallery({
               loading={i === 0 ? 'eager' : 'lazy'}
               fetchPriority={i === 0 ? 'high' : undefined}
               decoding="async"
-              className="aspect-square w-full bg-muted object-cover"
+              className="aspect-[4/5] w-full bg-[var(--store-tint)] object-cover"
             />
+            {photos.length > 1 ? (
+              <span className="absolute right-3 bottom-3 rounded-full bg-black/55 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-sm">
+                {i + 1} / {photos.length}
+              </span>
+            ) : null}
           </li>
         ))}
       </ul>
       {photos.length > 1 ? (
-        <p className="text-center text-xs text-muted-foreground">
-          {photos.length} photos · swipe to see more
-        </p>
+        <ul className="flex gap-2 px-4 md:px-0">
+          {photos.map((urls, i) => (
+            <li key={urls.sm}>
+              <a
+                href={`#photo-${i + 1}`}
+                aria-label={`Photo ${i + 1}`}
+                className="block size-14 overflow-hidden ring-1 ring-black/10"
+                style={{ borderRadius: 'calc(var(--store-radius) * 0.6)' }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element -- pre-sized storage image */}
+                <img src={urls.sm} alt="" loading="lazy" className="size-full object-cover" />
+              </a>
+            </li>
+          ))}
+        </ul>
       ) : null}
     </div>
   );

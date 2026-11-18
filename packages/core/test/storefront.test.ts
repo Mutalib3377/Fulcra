@@ -13,7 +13,7 @@ import {
   listStoreProducts,
   STORE_PAGE_SIZE,
 } from '../src/storefront/store';
-import { newBusiness, productDraft } from './helpers';
+import { newBusiness, productDraft, shopWithStock } from './helpers';
 
 describe('getStoreBySubdomain', () => {
   it('finds the store with brand defaults and only public details', async () => {
@@ -32,7 +32,29 @@ describe('getStoreBySubdomain', () => {
         font: 'clean',
         description: '',
       },
+      trust: { securePayments: false, deliveryAreas: [], deliveryAreaCount: 0 },
     });
+  });
+
+  it('tells the store what it can promise: delivery areas and secure payment', async () => {
+    const { savePayoutAccount } = await import('../src/payments/payout');
+    const { setPaystackClient } = await import('../src/payments/paystack');
+    const { FakePaystack } = await import('../src/testing/fake-paystack');
+    const { createDeliveryZone } = await import('../src/delivery/zones');
+    setPaystackClient(new FakePaystack());
+    try {
+      const shop = await shopWithStock(5);
+      await createDeliveryZone(shop.actor, { name: 'Ikeja', fee: 250_000, estimatedTime: '1 day' });
+      await savePayoutAccount(shop.actor, { bankCode: '058', accountNumber: '0123456789' });
+      const store = await getStoreBySubdomain(shop.business.subdomain);
+      expect(store?.trust).toEqual({
+        securePayments: true,
+        deliveryAreas: ['Ikeja', 'Lekki'],
+        deliveryAreaCount: 2,
+      });
+    } finally {
+      setPaystackClient(null);
+    }
   });
 
   it('uses the saved brand kit', async () => {
@@ -81,6 +103,7 @@ describe('getStoreHome', () => {
     expect(home.featured.map((x) => x.name)).toEqual(['Item C', 'Item B', 'Item A']);
     expect(home.featured[0]).toMatchObject({
       soldOut: true,
+      fewLeft: null,
       price: 1_500_000,
       hasPriceRange: false,
     });
@@ -89,6 +112,15 @@ describe('getStoreHome', () => {
       { name: 'Shoes', productCount: 1 },
     ]);
     expect(home.productCount).toBe(3);
+    // A product at or under its warning level says how many are left.
+    await createProduct(
+      actor,
+      productDraft({ name: 'Item D', lowStockThreshold: 3, options: { kind: 'simple', stock: 2 } }),
+    );
+    expect((await getStoreHome(business.id)).featured[0]).toMatchObject({
+      name: 'Item D',
+      fewLeft: 2,
+    });
 
     await updateProduct(
       actor,

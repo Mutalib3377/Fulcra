@@ -29,3 +29,9 @@ export function safeNextPath(value: string | null | undefined, fallback = '/'): 
   }
   return value;
 }
+
+/** Absolute URL on the marketing site, e.g. https://yourdomain.com/?ref=store. */
+export function marketingUrl(path = '/'): string {
+  const root = getRootDomain();
+  return `${protocolFor(root)}//${root}${path}`;
+}
