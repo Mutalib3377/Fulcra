@@ -7,7 +7,9 @@ import { planStateInTx } from '../billing/entitlements';
 import { templateParam } from '../conversations/templates';
 import { enqueueOwnerAlertsNow } from '../jobs/queue';
 import { requireMember, type ActorContext } from '../members/access';
+import { CLAIM_FLAG_LABELS } from '../payments/claim-rules';
 import { dashboardUrl } from '../payments/urls';
+import type { PaymentClaimFlag } from '@fulcra/db/schema';
 import { CoreError } from '../shared/errors';
 import { recordWhatsAppUsage } from '../usage/usage';
 import { alertText, approvedPlatformTemplate, platformWhatsApp, type AlertKind } from './platform';
@@ -76,7 +78,9 @@ export async function createPendingAlerts(businessId: string, now = new Date()):
       'usage.limit',
       ...(settings.alertPaidOrders ? ['order.paid', 'payment.confirmed'] : []),
       ...(settings.alertLowStock ? ['stock.low'] : []),
-      ...(settings.alertUnmatchedPayments ? ['payment.unmatched', 'payment.needs_review'] : []),
+      ...(settings.alertUnmatchedPayments
+        ? ['payment.unmatched', 'payment.needs_review', 'payment.claim_unverified']
+        : []),
       ...(settings.alertWaitingCustomers ? ['conversation.handoff'] : []),
     ];
     if (types.length === 0) return 0;
@@ -97,7 +101,7 @@ export async function createPendingAlerts(businessId: string, now = new Date()):
       .limit(100);
     if (events.length === 0) return 0;
     const [business] = await tx
-      .select({ name: schema.businesses.name })
+      .select({ name: schema.businesses.name, timezone: schema.businesses.timezone })
       .from(schema.businesses)
       .limit(1);
     const shop = business?.name ?? '';
@@ -149,6 +153,33 @@ export async function createPendingAlerts(businessId: string, now = new Date()):
             ? 'New chats now come to you until next month, or until you upgrade'
             : 'When it reaches the limit, new chats will come to you instead',
           dashboardUrl('/settings/billing'),
+        ];
+      } else if (event.type === 'payment.claim_unverified') {
+        const [customer] = event.customerId
+          ? await tx
+              .select({ name: schema.customers.name })
+              .from(schema.customers)
+              .where(eq(schema.customers.id, event.customerId))
+              .limit(1)
+          : [];
+        const flags = (Array.isArray(p.flags) ? p.flags : []).filter(
+          (f): f is PaymentClaimFlag => typeof f === 'string' && f in CLAIM_FLAG_LABELS,
+        );
+        const claimedAt = new Date(asString(p.claimedAt) || event.createdAt.toISOString());
+        kind = 'payment_claim';
+        params = [
+          shop,
+          customer?.name || 'A customer',
+          asNumber(p.amount) ? formatNaira(asNumber(p.amount)) : 'an order',
+          new Intl.DateTimeFormat('en-NG', {
+            timeZone: business?.timezone ?? 'Africa/Lagos',
+            hour: 'numeric',
+            minute: '2-digit',
+          }).format(claimedAt),
+          flags.length
+            ? `Warning: ${flags.map((f) => CLAIM_FLAG_LABELS[f].toLowerCase()).join('; ')}`
+            : 'Fulcra will tell you if it arrives',
+          dashboardUrl('/payments?show=checks'),
         ];
       } else if (event.type === 'payment.unmatched' || event.type === 'payment.needs_review') {
         kind = 'unmatched_payment';

@@ -1,7 +1,10 @@
 import { schema, withSystem, withTenant, type Tx } from '@fulcra/db';
+import { z } from 'zod';
 import { and, desc, eq, gte, inArray, isNull, lte, ne, or, sql } from 'drizzle-orm';
 import type { PaymentProof } from '../agent/photos';
-import { recordEvent } from '../events/events';
+import { recordEvent, userActor } from '../events/events';
+import { requireMember, type ActorContext } from '../members/access';
+import { CoreError } from '../shared/errors';
 import {
   CLAIM_WAIT_MINUTES,
   claimFlags,
@@ -332,4 +335,132 @@ export async function businessesWithOpenClaims(now = new Date()): Promise<string
       ),
   );
   return rows.map((r) => r.businessId);
+}
+
+// ─── For the owner (F1b) ─────────────────────────────────────────────────────
+
+const EDITORS = ['owner', 'staff'] as const;
+
+export const paymentClaimListFilter = z.object({
+  /** open: still checking or nothing arrived; recent: everything from the last 7 days. */
+  show: z.enum(['open', 'recent', 'all']).default('open'),
+});
+
+export type PaymentClaimListItem = {
+  id: string;
+  status: schema.PaymentClaimStatus;
+  source: schema.PaymentClaimSource;
+  claimedAmount: number | null;
+  receivedAmount: number | null;
+  bank: string | null;
+  senderName: string | null;
+  reference: string | null;
+  claimedPaidAt: Date | null;
+  image: schema.StoredImage | null;
+  flags: schema.PaymentClaimFlag[];
+  createdAt: Date;
+  notReceivedAt: Date | null;
+  confirmedAt: Date | null;
+  customerId: string;
+  customerName: string;
+  conversationId: string | null;
+  orderId: string | null;
+  orderNumber: number | null;
+  orderTotal: number | null;
+  orderAmountPaid: number | null;
+};
+
+/** Payment claims, newest first: open ones ("nothing arrived" first), or recent ones. */
+export async function listPaymentClaims(
+  actor: ActorContext,
+  filter: z.input<typeof paymentClaimListFilter> = {},
+  now = new Date(),
+): Promise<PaymentClaimListItem[]> {
+  const f = paymentClaimListFilter.parse(filter);
+  return withTenant(actor.businessId, async (tx) => {
+    await requireMember(tx, actor, EDITORS);
+    const where =
+      f.show === 'open'
+        ? inArray(pc.status, ['waiting', 'not_received'])
+        : f.show === 'recent'
+          ? gte(pc.createdAt, new Date(now.getTime() - CHECK_FOR_MS))
+          : undefined;
+    return tx
+      .select({
+        id: pc.id,
+        status: pc.status,
+        source: pc.source,
+        claimedAmount: pc.claimedAmount,
+        receivedAmount: pc.receivedAmount,
+        bank: pc.bank,
+        senderName: pc.senderName,
+        reference: pc.reference,
+        claimedPaidAt: pc.claimedPaidAt,
+        image: pc.image,
+        flags: pc.flags,
+        createdAt: pc.createdAt,
+        notReceivedAt: pc.notReceivedAt,
+        confirmedAt: pc.confirmedAt,
+        customerId: pc.customerId,
+        customerName: schema.customers.name,
+        conversationId: pc.conversationId,
+        orderId: pc.orderId,
+        orderNumber: o.orderNumber,
+        orderTotal: o.total,
+        orderAmountPaid: o.amountPaid,
+      })
+      .from(pc)
+      .innerJoin(schema.customers, eq(schema.customers.id, pc.customerId))
+      .leftJoin(o, eq(o.id, pc.orderId))
+      .where(where)
+      .orderBy(sql`case when ${pc.status} = 'not_received' then 0 else 1 end`, desc(pc.createdAt))
+      .limit(200);
+  });
+}
+
+/** How many claims are still being checked and how many had no money (for the tab badge). */
+export async function countOpenPaymentClaims(
+  actor: ActorContext,
+): Promise<{ waiting: number; notReceived: number }> {
+  return withTenant(actor.businessId, async (tx) => {
+    await requireMember(tx, actor, EDITORS);
+    const rows = await tx
+      .select({ status: pc.status, n: sql<number>`count(*)::int` })
+      .from(pc)
+      .where(inArray(pc.status, ['waiting', 'not_received']))
+      .groupBy(pc.status);
+    const n = (s: string) => rows.find((r) => r.status === s)?.n ?? 0;
+    return { waiting: n('waiting'), notReceived: n('not_received') };
+  });
+}
+
+/**
+ * The owner closes a claim (e.g. the customer paid into their own account outside Fulcra and
+ * they checked their bank app, or it was a mistake). It is no longer checked or alerted.
+ * To record money received outside Fulcra, the owner marks the order paid as usual.
+ */
+export async function dismissPaymentClaim(
+  actor: ActorContext,
+  claimId: string,
+  now = new Date(),
+): Promise<void> {
+  const id = z.uuid().parse(claimId);
+  await withTenant(actor.businessId, async (tx) => {
+    await requireMember(tx, actor, EDITORS);
+    const [claim] = await tx.select().from(pc).where(eq(pc.id, id)).for('update').limit(1);
+    if (!claim) throw new CoreError('not_found', 'This payment check was not found.');
+    if (claim.status !== 'waiting' && claim.status !== 'not_received')
+      throw new CoreError('conflict', 'This payment check is already closed.');
+    await tx
+      .update(pc)
+      .set({ status: 'dismissed', dismissedAt: now, dismissedBy: actor.userId })
+      .where(eq(pc.id, id));
+    await recordEvent(tx, actor.businessId, {
+      type: 'payment.claim_dismissed',
+      actor: userActor(actor),
+      orderId: claim.orderId,
+      customerId: claim.customerId,
+      payload: { claimId: id },
+    });
+  });
 }

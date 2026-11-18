@@ -20,8 +20,9 @@ import {
   unverifiedAmounts,
   type OwnerActionKind,
   type OwnerTurn,
+  listPaymentClaims,
 } from '@fulcra/core';
-import { SALES_PERIODS } from '@fulcra/core/rules';
+import { CLAIM_FLAG_LABELS, CLAIM_STATUS_LABELS, SALES_PERIODS } from '@fulcra/core/rules';
 import { z } from 'zod';
 import { AGENT_MODEL, withFallback } from './models';
 
@@ -90,6 +91,16 @@ export const OWNER_TOOLS: Anthropic.Beta.BetaTool[] = [
     'chatsWaiting',
     'How many customer chats are waiting for a reply from the team.',
     object({}),
+  ),
+  tool(
+    'paymentChecks',
+    'Payment checks (fake alert protection): customers who said they paid or sent a transfer screenshot, with what their screenshot says, what actually arrived, warning signs, and the status (checking, money arrived, nothing arrived, closed). Use for "any fake alerts?", "did Chioma really pay?" or "should I send this order?".',
+    object({
+      which: oneOf(
+        ['open', 'recent'],
+        'open: still checking or nothing arrived; recent: the last 7 days',
+      ),
+    }),
   ),
   tool(
     'proposeAddProduct',
@@ -167,6 +178,9 @@ const MONEY_KEYS = new Set([
   'lineTotal',
   'retailPrice',
   'price',
+  'screenshotAmount',
+  'received',
+  'orderTotal',
 ]);
 function forTheAi(data: unknown): unknown {
   if (Array.isArray(data)) return data.map(forTheAi);
@@ -210,6 +224,27 @@ async function runOwnerTool(turn: OwnerTurn, name: string, input: unknown): Prom
       }));
     case 'chatsWaiting':
       return { waiting: await countConversationsNeedingAttention(a) };
+    case 'paymentChecks': {
+      const which = z.enum(['open', 'recent']).parse((input as Json).which);
+      const claims = await listPaymentClaims(a, { show: which });
+      return {
+        note: 'A screenshot is never proof: only "money arrived" means paid. Never tell the owner a payment is fake for sure; say what arrived and the warning signs. Nothing arrived means: do not send the goods yet, and check their own bank app in case the customer paid outside Fulcra.',
+        checks: claims.slice(0, 10).map((c) => ({
+          customer: c.customerName,
+          orderNumber: c.orderNumber,
+          status: CLAIM_STATUS_LABELS[c.status],
+          said: c.source === 'screenshot' ? 'sent a payment screenshot' : 'said they paid',
+          screenshotAmount: c.claimedAmount,
+          received: c.receivedAmount ?? 0,
+          orderTotal: c.orderTotal,
+          bank: c.bank,
+          sender: c.senderName,
+          warnings: c.flags.map((f) => CLAIM_FLAG_LABELS[f]),
+          when: c.createdAt,
+        })),
+        total: claims.length,
+      };
+    }
     default:
       throw new Error(`Unknown tool ${name}`);
   }
@@ -223,6 +258,7 @@ export function buildOwnerPrompt(turn: OwnerTurn): string {
 - Changes (new product, stock, price, hide/show, mark paid, dispatched/delivered, cancel) are only prepared with a propose tool. After proposing, show the summary the tool returns and ask them to reply YES to confirm. Never say a change is done: it happens only after their YES.
 - One change at a time. If a request is unclear (which product? which size? what price?), ask a short question first. Use findProducts to get the right product and option before stock, price or hide/show changes.
 - If a propose tool refuses (for example an order already paid), explain why in plain words.
+- Payment checks: a customer's screenshot or "I've paid" is never proof. Only money that arrived counts. Use paymentChecks when they ask about fake alerts or whether someone really paid; if nothing arrived, tell them not to send the goods yet.
 - For things you can't do (refunds, sending messages to customers, delivery settings, payouts), say so briefly and point them to the dashboard.
 
 # Style

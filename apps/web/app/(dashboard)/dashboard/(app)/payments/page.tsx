@@ -1,6 +1,8 @@
 import { formatNaira } from '@fulcra/config';
 import {
+  countOpenPaymentClaims,
   countPaymentsNeedingAttention,
+  listPaymentClaims,
   listOrders,
   listPayments,
   paymentListFilter,
@@ -14,11 +16,12 @@ import { redirect } from 'next/navigation';
 import { getDashboardContext } from '@/lib/auth';
 import { formatDateTime } from '@/lib/orders';
 import { OrdersCustomersTabs } from '../orders/tabs';
+import { ClaimsList } from './claims-list';
 import { UnmatchedActions } from './unmatched-actions';
 
 export const metadata: Metadata = { title: 'Payments' };
 
-type Props = { searchParams: Promise<{ show?: string }> };
+type Props = { searchParams: Promise<{ show?: string; range?: string }> };
 
 const statusTone = {
   success: 'success',
@@ -41,13 +44,18 @@ export default async function PaymentsPage({ searchParams }: Props) {
   const { actor, membership } = await getDashboardContext();
   if (membership.role === 'rider') redirect('/orders');
   const params = await searchParams;
+  const checks = params.show === 'checks';
+  const range = params.range === 'recent' ? 'recent' : 'open';
   const parsed = paymentListFilter.safeParse({ show: params.show || undefined });
   const f = parsed.success ? parsed.data : paymentListFilter.parse({});
-  const [payments, counts, openOrders] = await Promise.all([
-    listPayments(actor, f),
+  const [payments, counts, openOrders, claimCounts, claims] = await Promise.all([
+    checks ? [] : listPayments(actor, f),
     countPaymentsNeedingAttention(actor),
-    listOrders(actor, { status: 'open' }),
+    checks ? [] : listOrders(actor, { status: 'open' }),
+    countOpenPaymentClaims(actor),
+    checks ? listPaymentClaims(actor, { show: range }) : [],
   ]);
+  const active = checks ? 'checks' : f.show;
   const unpaid = openOrders
     .filter((o) => o.status === 'new' || o.status === 'awaiting_payment')
     .map((o) => ({
@@ -61,6 +69,11 @@ export default async function PaymentsPage({ searchParams }: Props) {
     { show: 'all', label: 'All', count: 0 },
     { show: 'unmatched', label: 'To match', count: counts.unmatched },
     { show: 'review', label: 'Needs checking', count: counts.review },
+    {
+      show: 'checks',
+      label: 'Payment checks',
+      count: claimCounts.waiting + claimCounts.notReceived,
+    },
   ] as const;
 
   return (
@@ -72,10 +85,10 @@ export default async function PaymentsPage({ searchParams }: Props) {
           <Link
             key={t.show}
             href={t.show === 'all' ? '/payments' : `/payments?show=${t.show}`}
-            aria-current={f.show === t.show ? 'page' : undefined}
+            aria-current={active === t.show ? 'page' : undefined}
             className={cn(
               'rounded-full border px-4 py-1.5 text-sm whitespace-nowrap',
-              f.show === t.show ? 'border-primary bg-primary text-primary-foreground' : 'bg-card',
+              active === t.show ? 'border-primary bg-primary text-primary-foreground' : 'bg-card',
             )}
           >
             {t.label}
@@ -84,7 +97,9 @@ export default async function PaymentsPage({ searchParams }: Props) {
         ))}
       </nav>
 
-      {payments.length === 0 ? (
+      {checks ? (
+        <ClaimsList claims={claims} show={range} />
+      ) : payments.length === 0 ? (
         <EmptyState
           icon={<Wallet aria-hidden />}
           title={

@@ -31,6 +31,7 @@ export const ALERT_KINDS = [
   'briefing',
   'test',
   'usage_limit',
+  'payment_claim',
 ] as const;
 export type AlertKind = (typeof ALERT_KINDS)[number];
 
@@ -97,6 +98,18 @@ export const PLATFORM_TEMPLATES: Record<AlertKind, PlatformTemplate> = {
       '500',
       'When it reaches the limit, new chats will come to you instead',
       'https://app.yourdomain.com/settings/billing',
+    ],
+  },
+  payment_claim: {
+    name: 'fulcra_alert_payment_check_v1',
+    body: 'Payment check at {{1}}: {{2}} says they paid {{3}} at {{4}}, but no money has arrived. Please do not send the goods until it does. {{5}}. See it here: {{6}} (Fulcra alert)',
+    examples: [
+      'Ada Styles',
+      'Chioma',
+      '₦17,000.00',
+      '3:42 pm',
+      'Warning: the same receipt was sent before for another order',
+      'https://app.yourdomain.com/payments?show=checks',
     ],
   },
   test: {

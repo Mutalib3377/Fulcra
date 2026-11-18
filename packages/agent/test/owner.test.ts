@@ -216,6 +216,62 @@ describe("owner's assistant", () => {
     expect(product.variants.find((v) => v.size === 'L')!.stock).toBe(7);
   });
 
+  it('answers "any fake alerts?" from the payment checks, amounts in naira', async () => {
+    const s = await shop();
+    const { order } = await core.createOrder(s.actor, {
+      customer: { name: 'Chioma', phone: '08051112222' },
+      items: [{ variantId: s.dress.variants[0]!.id, quantity: 1 }],
+      fulfilment: 'pickup',
+    });
+    await withTenant(s.business.id, (tx) =>
+      tx.insert(schema.paymentClaims).values({
+        businessId: s.business.id,
+        customerId: order.customerId,
+        orderId: order.id,
+        source: 'screenshot',
+        status: 'not_received',
+        claimedAmount: 1_200_000,
+        receivedAmount: 0,
+        bank: 'Opay',
+        flags: ['amount_mismatch'],
+      }),
+    );
+    script = [
+      () => ({ tool: 'paymentChecks', input: { which: 'open' } }),
+      (body) => {
+        const r = lastToolResult(body) as {
+          note: string;
+          checks: {
+            customer: string;
+            status: string;
+            screenshotAmount: string;
+            received: string;
+            warnings: string[];
+          }[];
+        };
+        expect(r.note).toMatch(/never proof/);
+        expect(r.checks).toEqual([
+          expect.objectContaining({
+            customer: 'Chioma',
+            status: 'Nothing arrived',
+            screenshotAmount: '₦12,000.00',
+            received: '₦0.00',
+            orderTotal: '₦15,000.00',
+            warnings: ["The amount on the screenshot isn't what the order costs"],
+          }),
+        ]);
+        const c = r.checks[0]!;
+        return {
+          text: `${c.customer} sent a screenshot for ${c.screenshotAmount}, but ${c.received} has arrived. Don't send the goods yet.`,
+        };
+      },
+    ];
+    expect(await s.ask('Any fake alert today?')).toMatchObject({ status: 'replied' });
+    expect(await s.lastReply()).toBe(
+      "Chioma sent a screenshot for ₦12,000.00, but ₦0.00 has arrived. Don't send the goods yet.",
+    );
+  });
+
   it('never sends an amount that did not come from the data', async () => {
     const s = await shop();
     script = [() => ({ text: 'You made ₦99,000 this week!' })];

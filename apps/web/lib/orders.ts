@@ -71,6 +71,18 @@ export function describeEvent(e: EventLike): { text: string; href: string | null
       };
     case 'payment.needs_review':
       return { text: `${order}: a payment needs checking`, href: orderHref };
+    case 'payment.claim_unverified':
+      return {
+        text: `Customer said they paid${num(p.amount) ? ` ${formatNaira(num(p.amount))}` : ''}, but nothing arrived after 20 minutes`,
+        href: '/payments?show=checks',
+      };
+    case 'payment.claim_cleared':
+      return {
+        text: `The money for a payment check arrived${num(p.amount) ? ` · ${formatNaira(num(p.amount))}` : ''}`,
+        href: orderHref ?? '/payments?show=checks',
+      };
+    case 'payment.claim_dismissed':
+      return { text: 'A payment check was closed', href: '/payments?show=checks' };
     case 'stock.low': {
       const label = [
         str(p.productName),

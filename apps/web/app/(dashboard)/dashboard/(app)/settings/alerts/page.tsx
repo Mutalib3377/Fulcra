@@ -30,6 +30,7 @@ const KIND: Record<string, string> = {
   briefing: 'Daily briefing',
   test: 'Test alert',
   usage_limit: 'Assistant chats',
+  payment_claim: 'Payment check',
 };
 
 export default async function AlertsSettingsPage() {
