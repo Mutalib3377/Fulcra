@@ -3,6 +3,7 @@ import { Badge } from '@fulcra/ui';
 import { LogOut } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { ActionButton } from '@/components/action-button';
+import { Monitoring } from '@/components/monitoring';
 import { QueryProvider } from '@/components/query-provider';
 import { getDashboardContext } from '@/lib/auth';
 import { signOut } from '../(auth)/sign-in/actions';
@@ -17,6 +18,7 @@ export default async function AppShellLayout({ children }: { children: ReactNode
 
   return (
     <QueryProvider>
+      <Monitoring area="dashboard" userId={actor.userId} businessId={actor.businessId} />
       <div className="min-h-dvh md:flex">
         <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r bg-card/60 md:flex">
           <div className="flex h-16 items-center px-6 text-lg font-semibold tracking-[-0.02em]">
