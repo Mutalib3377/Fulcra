@@ -1,8 +1,8 @@
-import { schema, withTenant, type Tx } from '@fulcra/db';
+import { schema, withSystem, withTenant, type Tx } from '@fulcra/db';
 import { and, asc, desc, eq, gt, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { planStateInTx } from '../billing/entitlements';
-import { enqueueOwnerMessage } from '../jobs/queue';
+import { enqueueOwnerMessage, enqueueOwnerWhatsAppSend } from '../jobs/queue';
 import { isOwnImagePath } from '../media/images';
 import { requireMember, type ActorContext } from '../members/access';
 import { CoreError } from '../shared/errors';
@@ -113,7 +113,12 @@ export const ownerMessageInput = z.object({
     .transform((v) => v ?? null),
 });
 
-type Outcome = { kind: 'confirm' | 'refuse' | 'agent' | 'reply'; text?: string };
+type Outcome = {
+  kind: 'confirm' | 'refuse' | 'agent' | 'reply';
+  text?: string;
+  /** A reply saved here (to send on WhatsApp after the transaction). */
+  reply?: schema.OwnerChatMessage;
+};
 
 /**
  * Saves an owner message and decides what happens next. The caller runs a confirmed change
@@ -160,14 +165,14 @@ async function takeOwnerMessageInTx(
     const text = state.active
       ? 'Your plan does not include the assistant chat. Upgrade in Settings → Billing to use it.'
       : 'Your Fulcra plan has ended. Choose a plan in Settings → Billing to use the assistant chat again.';
-    await addAssistantMessage(tx, chat, text);
-    return { message, outcome: { kind: 'reply', text } };
+    const reply = await addAssistantMessage(tx, chat, text);
+    return { message, outcome: { kind: 'reply', text, reply } };
   }
   const limit = await limitInTx(tx, now);
   if (limit.used > limit.limit) {
     const text = `You've used your ${limit.limit} assistant messages for this month. Everything is still on your dashboard, and the count starts again next month.`;
-    await addAssistantMessage(tx, chat, text);
-    return { message, outcome: { kind: 'reply', text } };
+    const reply = await addAssistantMessage(tx, chat, text);
+    return { message, outcome: { kind: 'reply', text, reply } };
   }
   return { message, outcome: { kind: 'agent' } };
 }
@@ -210,15 +215,26 @@ async function settlePending(
       if (!(error instanceof CoreError)) console.error('[owner-chat] action failed', error);
     }
   }
-  await withTenant(businessId, (tx) => addAssistantMessage(tx, chat, reply));
+  const saved = await withTenant(businessId, (tx) => addAssistantMessage(tx, chat, reply));
+  await sendIfWhatsApp(chat, saved);
+}
+
+/** WhatsApp replies are sent by a job, after the message is saved (O1b). */
+async function sendIfWhatsApp(
+  chat: Pick<schema.OwnerChat, 'channel' | 'businessId'>,
+  message: Pick<schema.OwnerChatMessage, 'id'> | undefined,
+): Promise<void> {
+  if (chat.channel === 'whatsapp' && message)
+    await enqueueOwnerWhatsAppSend(chat.businessId, message.id);
 }
 
 async function afterTake(
-  businessId: string,
-  chatId: string,
+  chat: schema.OwnerChat,
   taken: { message: schema.OwnerChatMessage | null; outcome: Outcome },
 ): Promise<void> {
+  const { businessId, id: chatId } = chat;
   if (!taken.message) return;
+  if (taken.outcome.reply) await sendIfWhatsApp(chat, taken.outcome.reply);
   if (taken.outcome.kind === 'confirm' || taken.outcome.kind === 'refuse')
     await settlePending(businessId, chatId, taken.outcome.kind);
   else if (taken.outcome.kind === 'agent')
@@ -242,7 +258,7 @@ export async function sendOwnerDashboardMessage(
     const chat = await chatFor(tx, actor.businessId, 'dashboard', DASHBOARD_USER);
     return { chat, taken: await takeOwnerMessageInTx(tx, chat, data, now) };
   });
-  await afterTake(actor.businessId, chat.id, taken);
+  await afterTake(chat, taken);
   return { messageId: taken.message!.id };
 }
 
@@ -368,7 +384,7 @@ export async function saveOwnerReply(
   text: string,
 ): Promise<{ status: 'saved'; messageId: string } | { status: 'skipped' }> {
   const body = z.string().trim().min(1).max(4096).parse(text);
-  return withTenant(turn.businessId, async (tx) => {
+  const result = await withTenant(turn.businessId, async (tx) => {
     const [chat] = await tx.select().from(c).where(eq(c.id, turn.chatId)).limit(1);
     const [latest] = await tx
       .select({ sender: m.sender, createdAt: m.createdAt })
@@ -377,8 +393,163 @@ export async function saveOwnerReply(
       .orderBy(desc(m.createdAt))
       .limit(1);
     const newestSeen = turn.history.at(-1)?.createdAt.getTime() ?? 0;
-    if (!chat || (latest && latest.createdAt.getTime() > newestSeen)) return { status: 'skipped' };
+    if (!chat || (latest && latest.createdAt.getTime() > newestSeen))
+      return { status: 'skipped' as const };
     const message = await addAssistantMessage(tx, chat, body);
-    return { status: 'saved', messageId: message.id };
+    return { status: 'saved' as const, messageId: message.id, chat };
   });
+  if (result.status === 'skipped') return result;
+  await sendIfWhatsApp(result.chat, { id: result.messageId });
+  return { status: 'saved', messageId: result.messageId };
+}
+
+// ─── WhatsApp door (O1b) ────────────────────────────────────────────────────
+
+export type OwnerWhatsAppResult =
+  | { status: 'unknown' }
+  | { status: 'duplicate' }
+  | { status: 'saved'; businessId: string; chatId: string };
+
+const SWITCH = /^\s*(?:switch|change)\s+(?:to\s+)?(.+?)\s*$/i;
+
+/**
+ * A message to Fulcra's WhatsApp number. The sender is recognised by the alert number saved in
+ * Settings → Alerts (`owner_whatsapp`), so the WhatsApp number is the owner's key. A number
+ * linked to several businesses talks to the one used last; "switch to <name>" changes it.
+ * Unknown numbers get `unknown` (the worker sends a short explanation).
+ */
+export async function receiveOwnerWhatsAppMessage(
+  input: { fromPhone: string; externalId: string; text: string },
+  options: {
+    /** Stores the photo for the chosen business (the worker downloads it from WhatsApp). */
+    loadPhoto?: (businessId: string) => Promise<schema.StoredImage | null>;
+    now?: Date;
+  } = {},
+): Promise<OwnerWhatsAppResult> {
+  const now = options.now ?? new Date();
+  const phone = `+${input.fromPhone.replace(/\D/g, '')}`;
+  const text = input.text.trim().slice(0, 2000);
+
+  // Which businesses this number owns, and when each was last talked to (cross-business by
+  // nature: docs/decisions/0003).
+  const options_ = await withSystem((tx) =>
+    tx
+      .select({
+        businessId: schema.businesses.id,
+        name: schema.businesses.name,
+        lastMessageAt: c.lastMessageAt,
+      })
+      .from(schema.ownerNotificationSettings)
+      .innerJoin(
+        schema.businesses,
+        eq(schema.businesses.id, schema.ownerNotificationSettings.businessId),
+      )
+      .leftJoin(
+        c,
+        and(
+          eq(c.businessId, schema.businesses.id),
+          eq(c.channel, 'whatsapp'),
+          eq(c.externalUserId, phone),
+        ),
+      )
+      .where(eq(schema.ownerNotificationSettings.ownerWhatsapp, phone)),
+  );
+  if (options_.length === 0) return { status: 'unknown' };
+
+  const byRecent = [...options_].sort(
+    (a, b) => (b.lastMessageAt?.getTime() ?? 0) - (a.lastMessageAt?.getTime() ?? 0),
+  );
+  const wanted = options_.length > 1 ? SWITCH.exec(text)?.[1]?.toLowerCase() : undefined;
+  const switchedTo = wanted
+    ? options_.find((o) => o.name.toLowerCase().includes(wanted))
+    : undefined;
+  const chosen = switchedTo ?? byRecent[0]!;
+  const firstTime = !chosen.lastMessageAt;
+  const image =
+    !switchedTo && options.loadPhoto ? await options.loadPhoto(chosen.businessId) : null;
+
+  const { chat, taken, notes } = await withTenant(chosen.businessId, async (tx) => {
+    const chat = await chatFor(tx, chosen.businessId, 'whatsapp', phone);
+    const notes: schema.OwnerChatMessage[] = [];
+    if (switchedTo) {
+      // Handled here, not by the AI: save the request and confirm the switch.
+      const [saved] = await tx
+        .insert(m)
+        .values({
+          businessId: chosen.businessId,
+          chatId: chat.id,
+          sender: 'owner',
+          text,
+          externalId: input.externalId,
+          status: 'received',
+        })
+        .onConflictDoNothing()
+        .returning();
+      if (!saved)
+        return { chat, taken: { message: null, outcome: { kind: 'reply' as const } }, notes };
+      notes.push(
+        await addAssistantMessage(tx, chat, `Okay, now we're talking about ${chosen.name}.`),
+      );
+      return { chat, taken: { message: saved, outcome: { kind: 'reply' as const } }, notes };
+    }
+    const taken = await takeOwnerMessageInTx(
+      tx,
+      chat,
+      { text, image, externalId: input.externalId },
+      now,
+    );
+    if (taken.message && firstTime && options_.length > 1) {
+      const others = options_.filter((o) => o.businessId !== chosen.businessId).map((o) => o.name);
+      notes.push(
+        await addAssistantMessage(
+          tx,
+          chat,
+          `This number is linked to ${options_.length} businesses. I'm answering for ${chosen.name}. To change, write "switch to ${others[0]}".`,
+        ),
+      );
+    }
+    return { chat, taken, notes };
+  });
+  if (!taken.message) return { status: 'duplicate' };
+  for (const note of notes) await sendIfWhatsApp(chat, note);
+  await afterTake(chat, taken);
+  return { status: 'saved', businessId: chosen.businessId, chatId: chat.id };
+}
+
+/** An owner-chat reply waiting to go out on WhatsApp: who to and what. Null when not queued. */
+export async function claimOwnerOutbound(
+  businessId: string,
+  messageId: string,
+): Promise<{ to: string; text: string } | 'missing' | null> {
+  return withTenant(businessId, async (tx) => {
+    const [row] = await tx
+      .select({ message: m, chat: c })
+      .from(m)
+      .innerJoin(c, eq(c.id, m.chatId))
+      .where(eq(m.id, messageId))
+      .limit(1);
+    if (!row) return 'missing';
+    if (row.message.status !== 'queued' || row.chat.channel !== 'whatsapp') return null;
+    // WhatsApp wants the number without "+".
+    return { to: row.chat.externalUserId.replace(/^\+/, ''), text: row.message.text };
+  });
+}
+
+export async function markOwnerOutboundSent(
+  businessId: string,
+  messageId: string,
+  externalId: string,
+): Promise<void> {
+  await withTenant(businessId, (tx) =>
+    tx.update(m).set({ status: 'sent', externalId }).where(eq(m.id, messageId)),
+  );
+}
+
+export async function markOwnerOutboundFailed(
+  businessId: string,
+  messageId: string,
+): Promise<void> {
+  await withTenant(businessId, (tx) =>
+    tx.update(m).set({ status: 'failed' }).where(eq(m.id, messageId)),
+  );
 }

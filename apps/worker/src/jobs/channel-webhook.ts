@@ -16,6 +16,7 @@ import {
   storeImage,
 } from '@fulcra/core';
 import type { Job } from 'pg-boss';
+import { handleOwnerWhatsAppMessage } from './owner-whatsapp';
 import { z } from 'zod';
 
 /**
@@ -37,7 +38,11 @@ export async function handleChannelWebhook(jobs: Job<unknown>[]): Promise<void> 
       const parsed = adapter.parseWebhook(event.payload);
       const platform = event.channel === 'whatsapp' ? platformWhatsApp() : null;
       for (const { accountId, message } of parsed.messages) {
-        if (platform && accountId === platform.phoneNumberId) continue; // a reply to an alert
+        if (platform && accountId === platform.phoneNumberId) {
+          // The owner writing to Fulcra's number: their own assistant (O1b).
+          await handleOwnerWhatsAppMessage(platform, message);
+          continue;
+        }
         const connection = await findConnectionByAccount(event.channel, accountId);
         if (!connection || connection.mode !== 'live') {
           console.warn(`[worker] message for an unknown ${event.channel} account ${accountId}`);

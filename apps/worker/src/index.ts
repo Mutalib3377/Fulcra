@@ -10,6 +10,7 @@ import {
 } from '@fulcra/core';
 import { handleAgentReply } from './jobs/agent-reply';
 import { handleOwnerMessage } from './jobs/owner-message';
+import { makeOwnerWhatsAppSendHandler } from './jobs/owner-whatsapp';
 import { handleDatabaseBackup } from './jobs/backup';
 import { handleCatalogImport } from './jobs/catalog-import';
 import { handleChannelWebhook, handleMessageStatus } from './jobs/channel-webhook';
@@ -67,6 +68,11 @@ async function main(): Promise<void> {
     JOBS.ownerMessage.name,
     { localConcurrency: 2 },
     reported(JOBS.ownerMessage.name, handleOwnerMessage),
+  );
+  await boss.work(
+    JOBS.ownerWhatsAppSend.name,
+    { localConcurrency: 2 },
+    reported(JOBS.ownerWhatsAppSend.name, makeOwnerWhatsAppSendHandler(platformWhatsApp)),
   );
   await boss.work(
     JOBS.channelWebhook.name,

@@ -107,7 +107,7 @@ To roll back, use **Rollback** on the service in Render. Migrations only move fo
 
 ## 5. WhatsApp, Instagram and Shopify
 
-- **WhatsApp (Meta app):** webhook URL `https://app.yourdomain.com/api/webhooks/whatsapp`, verify token = `META_WEBHOOK_VERIFY_TOKEN`, subscribe to `messages` and `message_template_status_update`. `META_APP_ID`, `META_APP_SECRET`, `WHATSAPP_EMBEDDED_SIGNUP_CONFIG_ID` from the app. Fulcra's own number for owner alerts: `FULCRA_WHATSAPP_*` on the worker. Other sellers' numbers need Business Verification and App Review.
+- **WhatsApp (Meta app):** webhook URL `https://app.yourdomain.com/api/webhooks/whatsapp`, verify token = `META_WEBHOOK_VERIFY_TOKEN`, subscribe to `messages` and `message_template_status_update`. `META_APP_ID`, `META_APP_SECRET`, `WHATSAPP_EMBEDDED_SIGNUP_CONFIG_ID` from the app. Fulcra's own number for owner alerts **and the owner's assistant on WhatsApp**: `FULCRA_WHATSAPP_*` on the worker, plus `FULCRA_WHATSAPP_DISPLAY_NUMBER` (the number as people dial it, e.g. `+2348012345678`) on the web service for the "chat on WhatsApp" link. Owners message that number from the alert number they saved in Settings → Alerts. Other sellers' numbers need Business Verification and App Review.
 - **Instagram:** redirect URL `https://app.yourdomain.com/api/integrations/instagram/callback`, webhook `https://app.yourdomain.com/api/webhooks/instagram`. Advanced Access needs App Review (screen recording).
 - **Shopify:** app URL and redirect `https://app.yourdomain.com/api/integrations/shopify/callback`, webhooks to `https://app.yourdomain.com/api/webhooks/shopify`.
 - **AI:** `ANTHROPIC_API_KEY`. Optional `AGENT_MODEL` / `AGENT_PHOTO_MODEL` on the worker to change models without a deploy.

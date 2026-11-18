@@ -1,6 +1,6 @@
 # 0023 — The owner's assistant
 
-Status: accepted (O1a; WhatsApp door in O1b). Moved ahead of launch at the owner's request.
+Status: accepted (O1a dashboard, O1b WhatsApp). Moved ahead of launch at the owner's request.
 
 ## Context
 
@@ -14,6 +14,8 @@ Sellers live in WhatsApp and rarely sit at a dashboard. They want to ask "how mu
 - **Changes need a YES.** The AI can only *propose* (`proposeOwnerAction`): Core checks the change now (order exists, not already paid, a pickup order can't be dispatched, allowed status moves), describes it, and saves it as data on the chat with a 10-minute expiry. The owner's YES or NO (short replies, English or Pidgin: `isConfirmation` / `isRefusal`) is handled by Core **without the AI**: it takes the saved change once and runs it. Anything else replaces the waiting change.
 - **Limits:** feature `owner_assistant` in every plan; fair use of 300 owner messages a month, 50 during the free trial; over the limit, a plain reply without an AI call. Every AI call is costed (`owner.assistant`).
 - Voice notes come later (they need a paid speech-to-text service).
+
+- **WhatsApp door (O1b).** Messages to Fulcra's own number used to be ignored; now `receiveOwnerWhatsAppMessage` finds the business by the sender's number (the owner's alert number, a cross-business lookup listed in `docs/decisions/0003`). A number linked to several businesses talks to the one used last, is told so once, and can write "switch to <name>" (handled without the AI). Photos are downloaded with Fulcra's credentials and stored for that business; a photo's caption is its text; voice notes get a polite "please type it". Replies are saved, then sent by the `owner-whatsapp-send` job from Fulcra's number (retried until the reply is committed). Because the owner writes first, replies are inside WhatsApp's free 24-hour service window. Unknown numbers get one short explanation a day (`consumeRateLimit`). The WhatsApp chat and the dashboard chat are separate histories.
 
 ## Consequences
 
