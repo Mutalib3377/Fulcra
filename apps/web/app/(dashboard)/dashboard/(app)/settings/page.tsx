@@ -16,10 +16,13 @@ import {
   Users,
 } from 'lucide-react';
 import type { Metadata } from 'next';
+import { cookies } from 'next/headers';
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { ActionButton } from '@/components/action-button';
 import { PageHeader } from '@/components/page-header';
+import { ThemeChoice } from '@/components/theme-controls';
+import { parseTheme, THEME_COOKIE } from '@/lib/theme';
 import { getDashboardContext } from '@/lib/auth';
 import { storeHost } from '@/lib/urls';
 import { switchBusinessAction } from './actions';
@@ -37,6 +40,7 @@ const categoryLabels = {
 export default async function SettingsPage() {
   const { actor, membership, memberships } = await getDashboardContext();
   const business = await getBusiness(actor);
+  const theme = parseTheme((await cookies()).get(THEME_COOKIE)?.value);
 
   const details = [
     ['Business name', business.name],
@@ -139,6 +143,15 @@ export default async function SettingsPage() {
           'Your plan, free trial and assistant chats this month.',
         )}
         {link('/settings/team', <Users aria-hidden />, 'Team', 'Invite staff and riders.')}
+      </ListGroup>
+
+      <ListGroup
+        title="Appearance"
+        footer="Automatic follows your phone's light or dark setting. Saved on this device."
+      >
+        <div className="px-4 py-3">
+          <ThemeChoice initial={theme} />
+        </div>
       </ListGroup>
 
       <ListGroup title="Your businesses">
