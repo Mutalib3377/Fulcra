@@ -45,6 +45,11 @@ export const JOBS = {
     name: 'owner-alerts',
     data: z.object({}).loose(),
   },
+  /** Every few minutes: cancel store checkouts not paid in time, returning their stock (K1). */
+  storeCheckoutExpiry: {
+    name: 'store-checkout-expiry',
+    data: z.object({}).loose(),
+  },
   /** Every minute: check customers' payment claims against the money that arrived (F1). */
   paymentClaims: {
     name: 'payment-claims',

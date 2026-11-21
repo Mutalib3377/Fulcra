@@ -408,57 +408,72 @@ export async function cancelOrder(
   const reason = z.string().trim().max(300).default('').parse(input.reason);
   return withTenant(actor.businessId, async (tx) => {
     await requireMember(tx, actor, EDITORS);
-    const order = await lockOrder(tx, id);
-    if (!canCancelOrder(order.status)) {
-      throw new CoreError(
-        'conflict',
-        order.status === 'cancelled'
-          ? 'This order is already cancelled.'
-          : 'Orders that have left can no longer be cancelled.',
+    await cancelOrderInTx(tx, actor.businessId, id, reason, userActor(actor));
+    return (await loadOrder(tx, id))!;
+  });
+}
+
+/**
+ * Cancels an order inside a tenant transaction (locks it, returns its stock, records
+ * `order.cancelled`). Also used by the system to release unpaid store checkouts.
+ */
+export async function cancelOrderInTx(
+  tx: Tx,
+  businessId: string,
+  orderId: string,
+  reason: string,
+  actor: EventActorRef,
+): Promise<void> {
+  const order = await lockOrder(tx, orderId);
+  if (!canCancelOrder(order.status)) {
+    throw new CoreError(
+      'conflict',
+      order.status === 'cancelled'
+        ? 'This order is already cancelled.'
+        : 'Orders that have left can no longer be cancelled.',
+    );
+  }
+  const userId = actor.type === 'user' ? (actor.id ?? null) : null;
+  const items = await tx
+    .select()
+    .from(schema.orderItems)
+    .where(eq(schema.orderItems.orderId, orderId));
+  for (const item of items) {
+    const [variant] = await tx
+      .select({ archivedAt: schema.productVariants.archivedAt })
+      .from(schema.productVariants)
+      .where(eq(schema.productVariants.id, item.variantId))
+      .limit(1);
+    // An option removed since the order was placed has nowhere to return stock to.
+    if (variant && !variant.archivedAt) {
+      await applyStockChange(
+        tx,
+        businessId,
+        {
+          variantId: item.variantId,
+          change: item.quantity,
+          reason: 'cancellation',
+          note: `Order #${order.orderNumber} cancelled`,
+        },
+        userId,
       );
     }
-    const items = await tx
-      .select()
-      .from(schema.orderItems)
-      .where(eq(schema.orderItems.orderId, id));
-    for (const item of items) {
-      const [variant] = await tx
-        .select({ archivedAt: schema.productVariants.archivedAt })
-        .from(schema.productVariants)
-        .where(eq(schema.productVariants.id, item.variantId))
-        .limit(1);
-      // An option removed since the order was placed has nowhere to return stock to.
-      if (variant && !variant.archivedAt) {
-        await applyStockChange(
-          tx,
-          actor.businessId,
-          {
-            variantId: item.variantId,
-            change: item.quantity,
-            reason: 'cancellation',
-            note: `Order #${order.orderNumber} cancelled`,
-          },
-          actor.userId,
-        );
-      }
-    }
-    await tx
-      .update(schema.orders)
-      .set({ status: 'cancelled', cancelledAt: new Date(), cancelReason: reason })
-      .where(eq(schema.orders.id, id));
-    await recordEvent(tx, actor.businessId, {
-      type: 'order.cancelled',
-      actor: userActor(actor),
-      orderId: id,
-      customerId: order.customerId,
-      payload: {
-        orderNumber: order.orderNumber,
-        from: order.status,
-        reason,
-        wasPaid: order.amountPaid > 0,
-      },
-    });
-    return (await loadOrder(tx, id))!;
+  }
+  await tx
+    .update(schema.orders)
+    .set({ status: 'cancelled', cancelledAt: new Date(), cancelReason: reason })
+    .where(eq(schema.orders.id, orderId));
+  await recordEvent(tx, businessId, {
+    type: 'order.cancelled',
+    actor,
+    orderId,
+    customerId: order.customerId,
+    payload: {
+      orderNumber: order.orderNumber,
+      from: order.status,
+      reason,
+      wasPaid: order.amountPaid > 0,
+    },
   });
 }
 

@@ -2,14 +2,8 @@ import { formatNaira } from '@fulcra/config';
 import { schema, withTenant } from '@fulcra/db';
 import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
-import { recordEvent, userActor } from '../events/events';
-import {
-  authorize,
-  isAssistant,
-  requireMember,
-  type ActorContext,
-  type Performer,
-} from '../members/access';
+import { performerActor, recordEvent } from '../events/events';
+import { authorize, requireMember, type ActorContext, type Performer } from '../members/access';
 import { CoreError } from '../shared/errors';
 import { dedicatedAccountBank, getPaystackClient, PaystackError } from './paystack';
 import { dedicatedAccountEmail } from './urls';
@@ -204,7 +198,7 @@ export async function prepareAccountDetails(
     if (moved) {
       await recordEvent(tx, actor.businessId, {
         type: 'order.status_changed',
-        actor: isAssistant(actor) ? { type: 'agent' } : userActor(actor),
+        actor: performerActor(actor),
         orderId: id,
         customerId: moved.customerId,
         payload: { orderNumber: order.order.orderNumber, from: 'new', to: 'awaiting_payment' },

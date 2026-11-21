@@ -1,7 +1,13 @@
 import { schema, withTenant, type Tx } from '@fulcra/db';
 import { and, desc, eq, type SQL } from 'drizzle-orm';
 import { z } from 'zod';
-import { requireMember, type ActorContext } from '../members/access';
+import {
+  isAssistant,
+  isTeamMember,
+  requireMember,
+  type ActorContext,
+  type Performer,
+} from '../members/access';
 
 /** Every event type written today. Other parts of the app react to these (jobs, alerts). */
 export const EVENT_TYPES = [
@@ -34,6 +40,12 @@ export const userActor = (actor: ActorContext): EventActorRef => ({
   type: 'user',
   id: actor.userId,
 });
+
+/** The actor reference for anyone who can act: a member, the assistant or a store shopper. */
+export function performerActor(performer: Performer): EventActorRef {
+  if (isTeamMember(performer)) return userActor(performer);
+  return isAssistant(performer) ? { type: 'agent' } : { type: 'customer' };
+}
 
 export type NewEvent = {
   type: EventType;

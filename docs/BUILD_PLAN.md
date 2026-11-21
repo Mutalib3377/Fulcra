@@ -268,6 +268,11 @@ Goal: the agent sells on WhatsApp end to end, the owner can watch and take over,
 - [x] The customer assistant uses the claim (`checkPaymentStatus` with `customerSaysPaid`) and never calls an unconfirmed payment paid (F1a)
 - [x] Owner WhatsApp alert "nothing arrived, don't send the goods" (paid plans), Payments → Payment checks with the screenshot next to what arrived (close after checking), home page warning, "any fake alerts?" in Ask Fulcra (F1b) (the alert template needs Meta's approval on Fulcra's number)
 
+### K1 — Store checkout (moved before launch, free in every plan)
+
+- [x] Core: store orders created as the shopper (prices, stock and delivery from the database), Paystack payment link to the seller's subaccount, unpaid store orders cancelled after 30 minutes with stock returned, limits per device and phone, setting "Let customers pay on my store" (K1a)
+- [ ] Store pages: add to cart, cart, checkout (works without JavaScript), receipt; Settings → Store switch (K1b)
+
 ### Launch gate
 
 - [ ] WhatsApp live for real sellers (Business Verification approved)

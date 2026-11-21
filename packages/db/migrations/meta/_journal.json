@@ -134,6 +134,13 @@
       "when": 1795042609046,
       "tag": "0018_payment-claims",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1795290394089,
+      "tag": "0019_store-checkout",
+      "breakpoints": true
     }
   ]
 }

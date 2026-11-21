@@ -39,24 +39,37 @@ export async function requireMember(
  */
 export type AssistantActor = { businessId: string; assistant: true };
 
-/** Someone who can take an action: a team member or the assistant. */
-export type Performer = ActorContext | AssistantActor;
+/**
+ * A shopper paying on a business's store (K1): no signed-in user. Only Core's store checkout
+ * service (src/storefront/checkout.ts) creates it, for an order it has just created.
+ */
+export type StorefrontActor = { businessId: string; storefront: true };
+
+/** Someone who can take an action: a team member, the assistant, or a store checkout. */
+export type Performer = ActorContext | AssistantActor | StorefrontActor;
 
 export function isAssistant(performer: Performer): performer is AssistantActor {
   return 'assistant' in performer && performer.assistant === true;
 }
 
-/** Checks the role of a team member; the assistant's access is decided by its own services. */
+export function isTeamMember(performer: Performer): performer is ActorContext {
+  return 'userId' in performer;
+}
+
+/**
+ * Checks the role of a team member; the assistant's and the store checkout's access is decided
+ * by their own services.
+ */
 export async function authorize(
   tx: Tx,
   performer: Performer,
   allowedRoles?: readonly MemberRole[],
 ): Promise<void> {
-  if (isAssistant(performer)) return;
+  if (!isTeamMember(performer)) return;
   await requireMember(tx, performer, allowedRoles);
 }
 
-/** The user behind an action, or null for the assistant. */
+/** The user behind an action, or null for the assistant or a store checkout. */
 export function performerUserId(performer: Performer): string | null {
-  return isAssistant(performer) ? null : performer.userId;
+  return isTeamMember(performer) ? performer.userId : null;
 }

@@ -3,10 +3,9 @@ import { isSubscriptionWebhook, processSubscriptionWebhook } from '../billing/su
 import { schema, withSystem, withTenant, type Tx } from '@fulcra/db';
 import { and, desc, eq, gt, inArray, sql } from 'drizzle-orm';
 import { z } from 'zod';
-import { recordEvent, userActor } from '../events/events';
+import { performerActor, recordEvent } from '../events/events';
 import {
   authorize,
-  isAssistant,
   performerUserId,
   requireMember,
   type ActorContext,
@@ -167,7 +166,7 @@ export async function createPaymentLink(actor: Performer, orderId: string): Prom
     if (order) {
       await recordEvent(tx, actor.businessId, {
         type: 'order.status_changed',
-        actor: isAssistant(actor) ? { type: 'agent' } : userActor(actor),
+        actor: performerActor(actor),
         orderId: id,
         customerId: order.customerId,
         payload: { orderNumber: p.orderNumber, from: 'new', to: 'awaiting_payment' },
