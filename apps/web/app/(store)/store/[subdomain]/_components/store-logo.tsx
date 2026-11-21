@@ -20,7 +20,7 @@ export function StoreLogo({
         width={size}
         height={size}
         style={style}
-        className={`shrink-0 bg-white object-contain ring-1 ring-black/5 ${className}`}
+        className={`shrink-0 bg-(--store-surface) object-contain ring-1 ring-(--store-line) ${className}`}
       />
     );
   }

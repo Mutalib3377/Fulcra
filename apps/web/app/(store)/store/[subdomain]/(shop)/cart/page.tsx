@@ -62,7 +62,7 @@ export default async function CartPage({ params, searchParams }: Props) {
         </div>
       ) : (
         <>
-          <ul className="flex flex-col divide-y divide-black/5">
+          <ul className="flex flex-col divide-y divide-(--store-line)">
             {cart.lines.map((line) => {
               const photo = line.photo ? imageUrls(line.photo).sm : null;
               return (
@@ -84,7 +84,7 @@ export default async function CartPage({ params, searchParams }: Props) {
                           {line.productName}
                         </a>
                         {line.variantLabel ? (
-                          <p className="text-sm text-[#6b7280]">{line.variantLabel}</p>
+                          <p className="text-sm text-(--store-subtle)">{line.variantLabel}</p>
                         ) : null}
                       </div>
                       <p className="shrink-0 font-semibold">{formatNaira(line.lineTotal)}</p>
@@ -100,7 +100,7 @@ export default async function CartPage({ params, searchParams }: Props) {
                           : `Only ${line.available} left. Lower the quantity to continue.`}
                       </p>
                     ) : (
-                      <p className="text-xs text-[#6b7280]">
+                      <p className="text-xs text-(--store-subtle)">
                         {formatNaira(line.unitPrice)} each
                         {line.isWholesale ? ' (wholesale price)' : ''}
                       </p>
@@ -129,7 +129,7 @@ export default async function CartPage({ params, searchParams }: Props) {
                         <input type="hidden" name="quantity" value="0" />
                         <button
                           type="submit"
-                          className="inline-flex min-h-10 items-center gap-1.5 rounded-full px-3 text-sm text-[#6b7280] hover:bg-[var(--store-tint)]"
+                          className="inline-flex min-h-10 items-center gap-1.5 rounded-full px-3 text-sm text-(--store-subtle) hover:bg-[var(--store-tint)]"
                         >
                           <Trash2 className="size-4" aria-hidden /> Remove
                         </button>
@@ -146,12 +146,12 @@ export default async function CartPage({ params, searchParams }: Props) {
               <span>Subtotal</span>
               <span className="font-semibold">{formatNaira(cart.subtotal)}</span>
             </div>
-            <p className="text-sm text-[#4b5563]">
+            <p className="text-sm text-(--store-muted)">
               Delivery is added at checkout, or choose pickup.
             </p>
             {cart.checkoutOpen ? (
               blocked ? (
-                <p className="rounded-[var(--store-radius)] bg-white px-4 py-3 text-sm font-medium text-[#b45309]">
+                <p className="rounded-[var(--store-radius)] bg-(--store-surface) px-4 py-3 text-sm font-medium text-[#b45309]">
                   Fix the items marked above to continue.
                 </p>
               ) : (
@@ -174,7 +174,7 @@ export default async function CartPage({ params, searchParams }: Props) {
               )}
               className={
                 cart.checkoutOpen
-                  ? 'bg-white text-[#1f8f4e] shadow-none ring-1 ring-black/10 hover:bg-white'
+                  ? 'bg-(--store-surface) text-[#1f8f4e] shadow-none ring-1 ring-(--store-line) hover:bg-(--store-surface)'
                   : ''
               }
             >
@@ -208,7 +208,7 @@ function QuantityButton({
         type="submit"
         aria-label={label}
         disabled={disabled}
-        className="inline-flex size-10 items-center justify-center rounded-full ring-1 ring-black/10 hover:bg-[var(--store-tint)] disabled:opacity-40"
+        className="inline-flex size-10 items-center justify-center rounded-full ring-1 ring-(--store-line) hover:bg-[var(--store-tint)] disabled:opacity-40"
       >
         {children}
       </button>

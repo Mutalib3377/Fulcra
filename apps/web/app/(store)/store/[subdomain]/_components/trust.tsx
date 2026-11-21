@@ -33,13 +33,13 @@ export function trustItems(store: StoreInfo) {
 /** The promises as a compact list (product page, under the order button). */
 export function TrustList({ store }: { store: StoreInfo }) {
   return (
-    <ul className="flex flex-col divide-y divide-black/5 rounded-[var(--store-radius)] bg-[var(--store-tint)] px-4">
+    <ul className="flex flex-col divide-y divide-(--store-line) rounded-[var(--store-radius)] bg-[var(--store-tint)] px-4">
       {trustItems(store).map(({ key, icon: Icon, title, text }) => (
         <li key={key} className="flex items-center gap-3 py-3">
           <Icon className="size-5 shrink-0 text-[var(--store-ink)]" aria-hidden />
           <span className="text-sm">
             <span className="font-semibold">{title}</span>
-            <span className="text-[#4b5563]"> · {text}</span>
+            <span className="text-(--store-muted)"> · {text}</span>
           </span>
         </li>
       ))}

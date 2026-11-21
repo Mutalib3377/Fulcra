@@ -273,6 +273,11 @@ Goal: the agent sells on WhatsApp end to end, the owner can watch and take over,
 - [x] Core: store orders created as the shopper (prices, stock and delivery from the database), Paystack payment link to the seller's subaccount, unpaid store orders cancelled after 30 minutes with stock returned, limits per device and phone, setting "Let customers pay on my store" (K1a)
 - [x] Store pages: add to cart, cart, checkout (works without JavaScript), receipt; Settings → Store switch (K1b) (tested with a fake Paystack; a real test needs the owner's Paystack test key)
 
+### T1 — Store themes (moved before launch, free in every plan)
+
+- [x] Theme setting and six themes (Classic, Minimal, Boutique, Bold, Market, Playful) on the store home, product cards and header; picker with drawings in the seller's colours and a private preview of the real store (T1a)
+- [ ] Themes carried through product pages, cart, checkout and receipts; screenshots of all six (T1b)
+
 ### Launch gate
 
 - [ ] WhatsApp live for real sellers (Business Verification approved)

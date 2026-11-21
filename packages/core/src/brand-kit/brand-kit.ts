@@ -10,6 +10,7 @@ export const BRAND_KIT_DEFAULTS = {
   primaryColour: '#0f6b55',
   accentColour: '#f5a524',
   font: 'clean',
+  storeTheme: 'classic',
   voice: 'friendly',
   voiceNotes: '',
   description: '',
@@ -20,6 +21,8 @@ export type BrandKitView = {
   primaryColour: string;
   accentColour: string;
   font: schema.BrandFont;
+  /** How the store looks (T1). */
+  storeTheme: schema.StoreTheme;
   voice: schema.BrandVoice;
   voiceNotes: string;
   description: string;
@@ -44,6 +47,8 @@ export const brandKitInput = z.object({
   primaryColour: hexColour,
   accentColour: hexColour,
   font: z.enum(schema.brandFonts),
+  /** Left out by callers that don't show the theme picker: the saved theme is kept. */
+  storeTheme: z.enum(schema.storeThemes).optional(),
   voice: z.enum(schema.brandVoices),
   voiceNotes: z.string().trim().max(500, 'Keep this under 500 characters.').default(''),
   description: z.string().trim().max(1000, 'Keep this under 1,000 characters.').default(''),
@@ -62,6 +67,7 @@ export async function getBrandKit(actor: ActorContext): Promise<BrandKitView> {
       primaryColour: kit.primaryColour,
       accentColour: kit.accentColour,
       font: kit.font,
+      storeTheme: kit.storeTheme,
       voice: kit.voice,
       voiceNotes: kit.voiceNotes,
       description: kit.description,
@@ -91,11 +97,12 @@ export async function saveBrandKit(
       .from(schema.brandKits)
       .where(eq(schema.brandKits.businessId, actor.businessId))
       .limit(1);
-    const values = { ...data, businessId: actor.businessId };
+    const { storeTheme, ...rest } = data;
+    const set = storeTheme ? { ...rest, storeTheme } : rest;
     const [row] = await tx
       .insert(schema.brandKits)
-      .values(values)
-      .onConflictDoUpdate({ target: schema.brandKits.businessId, set: data })
+      .values({ ...set, businessId: actor.businessId })
+      .onConflictDoUpdate({ target: schema.brandKits.businessId, set })
       .returning();
     if (!row) throw new Error('Brand kit upsert returned no row');
     return { saved: row, oldLogo: current?.logo ?? null };
@@ -108,6 +115,7 @@ export async function saveBrandKit(
     primaryColour: saved.primaryColour,
     accentColour: saved.accentColour,
     font: saved.font,
+    storeTheme: saved.storeTheme,
     voice: saved.voice,
     voiceNotes: saved.voiceNotes,
     description: saved.description,

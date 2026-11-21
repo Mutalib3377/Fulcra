@@ -16,7 +16,7 @@ type Props = {
 export const metadata: Metadata = { title: 'Checkout', robots: { index: false } };
 
 const input =
-  'min-h-12 w-full rounded-[calc(var(--store-radius)*0.75)] bg-white px-4 text-base ring-1 ring-black/15 outline-none focus:ring-2 focus:ring-[var(--store-primary)]';
+  'min-h-12 w-full rounded-[calc(var(--store-radius)*0.75)] bg-(--store-surface) px-4 text-base ring-1 ring-(--store-line-strong) outline-none focus:ring-2 focus:ring-[var(--store-primary)]';
 
 /**
  * Checkout (K1): one plain form. "Pay now" posts to /checkout/start, which creates the order
@@ -88,7 +88,9 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
           {fieldError('phone')}
           <label className="flex flex-col gap-1.5 text-sm font-medium">
             Email{' '}
-            <span className="font-normal text-[#6b7280]">(optional, for your payment receipt)</span>
+            <span className="font-normal text-(--store-subtle)">
+              (optional, for your payment receipt)
+            </span>
             <input
               name="email"
               type="email"
@@ -104,7 +106,7 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
         <fieldset className="flex flex-col gap-3">
           <legend className="mb-2 font-semibold">How do you want it?</legend>
           {zones.length > 0 ? (
-            <label className="flex cursor-pointer items-start gap-3 rounded-[var(--store-radius)] p-4 ring-1 ring-black/10 has-[:checked]:ring-2 has-[:checked]:ring-[var(--store-primary)]">
+            <label className="flex cursor-pointer items-start gap-3 rounded-[var(--store-radius)] p-4 ring-1 ring-(--store-line) has-[:checked]:ring-2 has-[:checked]:ring-[var(--store-primary)]">
               <input
                 type="radio"
                 name="fulfilment"
@@ -143,7 +145,7 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
               </span>
             </label>
           ) : null}
-          <label className="flex cursor-pointer items-start gap-3 rounded-[var(--store-radius)] p-4 ring-1 ring-black/10 has-[:checked]:ring-2 has-[:checked]:ring-[var(--store-primary)]">
+          <label className="flex cursor-pointer items-start gap-3 rounded-[var(--store-radius)] p-4 ring-1 ring-(--store-line) has-[:checked]:ring-2 has-[:checked]:ring-[var(--store-primary)]">
             <input
               type="radio"
               name="fulfilment"
@@ -153,7 +155,7 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
             />
             <span className="flex flex-col">
               <span className="font-medium">I&apos;ll pick it up</span>
-              <span className="text-sm text-[#6b7280]">
+              <span className="text-sm text-(--store-subtle)">
                 Free. The shop will tell you where and when.
               </span>
             </span>
@@ -166,19 +168,19 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
         <ul className="flex flex-col gap-3">
           {cart.lines.map((l) => (
             <li key={l.variantId} className="flex items-center gap-3 text-sm">
-              <span className="relative size-12 shrink-0 overflow-hidden rounded-[calc(var(--store-radius)*0.6)] bg-white">
+              <span className="relative size-12 shrink-0 overflow-hidden rounded-[calc(var(--store-radius)*0.6)] bg-(--store-surface)">
                 {l.photo ? (
                   // eslint-disable-next-line @next/next/no-img-element -- pre-sized storage image
                   <img src={imageUrls(l.photo).sm} alt="" className="size-full object-cover" />
                 ) : null}
-                <span className="absolute -top-1 -right-1 flex size-5 items-center justify-center rounded-full bg-[#111827] text-[10px] font-semibold text-white">
+                <span className="absolute -top-1 -right-1 flex size-5 items-center justify-center rounded-full bg-(--store-fg) text-[10px] font-semibold text-(--store-bg)">
                   {l.quantity}
                 </span>
               </span>
               <span className="min-w-0 flex-1">
                 <span className="line-clamp-1">{l.productName}</span>
                 {l.variantLabel ? (
-                  <span className="text-xs text-[#6b7280]">{l.variantLabel}</span>
+                  <span className="text-xs text-(--store-subtle)">{l.variantLabel}</span>
                 ) : null}
               </span>
               <span className="font-medium">{formatNaira(l.lineTotal)}</span>
@@ -194,14 +196,14 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
         >
           <Lock className="size-4" aria-hidden /> Pay now
         </button>
-        <p className="flex items-start gap-2 text-xs text-[#4b5563]">
+        <p className="flex items-start gap-2 text-xs text-(--store-muted)">
           <ShieldCheck className="size-4 shrink-0" aria-hidden />
           You&apos;ll pay on Paystack&apos;s secure page by card, bank transfer or USSD. The money
           goes straight to {store.name}.
         </p>
         <a
           href="/cart"
-          className="text-center text-sm text-[#4b5563] underline-offset-4 hover:underline"
+          className="text-center text-sm text-(--store-muted) underline-offset-4 hover:underline"
         >
           Back to cart
         </a>

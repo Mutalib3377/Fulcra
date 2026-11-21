@@ -35,17 +35,72 @@
  * the brand kit; tints are mixed from them. Phones without color-mix get plain neutrals.
  */
 .store {
+  /* Page colours (Classic); themes below change them. */
+  --store-bg: #ffffff;
+  --store-surface: #ffffff;
+  --store-fg: #111827;
+  --store-muted: #4b5563;
+  --store-subtle: #6b7280;
+  --store-line: rgb(0 0 0 / 0.08);
+  --store-line-strong: rgb(0 0 0 / 0.15);
   --store-tint: #f4f4f5;
   --store-tint-strong: #e9e9ec;
   --store-ink: #111827;
 }
 @supports (color: color-mix(in srgb, red, blue)) {
   .store {
-    --store-tint: color-mix(in srgb, var(--store-primary) 7%, white);
-    --store-tint-strong: color-mix(in srgb, var(--store-primary) 15%, white);
-    /* A deep shade of the brand colour, readable as text on white. */
-    --store-ink: color-mix(in srgb, var(--store-primary) 62%, #0b0b0f);
+    --store-tint: color-mix(in srgb, var(--store-primary) 7%, var(--store-bg));
+    --store-tint-strong: color-mix(in srgb, var(--store-primary) 15%, var(--store-bg));
+    /* A deep shade of the brand colour, readable as text on the page. */
+    --store-ink: color-mix(in srgb, var(--store-primary) 62%, var(--store-fg));
     --store-primary-deep: color-mix(in srgb, var(--store-primary) 78%, black);
+  }
+}
+
+/* Store themes (T1): set on the store's root as data-store-theme. */
+.store[data-store-theme='minimal'] {
+  --store-fg: #0a0a0a;
+  --store-muted: #525252;
+  --store-subtle: #737373;
+  --store-line: rgb(0 0 0 / 0.1);
+  --store-radius: 0.125rem;
+}
+.store[data-store-theme='boutique'] {
+  --store-bg: #faf7f2;
+  --store-surface: #ffffff;
+  --store-fg: #1c1917;
+  --store-muted: #57534e;
+  --store-subtle: #78716c;
+  --store-line: rgb(28 25 23 / 0.1);
+  --store-radius: 0;
+}
+.store[data-store-theme='bold'] {
+  color-scheme: dark;
+  --store-bg: #0b0b0f;
+  --store-surface: #17171d;
+  --store-fg: #fafafa;
+  --store-muted: #c4c4c8;
+  --store-subtle: #9a9aa2;
+  --store-line: rgb(255 255 255 / 0.1);
+  --store-line-strong: rgb(255 255 255 / 0.2);
+  --store-radius: 0.75rem;
+}
+.store[data-store-theme='market'] {
+  --store-bg: #f5f5f2;
+  --store-surface: #ffffff;
+  --store-radius: 0.75rem;
+}
+.store[data-store-theme='playful'] {
+  --store-bg: #fffdf8;
+  --store-radius: 1.75rem;
+}
+@supports (color: color-mix(in srgb, red, blue)) {
+  .store[data-store-theme='bold'] {
+    /* On the dark page, brand-colour text needs to be lighter, not darker. */
+    --store-ink: color-mix(in srgb, var(--store-primary) 55%, white);
+  }
+  .store[data-store-theme='playful'] {
+    --store-bg: color-mix(in srgb, var(--store-accent) 6%, #fffdf8);
   }
 }
 .store-display {

@@ -1,6 +1,6 @@
 'use client';
 
-import { BRAND_FONTS, type BrandFont, type BrandVoice } from '@fulcra/core/rules';
+import { BRAND_FONTS, type BrandFont, type BrandVoice, type StoreTheme } from '@fulcra/core/rules';
 import {
   Button,
   Card,
@@ -19,12 +19,14 @@ import { uploadImage, type UploadedImage } from '@/components/upload-image';
 import { saveBrandKitAction } from './actions';
 import { brandFontOptions } from '@/lib/brand-fonts';
 import { StickyActions } from '@/components/page-header';
+import { ThemePicker } from './theme-picker';
 
 type Values = {
   logo: UploadedImage | null;
   primaryColour: string;
   accentColour: string;
   font: BrandFont;
+  storeTheme: StoreTheme;
   voice: BrandVoice;
   voiceNotes: string;
   description: string;
@@ -42,10 +44,13 @@ export function BrandKitForm({
   initial,
   businessName,
   canEdit,
+  storeAddress,
 }: {
   initial: Values;
   businessName: string;
   canEdit: boolean;
+  /** The seller's store address (for the theme preview); null with their own website. */
+  storeAddress: string | null;
 }) {
   const [values, setValues] = useState<Values>(initial);
   const [pending, startTransition] = useTransition();
@@ -186,6 +191,17 @@ export function BrandKitForm({
               onChange={(v) => set('accentColour', v)}
             />
           </div>
+        </Section>
+
+        <Section title="Store theme">
+          <ThemePicker
+            value={values.storeTheme}
+            onChange={(t) => set('storeTheme', t)}
+            primaryColour={HEX.test(values.primaryColour) ? values.primaryColour : '#0f6b55'}
+            accentColour={HEX.test(values.accentColour) ? values.accentColour : '#f5a524'}
+            storeAddress={storeAddress}
+            disabled={!canEdit}
+          />
         </Section>
 
         <Section title="Font">
