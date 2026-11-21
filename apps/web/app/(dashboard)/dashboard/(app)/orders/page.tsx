@@ -128,6 +128,7 @@ export default async function OrdersPage({ searchParams }: Props) {
                     <p className="text-sm text-muted-foreground">
                       {o.itemCount} {o.itemCount === 1 ? 'item' : 'items'} ·{' '}
                       {o.fulfilment === 'pickup' ? 'Pickup' : 'Delivery'} ·{' '}
+                      {o.channel === 'store' ? 'Store · ' : ''}
                       {timeAgo(o.createdAt, now)}
                     </p>
                   </div>

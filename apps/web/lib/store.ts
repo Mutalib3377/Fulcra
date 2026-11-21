@@ -17,7 +17,7 @@ import { cache } from 'react';
  */
 const STORE_REVALIDATE_SECONDS = 60;
 /** Bump when the shape of cached store data changes, so old entries are never read. */
-const CACHE_VERSION = 'v3';
+const CACHE_VERSION = 'v4';
 
 const businessTag = (businessId: string) => `store:${businessId}`;
 const subdomainTag = (subdomain: string) => `store-address:${subdomain}`;

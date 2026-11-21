@@ -7,7 +7,7 @@ import {
   type StoreVariant,
 } from '@fulcra/core';
 import { cn } from '@fulcra/ui';
-import { Package } from 'lucide-react';
+import { Package, ShoppingBag } from 'lucide-react';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { imageUrls } from '@/lib/images';
@@ -62,6 +62,8 @@ export default async function ProductPage({ params, searchParams }: Props) {
   const price = chosen ? chosen.price : product.price;
   const priceText = `${!chosen && product.hasPriceRange ? 'From ' : ''}${formatNaira(price)}`;
   const related = await relatedProducts(store.businessId, product.id, product.category);
+  // Store payments on, and this option can be bought now: add to cart first, WhatsApp second.
+  const canAddToCart = store.checkout && chosen !== null && chosen.stock.state !== 'sold_out';
   const order = (
     <OrderButton
       whatsappNumber={store.whatsappNumber}
@@ -168,7 +170,16 @@ export default async function ProductPage({ params, searchParams }: Props) {
           ) : null}
 
           <div className="flex flex-col gap-3">
-            {order}
+            {canAddToCart && chosen ? (
+              <>
+                <AddToCart variantId={chosen.id} max={Math.min(10, chosen.maxQuantity)} />
+                <div className="[&_a]:bg-white [&_a]:text-[#1f8f4e] [&_a]:shadow-none [&_a]:ring-1 [&_a]:ring-black/10 [&_a:hover]:bg-[#f0fdf4]">
+                  {order}
+                </div>
+              </>
+            ) : (
+              order
+            )}
             <ShareButton
               url={productUrl}
               title={product.name}
@@ -213,7 +224,9 @@ export default async function ProductPage({ params, searchParams }: Props) {
             <span className="font-semibold">{priceText}</span>
           </div>
           <div className="ml-auto shrink-0 [&_a]:min-h-11 [&_a]:px-5 [&_a]:text-sm [&_p]:min-h-11 [&_p]:text-xs">
-            {chosen || product.soldOut ? (
+            {canAddToCart && chosen ? (
+              <AddToCart variantId={chosen.id} max={1} compact />
+            ) : chosen || product.soldOut ? (
               order
             ) : (
               <a
@@ -231,6 +244,53 @@ export default async function ProductPage({ params, searchParams }: Props) {
         </div>
       </div>
     </main>
+  );
+}
+
+/** "Add to cart": a plain form (works without JavaScript), then the cart page. */
+function AddToCart({
+  variantId,
+  max,
+  compact = false,
+}: {
+  variantId: string;
+  max: number;
+  compact?: boolean;
+}) {
+  const button = (
+    <button
+      type="submit"
+      className={cn(
+        'inline-flex items-center justify-center gap-2 rounded-full font-semibold shadow-sm transition-transform active:scale-[0.98]',
+        compact ? 'min-h-11 px-5 text-sm' : 'min-h-12 flex-1 px-6 text-base',
+      )}
+      style={{ backgroundColor: 'var(--store-primary)', color: 'var(--store-on-primary)' }}
+    >
+      <ShoppingBag className="size-5" aria-hidden />
+      Add to cart
+    </button>
+  );
+  return (
+    <form method="post" action="/cart/add" className="flex gap-2">
+      <input type="hidden" name="variantId" value={variantId} />
+      {compact || max <= 1 ? (
+        <input type="hidden" name="quantity" value="1" />
+      ) : (
+        <select
+          name="quantity"
+          aria-label="Quantity"
+          defaultValue="1"
+          className="min-h-12 rounded-full bg-white px-4 font-medium ring-1 ring-black/15"
+        >
+          {Array.from({ length: max }, (_, i) => (
+            <option key={i + 1} value={i + 1}>
+              {i + 1}
+            </option>
+          ))}
+        </select>
+      )}
+      {button}
+    </form>
   );
 }
 

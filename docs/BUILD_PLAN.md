@@ -271,7 +271,7 @@ Goal: the agent sells on WhatsApp end to end, the owner can watch and take over,
 ### K1 — Store checkout (moved before launch, free in every plan)
 
 - [x] Core: store orders created as the shopper (prices, stock and delivery from the database), Paystack payment link to the seller's subaccount, unpaid store orders cancelled after 30 minutes with stock returned, limits per device and phone, setting "Let customers pay on my store" (K1a)
-- [ ] Store pages: add to cart, cart, checkout (works without JavaScript), receipt; Settings → Store switch (K1b)
+- [x] Store pages: add to cart, cart, checkout (works without JavaScript), receipt; Settings → Store switch (K1b) (tested with a fake Paystack; a real test needs the owner's Paystack test key)
 
 ### Launch gate
 
