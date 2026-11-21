@@ -92,9 +92,10 @@ plus any verification records Render shows for the wildcard certificate (an `_ac
    ```
 
    Never change it later: it decrypts sellers' saved channel tokens and shop keys.
-3. `ROOT_DOMAIN` = `yourdomain.com` (no `https://`). It is also baked into the build (the landing page is static), so set it **before** the first deploy, and redeploy the web service if it ever changes. The same applies to the `NEXT_PUBLIC_*` values.
-4. Deploy. The service applies database migrations when it starts; if they fail it doesn't start, and Render keeps the old version running.
-5. **fulcra → Settings → Custom Domains:** add `yourdomain.com`, `app.yourdomain.com` and `*.yourdomain.com`, then add the DNS records from step 2 in Cloudflare. Wait until Render shows the certificates as issued.
+3. `ADMIN_EMAILS` = the email you sign in with (several separated by commas). It opens your admin area at `https://app.yourdomain.com/admin`; for everyone else that page does not exist. `ADMIN_USD_NGN_RATE` (default 1600) converts AI and WhatsApp costs to naira there.
+4. `ROOT_DOMAIN` = `yourdomain.com` (no `https://`). It is also baked into the build (the landing page is static), so set it **before** the first deploy, and redeploy the web service if it ever changes. The same applies to the `NEXT_PUBLIC_*` values.
+5. Deploy. The service applies database migrations when it starts; if they fail it doesn't start, and Render keeps the old version running.
+6. **fulcra → Settings → Custom Domains:** add `yourdomain.com`, `app.yourdomain.com` and `*.yourdomain.com`, then add the DNS records from step 2 in Cloudflare. Wait until Render shows the certificates as issued.
 
 To roll back, use **Rollback** on the service in Render. Migrations only move forward, so a rollback keeps the newer database tables (they are always added in a backward-compatible way).
 

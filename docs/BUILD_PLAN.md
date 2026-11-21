@@ -278,6 +278,11 @@ Goal: the agent sells on WhatsApp end to end, the owner can watch and take over,
 - [x] Theme setting and six themes (Classic, Minimal, Boutique, Bold, Market, Playful) on the store home, product cards and header; picker with drawings in the seller's colours and a private preview of the real store (T1a)
 - [x] Themes carried through product pages, cart, checkout and receipts; screenshots of all six (T1b)
 
+### AD — Admin area for Fulcra's staff
+
+- [x] Access by `ADMIN_EMAILS` ("not found" for everyone else); overview (sign-ups, plans, monthly recurring, plan income, AI and WhatsApp costs, sellers' sales, system health); sellers list (search, status filter, this month's activity and cost); seller page (plan, usage, team, channels, costs, recent orders) (AD1)
+- [ ] Actions: extend trial, give a plan, extra limits, switch a feature off, suspend; activity log with reasons (AD2)
+
 ### Launch gate
 
 - [ ] WhatsApp live for real sellers (Business Verification approved)

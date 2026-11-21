@@ -18,6 +18,10 @@ services:
     envVars:
       - key: ROOT_DOMAIN
         sync: false
+      - key: ADMIN_EMAILS # your email: opens app.yourdomain.com/admin
+        sync: false
+      - key: ADMIN_USD_NGN_RATE
+        value: '1600'
       - key: DATABASE_URL # Supabase transaction pooler (port 6543)
         sync: false
       - key: DATABASE_URL_QUEUE # Supabase session pooler (port 5432 on the pooler host)
