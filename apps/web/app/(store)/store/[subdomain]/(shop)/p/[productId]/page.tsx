@@ -99,7 +99,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
                 </>
               ) : null}
             </nav>
-            <h1 className="store-display text-[2rem] leading-tight text-balance md:text-4xl">
+            <h1 className="store-display store-title text-[2rem] leading-tight text-balance md:text-4xl">
               {product.name}
             </h1>
             <div className="flex flex-wrap items-center gap-3">
@@ -175,7 +175,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
             {canAddToCart && chosen ? (
               <>
                 <AddToCart variantId={chosen.id} max={Math.min(10, chosen.maxQuantity)} />
-                <div className="[&_a]:bg-(--store-surface) [&_a]:text-[#1f8f4e] [&_a]:shadow-none [&_a]:ring-1 [&_a]:ring-(--store-line) [&_a:hover]:bg-[#f0fdf4]">
+                <div className="[&_a]:w-full [&_a]:bg-(--store-surface) [&_a]:text-[#1f8f4e] [&_a]:shadow-none [&_a]:ring-1 [&_a]:ring-(--store-line) [&_a:hover]:bg-(--store-tint)">
                   {order}
                 </div>
               </>
@@ -187,7 +187,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
               title={product.name}
               text={`${product.name} – ${priceText} at ${store.name}`}
               label="Share with a friend"
-              className="min-h-11 rounded-full text-sm text-(--store-muted) ring-1 ring-(--store-line) hover:bg-[var(--store-tint)]"
+              className="min-h-11 rounded-(--store-button-radius) text-sm text-(--store-muted) ring-1 ring-(--store-line) hover:bg-[var(--store-tint)]"
             />
           </div>
 
@@ -238,7 +238,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
             ) : (
               <a
                 href="#options"
-                className="inline-flex items-center justify-center rounded-full font-semibold"
+                className="inline-flex items-center justify-center rounded-(--store-button-radius) font-semibold"
                 style={{
                   backgroundColor: 'var(--store-primary)',
                   color: 'var(--store-on-primary)',
@@ -268,7 +268,7 @@ function AddToCart({
     <button
       type="submit"
       className={cn(
-        'inline-flex items-center justify-center gap-2 rounded-full font-semibold shadow-sm transition-transform active:scale-[0.98]',
+        'inline-flex items-center justify-center gap-2 rounded-(--store-button-radius) font-semibold shadow-sm transition-transform active:scale-[0.98]',
         compact ? 'min-h-11 px-5 text-sm' : 'min-h-12 flex-1 px-6 text-base',
       )}
       style={{ backgroundColor: 'var(--store-primary)', color: 'var(--store-on-primary)' }}
@@ -287,7 +287,7 @@ function AddToCart({
           name="quantity"
           aria-label="Quantity"
           defaultValue="1"
-          className="min-h-12 rounded-full bg-(--store-surface) px-4 font-medium ring-1 ring-(--store-line-strong)"
+          className="min-h-12 rounded-(--store-button-radius) bg-(--store-surface) px-4 font-medium ring-1 ring-(--store-line-strong)"
         >
           {Array.from({ length: max }, (_, i) => (
             <option key={i + 1} value={i + 1}>
@@ -316,9 +316,9 @@ async function relatedProducts(businessId: string, productId: string, category: 
 
 function StockPill({ state, label }: { state: StoreVariant['stock']['state']; label: string }) {
   const tone = {
-    in_stock: 'bg-[#dcfce7] text-[#166534]',
-    low: 'bg-[#fef3c7] text-[#92400e]',
-    sold_out: 'bg-[#f3f4f6] text-(--store-subtle)',
+    in_stock: 'bg-(--store-success-soft) text-(--store-success)',
+    low: 'bg-(--store-warning-soft) text-(--store-warning)',
+    sold_out: 'bg-(--store-neutral-soft) text-(--store-subtle)',
   }[state];
   return (
     <span

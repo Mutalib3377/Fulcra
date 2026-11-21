@@ -276,7 +276,7 @@ Goal: the agent sells on WhatsApp end to end, the owner can watch and take over,
 ### T1 — Store themes (moved before launch, free in every plan)
 
 - [x] Theme setting and six themes (Classic, Minimal, Boutique, Bold, Market, Playful) on the store home, product cards and header; picker with drawings in the seller's colours and a private preview of the real store (T1a)
-- [ ] Themes carried through product pages, cart, checkout and receipts; screenshots of all six (T1b)
+- [x] Themes carried through product pages, cart, checkout and receipts; screenshots of all six (T1b)
 
 ### Launch gate
 

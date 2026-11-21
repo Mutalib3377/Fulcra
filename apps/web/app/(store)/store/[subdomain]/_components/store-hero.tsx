@@ -89,9 +89,9 @@ function Img({
 }
 
 const onPrimaryGhost =
-  'inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-white/15 px-6 font-semibold ring-1 ring-white/30 backdrop-blur-sm hover:bg-white/25';
+  'inline-flex min-h-12 items-center justify-center gap-2 rounded-(--store-button-radius) bg-white/15 px-6 font-semibold ring-1 ring-white/30 backdrop-blur-sm hover:bg-white/25';
 const pageGhost =
-  'inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-6 font-semibold ring-1 ring-(--store-line-strong) hover:bg-(--store-tint)';
+  'inline-flex min-h-12 items-center justify-center gap-2 rounded-(--store-button-radius) px-6 font-semibold ring-1 ring-(--store-line-strong) hover:bg-(--store-tint)';
 const brandSolid =
   'inline-flex min-h-12 items-center justify-center gap-2 px-7 font-semibold shadow-sm transition-transform active:scale-[0.98]';
 

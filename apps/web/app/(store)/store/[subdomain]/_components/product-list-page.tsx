@@ -30,7 +30,7 @@ export function ProductListPage({
           <span aria-hidden>/</span>
           <span className="text-(--store-fg)">{title}</span>
         </nav>
-        <h1 className="store-display text-4xl">{title}</h1>
+        <h1 className="store-display store-title text-4xl">{title}</h1>
       </div>
       {products.length === 0 ? (
         <div className="flex flex-col items-center gap-2 rounded-[var(--store-radius)] bg-[var(--store-tint)] px-6 py-14 text-center">
@@ -47,7 +47,7 @@ export function ProductListPage({
           {page > 1 ? (
             <a
               href={page === 2 ? basePath : `${basePath}?page=${page - 1}`}
-              className="inline-flex min-h-11 items-center rounded-full px-5 text-sm font-medium ring-1 ring-(--store-line) hover:bg-[var(--store-tint)]"
+              className="inline-flex min-h-11 items-center rounded-(--store-button-radius) px-5 text-sm font-medium ring-1 ring-(--store-line) hover:bg-[var(--store-tint)]"
             >
               ← Previous
             </a>
@@ -57,7 +57,7 @@ export function ProductListPage({
           {hasMore ? (
             <a
               href={`${basePath}?page=${page + 1}`}
-              className="inline-flex min-h-11 items-center rounded-full px-5 text-sm font-medium ring-1 ring-(--store-line) hover:bg-[var(--store-tint)]"
+              className="inline-flex min-h-11 items-center rounded-(--store-button-radius) px-5 text-sm font-medium ring-1 ring-(--store-line) hover:bg-[var(--store-tint)]"
             >
               More products →
             </a>

@@ -46,6 +46,16 @@
   --store-tint: #f4f4f5;
   --store-tint-strong: #e9e9ec;
   --store-ink: #111827;
+  /* Buttons: pills unless the theme has square corners. */
+  --store-button-radius: 9999px;
+  /* Status colours (stock, errors), readable on the page colour. */
+  --store-success: #166534;
+  --store-success-soft: #dcfce7;
+  --store-warning: #b45309;
+  --store-warning-soft: #fef3c7;
+  --store-danger: #b91c1c;
+  --store-danger-soft: #fef2f2;
+  --store-neutral-soft: #f3f4f6;
 }
 @supports (color: color-mix(in srgb, red, blue)) {
   .store {
@@ -64,6 +74,7 @@
   --store-subtle: #737373;
   --store-line: rgb(0 0 0 / 0.1);
   --store-radius: 0.125rem;
+  --store-button-radius: 0.125rem;
 }
 .store[data-store-theme='boutique'] {
   --store-bg: #faf7f2;
@@ -73,6 +84,7 @@
   --store-subtle: #78716c;
   --store-line: rgb(28 25 23 / 0.1);
   --store-radius: 0;
+  --store-button-radius: 0;
 }
 .store[data-store-theme='bold'] {
   color-scheme: dark;
@@ -84,11 +96,19 @@
   --store-line: rgb(255 255 255 / 0.1);
   --store-line-strong: rgb(255 255 255 / 0.2);
   --store-radius: 0.75rem;
+  --store-success: #4ade80;
+  --store-success-soft: rgb(74 222 128 / 0.14);
+  --store-warning: #fbbf24;
+  --store-warning-soft: rgb(251 191 36 / 0.14);
+  --store-danger: #f87171;
+  --store-danger-soft: rgb(248 113 113 / 0.14);
+  --store-neutral-soft: rgb(255 255 255 / 0.08);
 }
 .store[data-store-theme='market'] {
   --store-bg: #f5f5f2;
   --store-surface: #ffffff;
   --store-radius: 0.75rem;
+  --store-button-radius: 0.75rem;
 }
 .store[data-store-theme='playful'] {
   --store-bg: #fffdf8;
@@ -102,6 +122,11 @@
   .store[data-store-theme='playful'] {
     --store-bg: color-mix(in srgb, var(--store-accent) 6%, #fffdf8);
   }
+}
+/* Page titles: Bold shouts in capitals. */
+.store[data-store-theme='bold'] .store-title {
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
 }
 .store-display {
   font-family: var(--store-display);

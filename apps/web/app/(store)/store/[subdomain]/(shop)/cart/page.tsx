@@ -40,9 +40,9 @@ export default async function CartPage({ params, searchParams }: Props) {
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 py-8">
       <div className="flex flex-col gap-1">
-        <h1 className="store-display text-4xl">Your cart</h1>
+        <h1 className="store-display store-title text-4xl">Your cart</h1>
         {added && cart.lines.length > 0 ? (
-          <p className="text-sm font-medium text-[#166534]" role="status">
+          <p className="text-sm font-medium text-(--store-success)" role="status">
             Added to your cart.
           </p>
         ) : null}
@@ -54,7 +54,7 @@ export default async function CartPage({ params, searchParams }: Props) {
           <h2 className="store-display text-xl">Your cart is empty</h2>
           <a
             href="/products"
-            className="inline-flex min-h-12 items-center gap-2 rounded-full px-6 font-semibold"
+            className="inline-flex min-h-12 items-center gap-2 rounded-(--store-button-radius) px-6 font-semibold"
             style={{ backgroundColor: 'var(--store-primary)', color: 'var(--store-on-primary)' }}
           >
             Start shopping <ArrowRight className="size-4" aria-hidden />
@@ -90,11 +90,11 @@ export default async function CartPage({ params, searchParams }: Props) {
                       <p className="shrink-0 font-semibold">{formatNaira(line.lineTotal)}</p>
                     </div>
                     {line.problem === 'unavailable' ? (
-                      <p className="text-sm font-medium text-[#b91c1c]">
+                      <p className="text-sm font-medium text-(--store-danger)">
                         No longer available. Please remove it.
                       </p>
                     ) : line.problem === 'not_enough' ? (
-                      <p className="text-sm font-medium text-[#b45309]">
+                      <p className="text-sm font-medium text-(--store-warning)">
                         {line.available === 0
                           ? 'Sold out. Please remove it.'
                           : `Only ${line.available} left. Lower the quantity to continue.`}
@@ -129,7 +129,7 @@ export default async function CartPage({ params, searchParams }: Props) {
                         <input type="hidden" name="quantity" value="0" />
                         <button
                           type="submit"
-                          className="inline-flex min-h-10 items-center gap-1.5 rounded-full px-3 text-sm text-(--store-subtle) hover:bg-[var(--store-tint)]"
+                          className="inline-flex min-h-10 items-center gap-1.5 rounded-(--store-button-radius) px-3 text-sm text-(--store-subtle) hover:bg-[var(--store-tint)]"
                         >
                           <Trash2 className="size-4" aria-hidden /> Remove
                         </button>
@@ -151,13 +151,13 @@ export default async function CartPage({ params, searchParams }: Props) {
             </p>
             {cart.checkoutOpen ? (
               blocked ? (
-                <p className="rounded-[var(--store-radius)] bg-(--store-surface) px-4 py-3 text-sm font-medium text-[#b45309]">
+                <p className="rounded-[var(--store-radius)] bg-(--store-surface) px-4 py-3 text-sm font-medium text-(--store-warning)">
                   Fix the items marked above to continue.
                 </p>
               ) : (
                 <a
                   href="/checkout"
-                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-6 text-base font-semibold shadow-sm"
+                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-(--store-button-radius) px-6 text-base font-semibold shadow-sm"
                   style={{
                     backgroundColor: 'var(--store-primary)',
                     color: 'var(--store-on-primary)',
