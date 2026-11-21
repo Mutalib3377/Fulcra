@@ -3,6 +3,7 @@ import { and, asc, desc, eq, isNotNull, isNull, sql, type SQL } from 'drizzle-or
 import { z } from 'zod';
 import { BRAND_KIT_DEFAULTS } from '../brand-kit/brand-kit';
 import { variantLabel } from '../catalog/rules';
+import { MAX_CART_QUANTITY } from './cart-rules';
 import { storeStockStatus, type StockStatus } from './rules';
 
 /**
@@ -74,6 +75,8 @@ export type StoreVariant = {
   label: string;
   price: number;
   stock: StockStatus;
+  /** How many can go in the cart at once (stock, capped at MAX_CART_QUANTITY). */
+  maxQuantity: number;
 };
 
 export type StoreProduct = {
@@ -287,6 +290,7 @@ export async function getStoreProduct(
       label: row.isDefault ? '' : variantLabel(row),
       price: row.priceOverride ?? product.retailPrice,
       stock: storeStockStatus(row.stock, product.lowStockThreshold),
+      maxQuantity: Math.max(0, Math.min(row.stock, MAX_CART_QUANTITY)),
     }));
     const prices = variants.map((x) => x.price);
     const price = Math.min(...prices);

@@ -1,8 +1,9 @@
-import { getBusiness } from '@fulcra/core';
+import { getBusiness, getStoreCheckoutSetting } from '@fulcra/core';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getDashboardContext } from '@/lib/auth';
 import { StoreChoiceForm } from './store-choice-form';
+import { StorePayments } from './store-payments';
 import { BackLink } from '@/components/page-header';
 
 export const metadata: Metadata = { title: 'Store or website' };
@@ -13,6 +14,7 @@ type Props = { searchParams: Promise<{ welcome?: string }> };
 export default async function StoreChoicePage({ searchParams }: Props) {
   const { actor, membership } = await getDashboardContext();
   const business = await getBusiness(actor);
+  const checkout = membership.role === 'rider' ? null : await getStoreCheckoutSetting(actor);
   const welcome = (await searchParams).welcome === '1';
   return (
     <div className="mx-auto flex w-full max-w-xl flex-col gap-6">
@@ -30,6 +32,13 @@ export default async function StoreChoicePage({ searchParams }: Props) {
         initialWebsite={business.websiteUrl ?? ''}
         canEdit={membership.role === 'owner'}
       />
+      {!welcome && !business.hasExternalWebsite && checkout ? (
+        <StorePayments
+          enabled={checkout.enabled}
+          hasPayout={checkout.hasPayout}
+          canEdit={membership.role === 'owner'}
+        />
+      ) : null}
       {welcome && (
         <Link
           href="/"

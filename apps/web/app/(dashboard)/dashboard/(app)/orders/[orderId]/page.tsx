@@ -70,6 +70,7 @@ export default async function OrderPage({ params }: Props) {
         <div className="flex flex-wrap items-center gap-2">
           <h1 className="text-3xl font-semibold">Order #{order.orderNumber}</h1>
           <Badge tone={ORDER_STATUS_TONES[order.status]}>{orderStatusLabel(order.status)}</Badge>
+          {order.channel === 'store' ? <Badge tone="info">From your store</Badge> : null}
         </div>
         <p className="text-sm text-muted-foreground">{formatDateTime(order.createdAt)}</p>
       </div>

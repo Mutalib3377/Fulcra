@@ -1,8 +1,10 @@
 import { APP_NAME } from '@fulcra/config';
 import { whatsAppHelloMessage, whatsAppLink } from '@fulcra/core';
-import { ArrowUpRight, Sparkles } from 'lucide-react';
+import { cartCount } from '@fulcra/core/rules';
+import { ArrowUpRight, ShoppingBag, Sparkles } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import type { ReactNode } from 'react';
+import { readCart } from '@/lib/cart';
 import { imageUrls } from '@/lib/images';
 import { loadStore } from '@/lib/store';
 import { dashboardUrl, marketingUrl, storeUrl } from '@/lib/urls';
@@ -18,6 +20,7 @@ export default async function ShopLayout({ children, params }: Props) {
   const store = await loadStore(subdomain);
   if (!store) notFound();
   const logo = store.brand.logo ? imageUrls(store.brand.logo).sm : null;
+  const count = cartCount(await readCart());
   const home = storeUrl(store.subdomain);
   const hello = whatsAppLink(store.whatsappNumber, whatsAppHelloMessage(store.name));
   // Where shoppers who like the store can make their own (counted per store).
@@ -47,6 +50,26 @@ export default async function ShopLayout({ children, params }: Props) {
               iconOnly
               className="size-10 rounded-full text-[#374151] hover:bg-[var(--store-tint)]"
             />
+            {store.checkout || count > 0 ? (
+              <a
+                href="/cart"
+                aria-label={count > 0 ? `Cart, ${count} ${count === 1 ? 'item' : 'items'}` : 'Cart'}
+                className="relative inline-flex size-10 items-center justify-center rounded-full text-[#374151] hover:bg-[var(--store-tint)]"
+              >
+                <ShoppingBag className="size-5" aria-hidden />
+                {count > 0 ? (
+                  <span
+                    className="absolute top-0.5 right-0.5 flex min-w-4.5 items-center justify-center rounded-full px-1 text-[10px] leading-4.5 font-semibold"
+                    style={{
+                      backgroundColor: 'var(--store-primary)',
+                      color: 'var(--store-on-primary)',
+                    }}
+                  >
+                    {count > 99 ? '99+' : count}
+                  </span>
+                ) : null}
+              </a>
+            ) : null}
             <a
               href={hello}
               target="_blank"

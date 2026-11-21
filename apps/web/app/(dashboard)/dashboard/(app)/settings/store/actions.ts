@@ -1,6 +1,7 @@
 'use server';
 
-import { setStoreChoice, type StoreChoiceInput } from '@fulcra/core';
+import { setStoreCheckoutEnabled, setStoreChoice, type StoreChoiceInput } from '@fulcra/core';
+import { refreshStore } from '@/lib/store';
 import { revalidatePath } from 'next/cache';
 import { toActionError, type ActionResult } from '@/lib/action-result';
 import { getActionContext, SESSION_ENDED } from '@/lib/auth';
@@ -18,6 +19,20 @@ export async function setStoreChoiceAction(
       ok: true,
       data: { redirectTo: input.choice === 'website' ? '/catalog/import' : '/catalog/new' },
     };
+  } catch (error) {
+    return toActionError(error);
+  }
+}
+
+/** Settings → Store: let customers pay on the store, or keep it WhatsApp-only. */
+export async function setStoreCheckoutAction(enabled: boolean): Promise<ActionResult> {
+  const context = await getActionContext();
+  if (!context) return SESSION_ENDED;
+  try {
+    await setStoreCheckoutEnabled(context.actor, enabled);
+    await refreshStore(context.actor);
+    revalidatePath('/dashboard/settings/store');
+    return { ok: true, data: undefined };
   } catch (error) {
     return toActionError(error);
   }

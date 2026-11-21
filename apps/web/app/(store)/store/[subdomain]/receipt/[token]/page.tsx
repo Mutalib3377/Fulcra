@@ -25,6 +25,27 @@ export default async function ReceiptPage({ params }: Props) {
   const { business, brand, order } = receipt;
   const logo = brand.logo ? imageUrls(brand.logo).sm : null;
 
+  if (!receipt.isPaid && order.status === 'cancelled') {
+    // A store checkout that wasn't paid in time (or was cancelled by the shop).
+    return (
+      <main className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center gap-3 px-4 text-center">
+        <h1 className="text-2xl font-semibold">This order was cancelled</h1>
+        <p className="text-muted-foreground">
+          Order #{order.orderNumber} from {business.name} was not paid in time, so the items went
+          back on sale. If you paid, don&apos;t worry: {business.name} will see your payment and
+          contact you.
+        </p>
+        <a
+          href="/"
+          className="mt-2 inline-flex min-h-11 items-center rounded-full px-5 font-semibold text-white"
+          style={{ backgroundColor: brand.primaryColour }}
+        >
+          Back to the store
+        </a>
+      </main>
+    );
+  }
+
   if (!receipt.isPaid) {
     return (
       <main className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center gap-3 px-4 text-center">
