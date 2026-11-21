@@ -2,6 +2,7 @@ import { schema, withTenant, type Tx } from '@fulcra/db';
 import { and, eq, ne, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { CoreError } from '../shared/errors';
+import { OWNER_MESSAGES_PER_MONTH, TRIAL_OWNER_MESSAGES } from '../owner-chat/rules';
 import {
   CHANNEL_FEATURES,
   effectiveStatus,
@@ -29,6 +30,10 @@ export type PlanState = {
   pendingPlanCode: PlanCode | null;
   /** Assistant conversations allowed this month (plan, or Fulcra's override). */
   conversationLimit: number;
+  /** Owner's assistant messages allowed this month (plan or trial, or Fulcra's override). */
+  ownerMessageLimit: number;
+  /** Suspended by Fulcra's staff (AD2): only the dashboard's own sales tools keep working. */
+  suspended: boolean;
   /** Features this business can use now, before the one-channel rule. */
   features: Set<FeatureKey>;
 };
@@ -40,7 +45,10 @@ const asPlan = (code: string | null | undefined): PlanCode =>
 export async function planStateInTx(tx: Tx, now = new Date()): Promise<PlanState> {
   const [sub] = await tx.select().from(schema.subscriptions).limit(1);
   const [business] = await tx
-    .select({ createdAt: schema.businesses.createdAt })
+    .select({
+      createdAt: schema.businesses.createdAt,
+      suspendedAt: schema.businesses.suspendedAt,
+    })
     .from(schema.businesses)
     .limit(1);
   // A business without a row (created before billing) is on its trial from sign-up.
@@ -60,18 +68,29 @@ export async function planStateInTx(tx: Tx, now = new Date()): Promise<PlanState
   if (trialing) for (const f of TRIAL_EXCLUDED_FEATURES) features.delete(f);
   const overrides = await tx.select().from(schema.entitlements);
   let conversationLimit = trialing ? TRIAL_CONVERSATIONS : plan.conversationsPerMonth;
+  let ownerMessageLimit = trialing ? TRIAL_OWNER_MESSAGES : OWNER_MESSAGES_PER_MONTH;
   for (const o of overrides) {
     if (o.featureKey === 'agent.conversations' && o.limitValue !== null)
       conversationLimit = o.limitValue;
+    if (o.featureKey === 'owner.messages' && o.limitValue !== null)
+      ownerMessageLimit = o.limitValue;
     const key = o.featureKey as FeatureKey;
     if (!FEATURE_KEYS.includes(key) || o.enabled === null) continue;
     if (o.enabled) features.add(key);
     else features.delete(key);
   }
+  const suspended = Boolean(business?.suspendedAt);
+  if (suspended) {
+    // Suspension wins over the plan and over Fulcra's switches.
+    features.clear();
+    for (const f of SUSPENDED_FEATURES) features.add(f);
+  }
   return {
     plan,
     status,
-    active,
+    active: active && !suspended,
+    ownerMessageLimit,
+    suspended,
     trialEndsAt: row.trialEndsAt,
     currentPeriodEnd: row.currentPeriodEnd,
     pendingPlanCode: row.pendingPlanCode ? asPlan(row.pendingPlanCode) : null,
@@ -79,6 +98,9 @@ export async function planStateInTx(tx: Tx, now = new Date()): Promise<PlanState
     features,
   };
 }
+
+/** What a suspended business keeps: payments and imports in its own dashboard (no store, no assistant). */
+const SUSPENDED_FEATURES: FeatureKey[] = ['payments', 'catalog_import'];
 
 /** Whether connecting this channel keeps the business within its plan's number of channels. */
 async function channelAllowedInTx(tx: Tx, state: PlanState, feature: FeatureKey): Promise<boolean> {
@@ -159,27 +181,35 @@ export async function requireFeatureInTx(tx: Tx, feature: FeatureKey): Promise<v
  */
 export async function setBusinessEntitlement(
   businessId: string,
-  featureKey: FeatureKey | 'agent.conversations',
+  featureKey: FeatureKey | 'agent.conversations' | 'owner.messages',
   change: { enabled?: boolean | null; limitValue?: number | null; note?: string },
 ): Promise<void> {
   const id = z.uuid().parse(businessId);
-  await withTenant(id, (tx) =>
-    tx
-      .insert(schema.entitlements)
-      .values({
-        businessId: id,
-        featureKey,
+  await withTenant(id, (tx) => setBusinessEntitlementInTx(tx, id, featureKey, change));
+}
+
+/** Same, inside the caller's tenant transaction (the admin area logs it in the same step). */
+export async function setBusinessEntitlementInTx(
+  tx: Tx,
+  businessId: string,
+  featureKey: FeatureKey | 'agent.conversations' | 'owner.messages',
+  change: { enabled?: boolean | null; limitValue?: number | null; note?: string },
+): Promise<void> {
+  await tx
+    .insert(schema.entitlements)
+    .values({
+      businessId,
+      featureKey,
+      enabled: change.enabled ?? null,
+      limitValue: change.limitValue ?? null,
+      note: change.note ?? '',
+    })
+    .onConflictDoUpdate({
+      target: [schema.entitlements.businessId, schema.entitlements.featureKey],
+      set: {
         enabled: change.enabled ?? null,
         limitValue: change.limitValue ?? null,
         note: change.note ?? '',
-      })
-      .onConflictDoUpdate({
-        target: [schema.entitlements.businessId, schema.entitlements.featureKey],
-        set: {
-          enabled: change.enabled ?? null,
-          limitValue: change.limitValue ?? null,
-          note: change.note ?? '',
-        },
-      }),
-  );
+      },
+    });
 }

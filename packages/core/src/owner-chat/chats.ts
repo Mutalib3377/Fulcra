@@ -7,13 +7,7 @@ import { isOwnImagePath } from '../media/images';
 import { requireMember, type ActorContext } from '../members/access';
 import { CoreError } from '../shared/errors';
 import { describeOwnerAction, executeOwnerAction, type OwnerActionKind } from './actions';
-import {
-  isConfirmation,
-  isRefusal,
-  OWNER_MESSAGES_PER_MONTH,
-  PENDING_ACTION_MINUTES,
-  TRIAL_OWNER_MESSAGES,
-} from './rules';
+import { isConfirmation, isRefusal, PENDING_ACTION_MINUTES } from './rules';
 
 /**
  * The owner's own chat with the assistant (O1). Owner messages are saved, then: a YES or NO to
@@ -69,7 +63,7 @@ async function limitInTx(tx: Tx, now: Date): Promise<OwnerChatLimit> {
     );
   return {
     used: row?.n ?? 0,
-    limit: state.status === 'trialing' ? TRIAL_OWNER_MESSAGES : OWNER_MESSAGES_PER_MONTH,
+    limit: state.ownerMessageLimit,
   };
 }
 

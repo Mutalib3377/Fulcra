@@ -26,6 +26,7 @@ describe('getStoreBySubdomain', () => {
       whatsappNumber: '+2348012345678',
       webChatKey: null, // website chat off
       checkout: false, // no payout account yet
+      suspended: false,
       brand: {
         logo: null,
         primaryColour: '#0f6b55',

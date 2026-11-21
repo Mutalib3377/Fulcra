@@ -6,6 +6,7 @@ const base = {
   planName: 'Growth',
   status: 'active' as const,
   active: true,
+  suspended: false,
   trialEndsAt: null,
   currentPeriodEnd: null,
   pendingPlanCode: null,

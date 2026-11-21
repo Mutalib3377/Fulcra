@@ -1,6 +1,15 @@
 import { BUSINESS_CATEGORIES } from '@fulcra/config';
 import { sql } from 'drizzle-orm';
-import { boolean, check, integer, pgEnum, pgPolicy, pgTable, text } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  check,
+  integer,
+  pgEnum,
+  pgPolicy,
+  pgTable,
+  text,
+  timestamp,
+} from 'drizzle-orm/pg-core';
 import { appRole, currentBusinessId, id, timestamps } from './_shared';
 
 export const businessCategories = BUSINESS_CATEGORIES;
@@ -21,6 +30,12 @@ export const businesses = pgTable(
     websiteUrl: text('website_url'),
     /** Set during payment setup (P1, docs/decisions/0001). */
     paystackSubaccountCode: text('paystack_subaccount_code'),
+    /**
+     * Set by Fulcra's staff (AD2): the store shows "temporarily unavailable" and the assistant,
+     * alerts and automatic messages stop. Data is kept; lifting it restores everything.
+     */
+    suspendedAt: timestamp('suspended_at', { withTimezone: true }),
+    suspendedReason: text('suspended_reason'),
     /** Customers can add to cart and pay on the store (K1); needs a payout account too. */
     storeCheckoutEnabled: boolean('store_checkout_enabled').notNull().default(true),
     /** Where sellers are paid (shown in Settings; the full account number is kept by Paystack). */

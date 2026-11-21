@@ -47,6 +47,8 @@ export type AdminOverview = {
     trialing: number;
     expired: number;
     paying: number;
+    /** Plans given for free by Fulcra (no card payment behind them). */
+    givenFree: number;
     byPlan: Record<PlanCode, number>;
     /** Monthly subscription value, kobo. */
     monthlyRecurring: number;
@@ -86,6 +88,7 @@ export async function adminOverview(admin: AdminActor, now = new Date()): Promis
         trialEndsAt: s.trialEndsAt,
         currentPeriodEnd: s.currentPeriodEnd,
         graceEndsAt: s.graceEndsAt,
+        paystackSubscriptionCode: s.paystackSubscriptionCode,
       })
       .from(s);
     const [income] = await tx
@@ -111,10 +114,12 @@ export async function adminOverview(admin: AdminActor, now = new Date()): Promis
   let trialing = 0;
   let expired = 0;
   let paying = 0;
+  let givenFree = 0;
   let monthlyRecurring = 0;
   for (const sub of data.subs) {
     const status = effectiveStatus(sub, now);
     if (status === 'trialing') trialing++;
+    else if (PAYING.includes(status) && !sub.paystackSubscriptionCode) givenFree++;
     else if (PAYING.includes(status)) {
       paying++;
       byPlan[asPlan(sub.planCode)]++;
@@ -133,7 +138,7 @@ export async function adminOverview(admin: AdminActor, now = new Date()): Promis
       last7: data.counts?.last7 ?? 0,
       last30: data.counts?.last30 ?? 0,
     },
-    plans: { trialing, expired, paying, byPlan, monthlyRecurring },
+    plans: { trialing, expired, paying, givenFree, byPlan, monthlyRecurring },
     thisMonth: {
       subscriptionIncome: data.income?.total ?? 0,
       sellerSales: Number(data.sales?.total ?? 0),
@@ -165,6 +170,7 @@ export type AdminBusinessRow = {
   createdAt: Date;
   plan: PlanCode;
   status: EffectiveStatus;
+  suspended: boolean;
   ordersThisMonth: number;
   salesThisMonth: number;
   chatsThisMonth: number;
@@ -196,6 +202,7 @@ export async function adminListBusinesses(
         name: b.name,
         subdomain: b.subdomain,
         createdAt: b.createdAt,
+        suspendedAt: b.suspendedAt,
         ownerEmail: owner,
         sub: {
           status: s.status,
@@ -234,6 +241,7 @@ export async function adminListBusinesses(
         createdAt: r.createdAt,
         plan: asPlan(r.sub?.planCode),
         status,
+        suspended: Boolean(r.suspendedAt),
         ordersThisMonth: r.ordersThisMonth,
         salesThisMonth: Number(r.salesThisMonth),
         chatsThisMonth: r.chatsThisMonth,
@@ -267,6 +275,7 @@ export type AdminBusinessDetail = {
   hasExternalWebsite: boolean;
   websiteUrl: string | null;
   createdAt: Date;
+  suspended: { at: Date; reason: string } | null;
   payoutConfigured: boolean;
   payoutBankName: string | null;
   team: { email: string; role: string; joinedAt: Date }[];
@@ -278,6 +287,9 @@ export type AdminBusinessDetail = {
     trialEndsAt: Date | null;
     currentPeriodEnd: Date | null;
     conversationLimit: number;
+    ownerMessageLimit: number;
+    /** A plan Fulcra gave for free (no card subscription behind it). */
+    givenFree: boolean;
   };
   overrides: {
     featureKey: string;
@@ -405,6 +417,9 @@ export async function adminGetBusiness(
       hasExternalWebsite: business.hasExternalWebsite,
       websiteUrl: business.websiteUrl,
       createdAt: business.createdAt,
+      suspended: business.suspendedAt
+        ? { at: business.suspendedAt, reason: business.suspendedReason ?? '' }
+        : null,
       payoutConfigured: Boolean(business.paystackSubaccountCode),
       payoutBankName: business.payoutBankName,
       team,
@@ -416,6 +431,12 @@ export async function adminGetBusiness(
         trialEndsAt: state.trialEndsAt,
         currentPeriodEnd: state.currentPeriodEnd,
         conversationLimit: state.conversationLimit,
+        ownerMessageLimit: state.ownerMessageLimit,
+        givenFree:
+          state.status !== 'trialing' &&
+          !!sub &&
+          sub.status !== 'trialing' &&
+          !sub.paystackSubscriptionCode,
       },
       overrides,
       channels,

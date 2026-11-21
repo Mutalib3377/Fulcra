@@ -17,7 +17,7 @@ import { cache } from 'react';
  */
 const STORE_REVALIDATE_SECONDS = 60;
 /** Bump when the shape of cached store data changes, so old entries are never read. */
-const CACHE_VERSION = 'v5';
+const CACHE_VERSION = 'v6';
 
 const businessTag = (businessId: string) => `store:${businessId}`;
 const subdomainTag = (subdomain: string) => `store-address:${subdomain}`;
@@ -73,4 +73,10 @@ export async function refreshStore(actor: ActorContext): Promise<void> {
   } catch {
     // The store refreshes by itself within a minute.
   }
+}
+
+/** Admin changes (suspension) refresh a store they don't belong to: by business id and address. */
+export function refreshStoreFor(businessId: string, subdomain: string): void {
+  updateTag(businessTag(businessId));
+  updateTag(subdomainTag(subdomain));
 }

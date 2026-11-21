@@ -1,5 +1,5 @@
 import { formatNaira } from '@fulcra/config';
-import { adminGetBusiness, isCoreError } from '@fulcra/core';
+import { adminActivity, adminGetBusiness, isCoreError } from '@fulcra/core';
 import { Badge, Card, ListGroup, ListRow } from '@fulcra/ui';
 import { ExternalLink } from 'lucide-react';
 import { notFound } from 'next/navigation';
@@ -7,7 +7,9 @@ import { PageHeader } from '@/components/page-header';
 import { formatUsd, requireAdminPage } from '@/lib/admin';
 import { formatDateTime, orderStatusLabel } from '@/lib/orders';
 import { storeHost, storeUrl } from '@/lib/urls';
+import { ActivityList } from '../../activity-list';
 import { STATUS_LABEL, STATUS_TONE } from '../../status';
+import { AdminControls } from './admin-controls';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,6 +29,7 @@ export default async function AdminSellerPage({ params }: Props) {
     if (isCoreError(error) && error.code === 'not_found') notFound();
     throw error;
   });
+  const activity = await adminActivity(admin, { businessId: b.id, limit: 30 });
   const date = (d: Date | null) => (d ? formatDateTime(d) : '—');
   return (
     <div className="flex flex-col gap-6">
@@ -48,6 +51,22 @@ export default async function AdminSellerPage({ params }: Props) {
         }
       />
 
+      {b.suspended ? (
+        <div role="alert" className="rounded-md bg-danger-soft px-4 py-3 text-sm text-danger">
+          <strong>Suspended</strong> on {formatDateTime(b.suspended.at)}: {b.suspended.reason}
+        </div>
+      ) : null}
+
+      <section className="flex flex-col gap-2">
+        <h2 className="text-sm font-semibold text-muted-foreground">Actions</h2>
+        <AdminControls
+          businessId={b.id}
+          suspended={Boolean(b.suspended)}
+          conversationLimit={b.plan.conversationLimit}
+          ownerMessageLimit={b.plan.ownerMessageLimit}
+        />
+      </section>
+
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Card className="flex flex-col gap-1 p-4">
           <span className="text-sm text-muted-foreground">Plan</span>
@@ -65,7 +84,7 @@ export default async function AdminSellerPage({ params }: Props) {
             </span>
           </span>
           <span className="text-xs text-muted-foreground">
-            {b.thisMonth.ownerMessages} messages to Ask Fulcra
+            {b.thisMonth.ownerMessages} / {b.plan.ownerMessageLimit} messages to Ask Fulcra
           </span>
         </Card>
         <Card className="flex flex-col gap-1 p-4">
@@ -172,6 +191,9 @@ export default async function AdminSellerPage({ params }: Props) {
                 />
               ))
             )}
+          </ListGroup>
+          <ListGroup title="Activity log" footer="Changes made from the admin area, newest first.">
+            <ActivityList items={activity} showBusiness={false} />
           </ListGroup>
           <ListGroup title="Recent orders">
             {b.recentOrders.length === 0 ? (
