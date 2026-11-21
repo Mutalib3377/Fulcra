@@ -29,6 +29,9 @@ export default async function AdminLayout({ children }: { children: ReactNode })
             <Link href="/admin/sellers" className="rounded-full px-3 py-1.5 hover:bg-muted">
               Sellers
             </Link>
+            <Link href="/admin/activity" className="rounded-full px-3 py-1.5 hover:bg-muted">
+              Activity
+            </Link>
           </nav>
           <span className="ml-auto hidden truncate text-xs text-muted-foreground sm:block">
             {admin.email}

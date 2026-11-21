@@ -1,4 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { schema, withTenant } from '@fulcra/db';
+import { eq } from 'drizzle-orm';
+import {
+  adminActivity,
+  adminExtendTrial,
+  adminGivePlan,
+  adminSetFeature,
+  adminSetLimit,
+  adminSuspend,
+  adminUnsuspend,
+} from '../src/admin/actions';
+import { getBillingSummary } from '../src/billing/billing';
+import { canUse } from '../src/billing/entitlements';
+import { getStoreBySubdomain } from '../src/storefront/store';
 import { adminFor, requireAdmin } from '../src/admin/access';
 import {
   adminGetBusiness,
@@ -126,5 +140,173 @@ describe('admin overview, sellers list and seller page', () => {
     await expect(
       adminGetBusiness({ userId: 'x', email: 'seller@example.com', admin: true }, s.business.id),
     ).rejects.toThrow('Page not found.');
+  });
+});
+
+describe('admin actions (AD2)', () => {
+  it('extends a trial from its end (or from today once ended), and refuses paying sellers', async () => {
+    const s = await shopWithStock(1);
+    const before = (await getBillingSummary(s.actor)).trialEndsAt!;
+    const { trialEndsAt } = await adminExtendTrial(boss(), s.business.id, {
+      days: 7,
+      reason: 'Design partner',
+    });
+    expect(trialEndsAt.getTime() - before.getTime()).toBe(7 * 86_400_000);
+    // An ended trial restarts from today.
+    const later = new Date(trialEndsAt.getTime() + 30 * 86_400_000);
+    const again = await adminExtendTrial(
+      boss(),
+      s.business.id,
+      { days: 3, reason: 'Second chance' },
+      later,
+    );
+    expect(again.trialEndsAt.getTime()).toBe(later.getTime() + 3 * 86_400_000);
+    await expect(
+      adminExtendTrial(boss(), s.business.id, { days: 0, reason: 'x y z' }),
+    ).rejects.toThrow('At least 1 day');
+    await expect(adminExtendTrial(boss(), s.business.id, { days: 5, reason: '' })).rejects.toThrow(
+      'short reason',
+    );
+
+    await adminGivePlan(boss(), s.business.id, { planCode: 'pro', months: 2, reason: 'Friend' });
+    await expect(
+      adminExtendTrial(boss(), s.business.id, { days: 5, reason: 'Oops now' }),
+    ).rejects.toThrow('on a plan');
+  });
+
+  it('gives a plan for free until a date, counted as given free and not as recurring income', async () => {
+    const s = await shopWithStock(1);
+    const before = await adminOverview(boss());
+    const { until } = await adminGivePlan(boss(), s.business.id, {
+      planCode: 'pro',
+      months: 3,
+      reason: 'Design partner',
+    });
+    const summary = await getBillingSummary(s.actor);
+    expect(summary).toMatchObject({ planCode: 'pro', status: 'active', active: true });
+    expect(summary.currentPeriodEnd?.getTime()).toBe(until.getTime());
+    const after = await adminOverview(boss());
+    expect(after.plans.givenFree).toBe(before.plans.givenFree + 1);
+    expect(after.plans.monthlyRecurring).toBe(before.plans.monthlyRecurring);
+    expect((await adminGetBusiness(boss(), s.business.id)).plan).toMatchObject({
+      code: 'pro',
+      givenFree: true,
+    });
+    // A seller paying by card is changed at Paystack, not here.
+    await withTenant(s.business.id, (tx) =>
+      tx
+        .update(schema.subscriptions)
+        .set({ paystackSubscriptionCode: 'SUB_card' })
+        .where(eq(schema.subscriptions.businessId, s.business.id)),
+    );
+    await expect(
+      adminGivePlan(boss(), s.business.id, { planCode: 'starter', months: 1, reason: 'Downgrade' }),
+    ).rejects.toThrow('pays by card');
+  });
+
+  it('changes limits and switches features, and back to the plan', async () => {
+    const s = await shopWithStock(1);
+    await adminSetLimit(boss(), s.business.id, {
+      key: 'agent.conversations',
+      limit: 500,
+      reason: 'Busy week',
+    });
+    await adminSetLimit(boss(), s.business.id, {
+      key: 'owner.messages',
+      limit: 120,
+      reason: 'Busy week',
+    });
+    let detail = await adminGetBusiness(boss(), s.business.id);
+    expect(detail.plan).toMatchObject({ conversationLimit: 500, ownerMessageLimit: 120 });
+    await adminSetLimit(boss(), s.business.id, {
+      key: 'agent.conversations',
+      limit: null,
+      reason: 'Back to normal',
+    });
+    detail = await adminGetBusiness(boss(), s.business.id);
+    expect(detail.plan.conversationLimit).toBe(100);
+
+    expect(await canUse(s.business.id, 'agent')).toBe(true);
+    await adminSetFeature(boss(), s.business.id, {
+      feature: 'agent',
+      enabled: false,
+      reason: 'Abuse report',
+    });
+    expect(await canUse(s.business.id, 'agent')).toBe(false);
+    await adminSetFeature(boss(), s.business.id, {
+      feature: 'owner_alerts',
+      enabled: true,
+      reason: 'Testing alerts',
+    });
+    expect(await canUse(s.business.id, 'owner_alerts')).toBe(true);
+    await adminSetFeature(boss(), s.business.id, {
+      feature: 'agent',
+      enabled: null,
+      reason: 'Resolved',
+    });
+    expect(await canUse(s.business.id, 'agent')).toBe(true);
+  });
+
+  it('suspends: store offline, assistant and alerts off, dashboard notice; lifting restores it', async () => {
+    const s = await shopWithStock(1);
+    await adminSetFeature(boss(), s.business.id, {
+      feature: 'owner_alerts',
+      enabled: true,
+      reason: 'Was on',
+    });
+    const { subdomain } = await adminSuspend(boss(), s.business.id, {
+      reason: 'Fraud reports from customers',
+    });
+    expect(subdomain).toBe(s.business.subdomain);
+    expect(await getStoreBySubdomain(subdomain)).toMatchObject({
+      suspended: true,
+      checkout: false,
+    });
+    expect(await canUse(s.business.id, 'agent')).toBe(false);
+    expect(await canUse(s.business.id, 'storefront')).toBe(false);
+    // Suspension wins over Fulcra's own switches.
+    expect(await canUse(s.business.id, 'owner_alerts')).toBe(false);
+    expect(await canUse(s.business.id, 'payments')).toBe(true);
+    expect((await getBillingSummary(s.actor)).suspended).toBe(true);
+    expect((await adminGetBusiness(boss(), s.business.id)).suspended?.reason).toBe(
+      'Fraud reports from customers',
+    );
+    expect((await adminListBusinesses(boss(), { q: subdomain })).rows[0]!.suspended).toBe(true);
+    await expect(adminSuspend(boss(), s.business.id, { reason: 'Again' })).rejects.toThrow(
+      'already suspended',
+    );
+
+    await adminUnsuspend(boss(), s.business.id, { reason: 'Seller explained, refunds done' });
+    expect(await getStoreBySubdomain(subdomain)).toMatchObject({ suspended: false });
+    expect(await canUse(s.business.id, 'agent')).toBe(true);
+    await expect(adminUnsuspend(boss(), s.business.id, { reason: 'Again' })).rejects.toThrow(
+      'not suspended',
+    );
+  });
+
+  it('logs every change with who, what and why; only admins can act or read it', async () => {
+    const s = await shopWithStock(1);
+    await adminExtendTrial(boss(), s.business.id, { days: 2, reason: 'Asked nicely' });
+    await adminSuspend(boss(), s.business.id, { reason: 'Chargebacks' });
+    const log = await adminActivity(boss(), { businessId: s.business.id });
+    expect(log.map((l) => [l.action, l.reason, l.adminEmail])).toEqual([
+      ['suspend', 'Chargebacks', 'boss@fulcra.test'],
+      ['extend_trial', 'Asked nicely', 'boss@fulcra.test'],
+    ]);
+    expect(log[1]!.details).toMatchObject({ days: 2 });
+    expect((await adminActivity(boss(), { limit: 5 })).length).toBeGreaterThan(0);
+    const stranger = { userId: 'x', email: 'seller@example.com', admin: true as const };
+    await expect(adminSuspend(stranger, s.business.id, { reason: 'Not allowed' })).rejects.toThrow(
+      'Page not found.',
+    );
+    await expect(adminActivity(stranger)).rejects.toThrow('Page not found.');
+    await expect(
+      adminExtendTrial(boss(), '00000000-0000-4000-8000-000000000999', {
+        days: 1,
+        reason: 'Nobody',
+      }),
+    ).rejects.toThrow('does not exist');
+    // A failed action leaves no log row.
+    expect((await adminActivity(boss(), { businessId: s.business.id })).length).toBe(2);
   });
 });

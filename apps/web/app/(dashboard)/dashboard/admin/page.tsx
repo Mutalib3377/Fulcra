@@ -74,7 +74,7 @@ export default async function AdminOverviewPage() {
           <Stat
             label="Paying"
             value={o.plans.paying}
-            hint={`Starter ${o.plans.byPlan.starter} · Growth ${o.plans.byPlan.growth} · Pro ${o.plans.byPlan.pro}`}
+            hint={`Starter ${o.plans.byPlan.starter} · Growth ${o.plans.byPlan.growth} · Pro ${o.plans.byPlan.pro}${o.plans.givenFree ? ` · ${o.plans.givenFree} given free` : ''}`}
             href="/admin/sellers?status=paying"
           />
           <Stat

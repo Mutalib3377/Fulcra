@@ -107,6 +107,7 @@ export default async function AdminSellersPage({ searchParams }: Props) {
                     <span className="font-medium" title="What this seller cost Fulcra this month">
                       {formatUsd(r.costUsdThisMonth)}
                     </span>
+                    {r.suspended ? <Badge tone="danger">Suspended</Badge> : null}
                     <Badge tone={STATUS_TONE[r.status]}>
                       {STATUS_LABEL[r.status]}
                       {r.status !== 'trialing' && r.status !== 'expired' ? ` · ${r.plan}` : ''}

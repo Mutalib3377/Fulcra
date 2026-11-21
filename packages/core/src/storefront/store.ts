@@ -34,6 +34,8 @@ export type StoreInfo = {
   };
   /** Customers can add to cart and pay on the store (setting on and a payout account; K1). */
   checkout: boolean;
+  /** Suspended by Fulcra (AD2): the store shows "temporarily unavailable" and nothing else. */
+  suspended: boolean;
   /** Facts the store can promise, worked out from the business's setup. */
   trust: {
     /** Payouts are set up: customers can pay by card, transfer or USSD through Paystack. */
@@ -121,6 +123,7 @@ export async function getStoreBySubdomain(subdomain: string): Promise<StoreInfo 
         description: schema.brandKits.description,
         subaccount: schema.businesses.paystackSubaccountCode,
         checkoutEnabled: schema.businesses.storeCheckoutEnabled,
+        suspendedAt: schema.businesses.suspendedAt,
       })
       .from(schema.businesses)
       .leftJoin(schema.brandKits, eq(schema.brandKits.businessId, schema.businesses.id))
@@ -147,7 +150,8 @@ export async function getStoreBySubdomain(subdomain: string): Promise<StoreInfo 
       .orderBy(asc(schema.deliveryZones.name));
     return {
       webChatKey: chat?.key ?? null,
-      checkout: Boolean(row.subaccount) && row.checkoutEnabled,
+      checkout: Boolean(row.subaccount) && row.checkoutEnabled && !row.suspendedAt,
+      suspended: Boolean(row.suspendedAt),
       trust: {
         securePayments: Boolean(row.subaccount),
         deliveryAreas: zones.slice(0, 6).map((z) => z.name),

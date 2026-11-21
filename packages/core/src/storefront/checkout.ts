@@ -35,10 +35,11 @@ async function checkoutOpenInTx(tx: Tx): Promise<boolean> {
     .select({
       enabled: schema.businesses.storeCheckoutEnabled,
       subaccount: schema.businesses.paystackSubaccountCode,
+      suspendedAt: schema.businesses.suspendedAt,
     })
     .from(schema.businesses)
     .limit(1);
-  return Boolean(b?.enabled && b.subaccount);
+  return Boolean(b?.enabled && b.subaccount && !b.suspendedAt);
 }
 
 export type StoreCartLine = {

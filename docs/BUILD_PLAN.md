@@ -281,7 +281,7 @@ Goal: the agent sells on WhatsApp end to end, the owner can watch and take over,
 ### AD — Admin area for Fulcra's staff
 
 - [x] Access by `ADMIN_EMAILS` ("not found" for everyone else); overview (sign-ups, plans, monthly recurring, plan income, AI and WhatsApp costs, sellers' sales, system health); sellers list (search, status filter, this month's activity and cost); seller page (plan, usage, team, channels, costs, recent orders) (AD1)
-- [ ] Actions: extend trial, give a plan, extra limits, switch a feature off, suspend; activity log with reasons (AD2)
+- [x] Actions: extend trial, give a plan, extra limits, switch a feature off, suspend; activity log with reasons (AD2)
 
 ### Launch gate
 

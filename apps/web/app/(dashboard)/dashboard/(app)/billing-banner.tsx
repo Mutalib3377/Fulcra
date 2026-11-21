@@ -12,10 +12,21 @@ const TONES = {
 /** Shown at the top of every dashboard page when billing needs attention. */
 export async function BillingBanner({ actor }: { actor: ActorContext }) {
   let banner: ReturnType<typeof bannerFor> = null;
+  let suspended = false;
   try {
-    banner = bannerFor(await getBillingSummary(actor));
+    const summary = await getBillingSummary(actor);
+    suspended = summary.suspended;
+    banner = bannerFor(summary);
   } catch {
     return null; // never break the dashboard over a banner
+  }
+  if (suspended) {
+    return (
+      <div role="alert" className={`mb-4 rounded-md px-3 py-2 text-sm ${TONES.danger}`}>
+        <strong>Your account is suspended by Fulcra.</strong> Your store is offline and the
+        assistant is paused. Your orders and data are safe. Please contact Fulcra support.
+      </div>
+    );
   }
   if (!banner) return null;
   return (

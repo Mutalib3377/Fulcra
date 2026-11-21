@@ -10,6 +10,8 @@ export type BillingSummary = {
   planName: string;
   status: EffectiveStatus;
   active: boolean;
+  /** Suspended by Fulcra (AD2): the store is offline and the assistant paused. */
+  suspended: boolean;
   trialEndsAt: Date | null;
   currentPeriodEnd: Date | null;
   pendingPlanCode: PlanCode | null;
@@ -48,6 +50,7 @@ export async function getBillingSummary(
     planName: state.plan.name,
     status: state.status,
     active: state.active,
+    suspended: state.suspended,
     trialEndsAt: state.trialEndsAt,
     currentPeriodEnd: state.currentPeriodEnd,
     pendingPlanCode: state.pendingPlanCode,

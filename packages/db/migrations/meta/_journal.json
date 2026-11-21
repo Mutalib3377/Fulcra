@@ -148,6 +148,13 @@
       "when": 1795293452116,
       "tag": "0020_store-themes",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1795299424681,
+      "tag": "0021_admin-actions",
+      "breakpoints": true
     }
   ]
 }
