@@ -31,6 +31,7 @@ describe('getStoreBySubdomain', () => {
         primaryColour: '#0f6b55',
         accentColour: '#f5a524',
         font: 'clean',
+        theme: 'classic',
         description: '',
       },
       trust: { securePayments: false, deliveryAreas: [], deliveryAreaCount: 0 },
@@ -74,8 +75,30 @@ describe('getStoreBySubdomain', () => {
       primaryColour: '#112233',
       accentColour: '#445566',
       font: 'elegant',
+      theme: 'classic',
       description: 'Handmade Ankara',
     });
+  });
+
+  it('the store theme is saved, kept when a save leaves it out, and given to the store', async () => {
+    const { business, actor } = await newBusiness('store');
+    expect((await getStoreBySubdomain(business.subdomain))?.brand.theme).toBe('classic');
+    const kit = {
+      logo: null,
+      primaryColour: '#112233',
+      accentColour: '#445566',
+      font: 'clean' as const,
+      voice: 'friendly' as const,
+      description: '',
+    };
+    expect((await saveBrandKit(actor, { ...kit, storeTheme: 'boutique' })).storeTheme).toBe(
+      'boutique',
+    );
+    expect((await saveBrandKit(actor, { ...kit, description: 'New words' })).storeTheme).toBe(
+      'boutique',
+    );
+    expect((await getStoreBySubdomain(business.subdomain))?.brand.theme).toBe('boutique');
+    await expect(saveBrandKit(actor, { ...kit, storeTheme: 'neon' as never })).rejects.toThrow();
   });
 
   it('returns null for unknown or invalid addresses', async () => {

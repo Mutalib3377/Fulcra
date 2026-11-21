@@ -6,6 +6,10 @@ import { businesses } from './businesses';
 export const brandFonts = ['clean', 'modern', 'friendly', 'elegant', 'bold'] as const;
 export const brandFont = pgEnum('brand_font', brandFonts);
 
+/** Store looks a seller can choose (T1); "classic" is the original design. */
+export const storeThemes = ['classic', 'minimal', 'boutique', 'bold', 'market', 'playful'] as const;
+export const storeTheme = pgEnum('store_theme', storeThemes);
+
 export const brandVoices = ['friendly', 'professional', 'playful'] as const;
 export const brandVoice = pgEnum('brand_voice', brandVoices);
 
@@ -25,6 +29,7 @@ export const brandKits = pgTable(
     primaryColour: text('primary_colour').notNull().default('#0f6b55'),
     accentColour: text('accent_colour').notNull().default('#f5a524'),
     font: brandFont('font').notNull().default('clean'),
+    storeTheme: storeTheme('store_theme').notNull().default('classic'),
     voice: brandVoice('voice').notNull().default('friendly'),
     /** Extra guidance for the assistant's tone, in the owner's words. */
     voiceNotes: text('voice_notes').notNull().default(''),
@@ -40,4 +45,5 @@ export const brandKits = pgTable(
 
 export type BrandKit = typeof brandKits.$inferSelect;
 export type BrandFont = (typeof brandFonts)[number];
+export type StoreTheme = (typeof storeThemes)[number];
 export type BrandVoice = (typeof brandVoices)[number];

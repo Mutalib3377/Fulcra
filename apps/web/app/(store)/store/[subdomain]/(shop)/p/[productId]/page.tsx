@@ -12,6 +12,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { imageUrls } from '@/lib/images';
 import { loadStore, loadStoreProduct, loadStoreProducts } from '@/lib/store';
+import { storeThemeFor } from '@/lib/store-theme-server';
 import { ProductGrid } from '../../../_components/product-grid';
 import { shareMetadata } from '../../../_components/share';
 import { ShareButton } from '../../../_components/share-button';
@@ -61,6 +62,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
   const productUrl = storeUrl(store.subdomain, `/p/${product.id}`);
   const price = chosen ? chosen.price : product.price;
   const priceText = `${!chosen && product.hasPriceRange ? 'From ' : ''}${formatNaira(price)}`;
+  const { option: theme } = await storeThemeFor(store);
   const related = await relatedProducts(store.businessId, product.id, product.category);
   // Store payments on, and this option can be bought now: add to cart first, WhatsApp second.
   const canAddToCart = store.checkout && chosen !== null && chosen.stock.state !== 'sold_out';
@@ -81,8 +83,8 @@ export default async function ProductPage({ params, searchParams }: Props) {
 
         <div className="flex flex-col gap-6 px-4 md:px-0">
           <div className="flex flex-col gap-3">
-            <nav className="flex items-center gap-1.5 text-sm text-[#6b7280]">
-              <a href="/" className="hover:text-[#111827]">
+            <nav className="flex items-center gap-1.5 text-sm text-(--store-subtle)">
+              <a href="/" className="hover:text-(--store-fg)">
                 Home
               </a>
               {product.category ? (
@@ -90,7 +92,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
                   <span aria-hidden>/</span>
                   <a
                     href={`/c/${encodeURIComponent(product.category)}`}
-                    className="hover:text-[#111827]"
+                    className="hover:text-(--store-fg)"
                   >
                     {product.category}
                   </a>
@@ -147,8 +149,8 @@ export default async function ProductPage({ params, searchParams }: Props) {
                           'inline-flex min-h-11 min-w-12 items-center justify-center px-4 text-sm font-medium ring-1 transition-colors',
                           selected
                             ? 'ring-transparent'
-                            : 'ring-black/10 hover:bg-[var(--store-tint)]',
-                          soldOut && !selected && 'text-[#9ca3af] line-through',
+                            : 'ring-(--store-line) hover:bg-[var(--store-tint)]',
+                          soldOut && !selected && 'text-(--store-subtle) line-through',
                         )}
                         style={{
                           borderRadius: 'calc(var(--store-radius) * 0.75)',
@@ -173,7 +175,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
             {canAddToCart && chosen ? (
               <>
                 <AddToCart variantId={chosen.id} max={Math.min(10, chosen.maxQuantity)} />
-                <div className="[&_a]:bg-white [&_a]:text-[#1f8f4e] [&_a]:shadow-none [&_a]:ring-1 [&_a]:ring-black/10 [&_a:hover]:bg-[#f0fdf4]">
+                <div className="[&_a]:bg-(--store-surface) [&_a]:text-[#1f8f4e] [&_a]:shadow-none [&_a]:ring-1 [&_a]:ring-(--store-line) [&_a:hover]:bg-[#f0fdf4]">
                   {order}
                 </div>
               </>
@@ -185,7 +187,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
               title={product.name}
               text={`${product.name} – ${priceText} at ${store.name}`}
               label="Share with a friend"
-              className="min-h-11 rounded-full text-sm text-[#374151] ring-1 ring-black/10 hover:bg-[var(--store-tint)]"
+              className="min-h-11 rounded-full text-sm text-(--store-muted) ring-1 ring-(--store-line) hover:bg-[var(--store-tint)]"
             />
           </div>
 
@@ -196,7 +198,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
               <h2 id="about" className="store-display text-lg">
                 About this product
               </h2>
-              <p className="leading-relaxed whitespace-pre-line text-[#4b5563]">
+              <p className="leading-relaxed whitespace-pre-line text-(--store-muted)">
                 {product.description}
               </p>
             </section>
@@ -212,15 +214,20 @@ export default async function ProductPage({ params, searchParams }: Props) {
           <h2 id="related" className="store-display text-2xl">
             You may also like
           </h2>
-          <ProductGrid products={related} eager={0} />
+          <ProductGrid
+            products={related}
+            eager={0}
+            card={theme.card}
+            phoneColumns={theme.phoneColumns}
+          />
         </section>
       ) : null}
 
       {/* Phones: the price and the order button stay in reach while scrolling. */}
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-black/5 bg-white/90 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-md md:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-(--store-line) bg-(--store-bg)/90 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-md md:hidden">
         <div className="flex items-center gap-3">
           <div className="flex min-w-0 flex-col">
-            <span className="truncate text-xs text-[#6b7280]">{product.name}</span>
+            <span className="truncate text-xs text-(--store-subtle)">{product.name}</span>
             <span className="font-semibold">{priceText}</span>
           </div>
           <div className="ml-auto shrink-0 [&_a]:min-h-11 [&_a]:px-5 [&_a]:text-sm [&_p]:min-h-11 [&_p]:text-xs">
@@ -280,7 +287,7 @@ function AddToCart({
           name="quantity"
           aria-label="Quantity"
           defaultValue="1"
-          className="min-h-12 rounded-full bg-white px-4 font-medium ring-1 ring-black/15"
+          className="min-h-12 rounded-full bg-(--store-surface) px-4 font-medium ring-1 ring-(--store-line-strong)"
         >
           {Array.from({ length: max }, (_, i) => (
             <option key={i + 1} value={i + 1}>
@@ -311,7 +318,7 @@ function StockPill({ state, label }: { state: StoreVariant['stock']['state']; la
   const tone = {
     in_stock: 'bg-[#dcfce7] text-[#166534]',
     low: 'bg-[#fef3c7] text-[#92400e]',
-    sold_out: 'bg-[#f3f4f6] text-[#6b7280]',
+    sold_out: 'bg-[#f3f4f6] text-(--store-subtle)',
   }[state];
   return (
     <span
@@ -420,7 +427,7 @@ function Gallery({
               <a
                 href={`#photo-${i + 1}`}
                 aria-label={`Photo ${i + 1}`}
-                className="block size-14 overflow-hidden ring-1 ring-black/10"
+                className="block size-14 overflow-hidden ring-1 ring-(--store-line)"
                 style={{ borderRadius: 'calc(var(--store-radius) * 0.6)' }}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element -- pre-sized storage image */}

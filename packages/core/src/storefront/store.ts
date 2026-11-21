@@ -29,6 +29,7 @@ export type StoreInfo = {
     primaryColour: string;
     accentColour: string;
     font: schema.BrandFont;
+    theme: schema.StoreTheme;
     description: string;
   };
   /** Customers can add to cart and pay on the store (setting on and a payout account; K1). */
@@ -116,6 +117,7 @@ export async function getStoreBySubdomain(subdomain: string): Promise<StoreInfo 
         primaryColour: schema.brandKits.primaryColour,
         accentColour: schema.brandKits.accentColour,
         font: schema.brandKits.font,
+        theme: schema.brandKits.storeTheme,
         description: schema.brandKits.description,
         subaccount: schema.businesses.paystackSubaccountCode,
         checkoutEnabled: schema.businesses.storeCheckoutEnabled,
@@ -160,6 +162,7 @@ export async function getStoreBySubdomain(subdomain: string): Promise<StoreInfo 
         primaryColour: row.primaryColour ?? BRAND_KIT_DEFAULTS.primaryColour,
         accentColour: row.accentColour ?? BRAND_KIT_DEFAULTS.accentColour,
         font: row.font ?? BRAND_KIT_DEFAULTS.font,
+        theme: row.theme ?? BRAND_KIT_DEFAULTS.storeTheme,
         description: row.description ?? BRAND_KIT_DEFAULTS.description,
       },
     };

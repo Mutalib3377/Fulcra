@@ -1,0 +1,2 @@
+CREATE TYPE "public"."store_theme" AS ENUM('classic', 'minimal', 'boutique', 'bold', 'market', 'playful');--> statement-breakpoint
+ALTER TABLE "brand_kits" ADD COLUMN "store_theme" "store_theme" DEFAULT 'classic' NOT NULL;

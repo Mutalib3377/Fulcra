@@ -27,7 +27,7 @@ export function CheckoutTotal({ subtotal }: { subtotal: number }) {
   }, []);
 
   return (
-    <dl className="flex flex-col gap-1.5 border-t border-black/10 pt-3 text-sm">
+    <dl className="flex flex-col gap-1.5 border-t border-(--store-line) pt-3 text-sm">
       <div className="flex justify-between">
         <dt>Items</dt>
         <dd>{formatNaira(subtotal)}</dd>

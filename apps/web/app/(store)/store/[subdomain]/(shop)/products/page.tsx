@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { loadStore, loadStoreProducts } from '@/lib/store';
+import { storeThemeFor } from '@/lib/store-theme-server';
 import { pageNumber, ProductListPage } from '../../_components/product-list-page';
 import { shareMetadata } from '../../_components/share';
 
@@ -30,5 +31,14 @@ export default async function AllProducts({ params, searchParams }: Props) {
   if (!store) notFound();
   const page = pageNumber((await searchParams).page);
   const result = await loadStoreProducts(store.businessId, null, page);
-  return <ProductListPage title="All products" basePath="/products" {...result} />;
+  const { option } = await storeThemeFor(store);
+  return (
+    <ProductListPage
+      title="All products"
+      basePath="/products"
+      {...result}
+      card={option.card}
+      phoneColumns={option.phoneColumns}
+    />
+  );
 }

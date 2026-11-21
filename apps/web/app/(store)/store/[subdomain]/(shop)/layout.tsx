@@ -5,6 +5,7 @@ import { ArrowUpRight, ShoppingBag, Sparkles } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { readCart } from '@/lib/cart';
+import { storeThemeFor } from '@/lib/store-theme-server';
 import { imageUrls } from '@/lib/images';
 import { loadStore } from '@/lib/store';
 import { dashboardUrl, marketingUrl, storeUrl } from '@/lib/urls';
@@ -27,9 +28,20 @@ export default async function ShopLayout({ children, params }: Props) {
   const ownStore = marketingUrl(
     `/?ref=store&utm_source=store&utm_medium=footer&utm_campaign=${encodeURIComponent(store.subdomain)}`,
   );
+  const { option, preview } = await storeThemeFor(store);
   return (
     <>
-      <header className="sticky top-0 z-20 border-b border-black/5 bg-white/85 backdrop-blur-md supports-[backdrop-filter]:bg-white/70">
+      {preview ? (
+        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 bg-[#111827] px-4 py-2 text-center text-xs text-white">
+          <span>
+            Previewing the <strong>{option.label}</strong> theme. Only you can see this.
+          </span>
+          <a href="/preview-theme/off" className="font-semibold underline underline-offset-2">
+            Back to my saved theme
+          </a>
+        </div>
+      ) : null}
+      <header className="sticky top-0 z-20 border-b border-(--store-line) bg-(--store-bg)/85 backdrop-blur-md supports-[backdrop-filter]:bg-(--store-bg)/70">
         <div className="mx-auto flex h-15 w-full max-w-6xl items-center gap-3 px-4">
           <a href="/" className="flex min-w-0 items-center gap-2.5">
             <StoreLogo name={store.name} src={logo} size={36} />
@@ -38,7 +50,7 @@ export default async function ShopLayout({ children, params }: Props) {
           <nav className="ml-auto flex shrink-0 items-center gap-1">
             <a
               href="/products"
-              className="hidden rounded-full px-3 py-2 text-sm font-medium text-[#374151] hover:bg-[var(--store-tint)] sm:inline-flex"
+              className="hidden rounded-full px-3 py-2 text-sm font-medium text-(--store-muted) hover:bg-[var(--store-tint)] sm:inline-flex"
             >
               All products
             </a>
@@ -48,13 +60,13 @@ export default async function ShopLayout({ children, params }: Props) {
               text={`Check out ${store.name}`}
               label="Share this store"
               iconOnly
-              className="size-10 rounded-full text-[#374151] hover:bg-[var(--store-tint)]"
+              className="size-10 rounded-full text-(--store-muted) hover:bg-[var(--store-tint)]"
             />
             {store.checkout || count > 0 ? (
               <a
                 href="/cart"
                 aria-label={count > 0 ? `Cart, ${count} ${count === 1 ? 'item' : 'items'}` : 'Cart'}
-                className="relative inline-flex size-10 items-center justify-center rounded-full text-[#374151] hover:bg-[var(--store-tint)]"
+                className="relative inline-flex size-10 items-center justify-center rounded-full text-(--store-muted) hover:bg-[var(--store-tint)]"
               >
                 <ShoppingBag className="size-5" aria-hidden />
                 {count > 0 ? (
@@ -94,7 +106,9 @@ export default async function ShopLayout({ children, params }: Props) {
                 <span className="store-display text-lg">{store.name}</span>
               </a>
               {store.brand.description ? (
-                <p className="line-clamp-3 text-sm text-[#4b5563]">{store.brand.description}</p>
+                <p className="line-clamp-3 text-sm text-(--store-muted)">
+                  {store.brand.description}
+                </p>
               ) : null}
             </div>
             <div className="flex flex-wrap gap-2">
@@ -102,7 +116,7 @@ export default async function ShopLayout({ children, params }: Props) {
                 href={hello}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex h-10 items-center gap-2 rounded-full bg-white px-4 text-sm font-medium shadow-sm ring-1 ring-black/5"
+                className="inline-flex h-10 items-center gap-2 rounded-full bg-(--store-surface) px-4 text-sm font-medium shadow-sm ring-1 ring-(--store-line)"
               >
                 <WhatsAppIcon className="size-4 text-[#1f8f4e]" /> Chat with us
               </a>
@@ -111,14 +125,14 @@ export default async function ShopLayout({ children, params }: Props) {
                 title={store.name}
                 text={`Check out ${store.name}`}
                 label="Share this store"
-                className="h-10 rounded-full bg-white px-4 text-sm shadow-sm ring-1 ring-black/5"
+                className="h-10 rounded-full bg-(--store-surface) px-4 text-sm shadow-sm ring-1 ring-(--store-line)"
               />
             </div>
           </div>
 
           <a
             href={ownStore}
-            className="group flex items-center justify-between gap-4 rounded-2xl bg-[#111827] p-4 text-white sm:p-5"
+            className="group flex items-center justify-between gap-4 rounded-2xl bg-(--store-fg) p-4 text-(--store-bg) sm:p-5"
           >
             <span className="flex items-center gap-3">
               <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-white/10">
@@ -126,17 +140,17 @@ export default async function ShopLayout({ children, params }: Props) {
               </span>
               <span className="flex flex-col">
                 <span className="text-sm font-semibold">Sell on WhatsApp like {store.name}</span>
-                <span className="text-xs text-white/70">
+                <span className="text-xs opacity-70">
                   Get your own free store and AI sales assistant with {APP_NAME}
                 </span>
               </span>
             </span>
-            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-[#111827] transition-transform group-hover:translate-x-0.5">
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-(--store-surface) px-3 py-1.5 text-xs font-semibold text-(--store-fg) transition-transform group-hover:translate-x-0.5">
               Start free <ArrowUpRight className="size-3.5" aria-hidden />
             </span>
           </a>
 
-          <p className="text-center text-xs text-[#6b7280]">
+          <p className="text-center text-xs text-(--store-subtle)">
             © {new Date().getFullYear()} {store.name} · Powered by {APP_NAME}
           </p>
         </div>

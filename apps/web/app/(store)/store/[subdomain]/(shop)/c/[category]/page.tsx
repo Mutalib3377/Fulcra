@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { loadStore, loadStoreProducts } from '@/lib/store';
+import { storeThemeFor } from '@/lib/store-theme-server';
 import { pageNumber, ProductListPage } from '../../../_components/product-list-page';
 import { shareMetadata } from '../../../_components/share';
 
@@ -43,5 +44,14 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   const page = pageNumber((await searchParams).page);
   const result = await loadStoreProducts(store.businessId, name, page);
   if (page === 1 && result.products.length === 0) notFound();
-  return <ProductListPage title={name} basePath={`/c/${encodeURIComponent(name)}`} {...result} />;
+  const { option } = await storeThemeFor(store);
+  return (
+    <ProductListPage
+      title={name}
+      basePath={`/c/${encodeURIComponent(name)}`}
+      {...result}
+      card={option.card}
+      phoneColumns={option.phoneColumns}
+    />
+  );
 }
