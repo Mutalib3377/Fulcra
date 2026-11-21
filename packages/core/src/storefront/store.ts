@@ -30,6 +30,8 @@ export type StoreInfo = {
     font: schema.BrandFont;
     description: string;
   };
+  /** Customers can add to cart and pay on the store (setting on and a payout account; K1). */
+  checkout: boolean;
   /** Facts the store can promise, worked out from the business's setup. */
   trust: {
     /** Payouts are set up: customers can pay by card, transfer or USSD through Paystack. */
@@ -113,6 +115,7 @@ export async function getStoreBySubdomain(subdomain: string): Promise<StoreInfo 
         font: schema.brandKits.font,
         description: schema.brandKits.description,
         subaccount: schema.businesses.paystackSubaccountCode,
+        checkoutEnabled: schema.businesses.storeCheckoutEnabled,
       })
       .from(schema.businesses)
       .leftJoin(schema.brandKits, eq(schema.brandKits.businessId, schema.businesses.id))
@@ -139,6 +142,7 @@ export async function getStoreBySubdomain(subdomain: string): Promise<StoreInfo 
       .orderBy(asc(schema.deliveryZones.name));
     return {
       webChatKey: chat?.key ?? null,
+      checkout: Boolean(row.subaccount) && row.checkoutEnabled,
       trust: {
         securePayments: Boolean(row.subaccount),
         deliveryAreas: zones.slice(0, 6).map((z) => z.name),

@@ -21,6 +21,8 @@ export const businesses = pgTable(
     websiteUrl: text('website_url'),
     /** Set during payment setup (P1, docs/decisions/0001). */
     paystackSubaccountCode: text('paystack_subaccount_code'),
+    /** Customers can add to cart and pay on the store (K1); needs a payout account too. */
+    storeCheckoutEnabled: boolean('store_checkout_enabled').notNull().default(true),
     /** Where sellers are paid (shown in Settings; the full account number is kept by Paystack). */
     payoutBankCode: text('payout_bank_code'),
     payoutBankName: text('payout_bank_name'),

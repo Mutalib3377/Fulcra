@@ -65,6 +65,7 @@ export * from './payments/receipts';
 export * from './payments/dedicated-accounts';
 export * from './payments/transfers';
 export * from './payments/claims';
+export * from './storefront/checkout';
 export { receiptUrl, storeUrl } from './payments/urls';
 
 export * from './storefront/rules';
@@ -96,7 +97,13 @@ export * from './agent/rules';
 export * from './agent/settings';
 export * from './agent/assistant';
 export * from './agent/photos';
-export { isAssistant, type AssistantActor, type Performer } from './members/access';
+export {
+  isAssistant,
+  isTeamMember,
+  type AssistantActor,
+  type Performer,
+  type StorefrontActor,
+} from './members/access';
 export * from './system/rate-limit';
 export * from './system/health';
 export * from './owner-chat/insights';

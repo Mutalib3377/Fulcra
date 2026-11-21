@@ -1,0 +1,1 @@
+ALTER TABLE "businesses" ADD COLUMN "store_checkout_enabled" boolean DEFAULT true NOT NULL;

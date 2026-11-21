@@ -19,6 +19,7 @@ import { handleRefreshChannelTokens } from './jobs/refresh-tokens';
 import { handleCustomerNotifications, handleSubmitTemplates } from './jobs/templates';
 import { handleInboundMessage, handleSendMessage } from './jobs/messages';
 import { handlePaymentClaims } from './jobs/payment-claims';
+import { handleStoreCheckoutExpiry } from './jobs/store-checkouts';
 import { handlePaystackWebhook } from './jobs/paystack-webhook';
 import { handleShopifyWebhook } from './jobs/shopify-webhook';
 import { getQueueDatabaseUrl } from '@fulcra/db';
@@ -113,6 +114,13 @@ async function main(): Promise<void> {
     reported(JOBS.paymentClaims.name, () => handlePaymentClaims()),
   );
   await boss.schedule(JOBS.paymentClaims.name, '* * * * *', {}, { singletonKey: 'tick' });
+  // Store checkouts not paid in time are cancelled and their stock returned.
+  await boss.work(
+    JOBS.storeCheckoutExpiry.name,
+    { localConcurrency: 1 },
+    reported(JOBS.storeCheckoutExpiry.name, () => handleStoreCheckoutExpiry()),
+  );
+  await boss.schedule(JOBS.storeCheckoutExpiry.name, '*/5 * * * *', {}, { singletonKey: 'tick' });
   await boss.work(
     JOBS.refreshChannelTokens.name,
     { localConcurrency: 1 },
