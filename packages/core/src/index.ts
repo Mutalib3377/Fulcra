@@ -109,3 +109,5 @@ export * from './system/health';
 export * from './owner-chat/insights';
 export * from './owner-chat/actions';
 export * from './owner-chat/chats';
+export * from './admin/access';
+export * from './admin/overview';
