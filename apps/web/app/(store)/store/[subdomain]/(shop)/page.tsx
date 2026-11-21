@@ -99,7 +99,7 @@ export default async function StoreHome({ params }: Props) {
                       <a
                         href={`/c/${encodeURIComponent(category.name)}`}
                         aria-label={`${category.name}, ${category.productCount} ${category.productCount === 1 ? 'product' : 'products'}`}
-                        className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--store-tint)] px-4 text-sm font-medium whitespace-nowrap ring-1 ring-(--store-line) transition-colors hover:bg-[var(--store-tint-strong)]"
+                        className="inline-flex min-h-11 items-center gap-2 rounded-(--store-button-radius) bg-[var(--store-tint)] px-4 text-sm font-medium whitespace-nowrap ring-1 ring-(--store-line) transition-colors hover:bg-[var(--store-tint-strong)]"
                       >
                         {category.name}
                         <span className="rounded-full bg-(--store-surface) px-1.5 text-xs text-(--store-subtle)">
@@ -134,7 +134,7 @@ export default async function StoreHome({ params }: Props) {
               {home.productCount > home.featured.length ? (
                 <a
                   href="/products"
-                  className="inline-flex min-h-12 items-center justify-center gap-2 self-center rounded-full px-7 font-semibold shadow-sm"
+                  className="inline-flex min-h-12 items-center justify-center gap-2 self-center rounded-(--store-button-radius) px-7 font-semibold shadow-sm"
                   style={{
                     backgroundColor: 'var(--store-primary)',
                     color: 'var(--store-on-primary)',

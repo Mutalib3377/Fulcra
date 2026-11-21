@@ -38,7 +38,7 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
   const zoneId = zones.some((z) => z.id === saved.deliveryZoneId) ? saved.deliveryZoneId : '';
   const fieldError = (name: string) =>
     error && field === name ? (
-      <p className="text-sm font-medium text-[#b91c1c]" id={`${name}-error`}>
+      <p className="text-sm font-medium text-(--store-danger)" id={`${name}-error`}>
         {error}
       </p>
     ) : null;
@@ -46,12 +46,12 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
   return (
     <main className="mx-auto grid w-full max-w-5xl flex-1 gap-8 px-4 py-8 md:grid-cols-[1fr_22rem]">
       <form method="post" action="/checkout/start" className="flex flex-col gap-6" id="checkout">
-        <h1 className="store-display text-4xl">Checkout</h1>
+        <h1 className="store-display store-title text-4xl">Checkout</h1>
         {error &&
         !['name', 'phone', 'email', 'deliveryZoneId', 'deliveryAddress'].includes(field ?? '') ? (
           <p
             role="alert"
-            className="rounded-[var(--store-radius)] bg-[#fef2f2] px-4 py-3 text-sm font-medium text-[#b91c1c]"
+            className="rounded-[var(--store-radius)] bg-(--store-danger-soft) px-4 py-3 text-sm font-medium text-(--store-danger)"
           >
             {error}
           </p>
@@ -191,7 +191,7 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
         <button
           type="submit"
           form="checkout"
-          className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-6 text-base font-semibold shadow-sm"
+          className="inline-flex min-h-12 items-center justify-center gap-2 rounded-(--store-button-radius) px-6 text-base font-semibold shadow-sm"
           style={{ backgroundColor: 'var(--store-primary)', color: 'var(--store-on-primary)' }}
         >
           <Lock className="size-4" aria-hidden /> Pay now

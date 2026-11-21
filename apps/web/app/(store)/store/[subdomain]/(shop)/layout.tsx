@@ -116,7 +116,7 @@ export default async function ShopLayout({ children, params }: Props) {
                 href={hello}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex h-10 items-center gap-2 rounded-full bg-(--store-surface) px-4 text-sm font-medium shadow-sm ring-1 ring-(--store-line)"
+                className="inline-flex h-10 items-center gap-2 rounded-(--store-button-radius) bg-(--store-surface) px-4 text-sm font-medium shadow-sm ring-1 ring-(--store-line)"
               >
                 <WhatsAppIcon className="size-4 text-[#1f8f4e]" /> Chat with us
               </a>
@@ -125,7 +125,7 @@ export default async function ShopLayout({ children, params }: Props) {
                 title={store.name}
                 text={`Check out ${store.name}`}
                 label="Share this store"
-                className="h-10 rounded-full bg-(--store-surface) px-4 text-sm shadow-sm ring-1 ring-(--store-line)"
+                className="h-10 rounded-(--store-button-radius) bg-(--store-surface) px-4 text-sm shadow-sm ring-1 ring-(--store-line)"
               />
             </div>
           </div>
