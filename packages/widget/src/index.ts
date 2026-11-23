@@ -1,6 +1,6 @@
 /**
  * @fulcra/widget — the website chat bubble. One small script, loaded with `async`:
- *   <script async src="https://app.yourdomain.com/widget.js" data-fulcra="wk_..."></script>
+ *   <script async src="https://app.fulcra.online/widget.js" data-fulcra="wk_..."></script>
  * Everything lives in a shadow root (no styles leak in or out) and every step is guarded,
  * so a problem here never breaks the seller's site. See docs/decisions/0017.
  */

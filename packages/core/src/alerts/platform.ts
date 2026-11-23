@@ -45,23 +45,17 @@ export const PLATFORM_TEMPLATES: Record<AlertKind, PlatformTemplate> = {
   paid_order: {
     name: 'fulcra_alert_paid_order_v1',
     body: 'New paid order {{1}} at {{2}}: {{3}} from {{4}}. See it here: {{5}} (Fulcra alert)',
-    examples: [
-      '#1024',
-      'Ada Styles',
-      '₦17,000.00',
-      'Chioma',
-      'https://app.yourdomain.com/orders/1',
-    ],
+    examples: ['#1024', 'Ada Styles', '₦17,000.00', 'Chioma', 'https://app.fulcra.online/orders/1'],
   },
   low_stock: {
     name: 'fulcra_alert_low_stock_v1',
     body: 'Low stock at {{1}}: {{2}} has {{3}} left. Update it here: {{4}} (Fulcra alert)',
-    examples: ['Ada Styles', 'Ankara Midi Dress (M)', '2', 'https://app.yourdomain.com/catalog/1'],
+    examples: ['Ada Styles', 'Ankara Midi Dress (M)', '2', 'https://app.fulcra.online/catalog/1'],
   },
   unmatched_payment: {
     name: 'fulcra_alert_unmatched_payment_v1',
     body: 'A payment of {{1}} reached {{2}} but could not be matched to an order. Check it here: {{3}} (Fulcra alert)',
-    examples: ['₦17,000.00', 'Ada Styles', 'https://app.yourdomain.com/payments'],
+    examples: ['₦17,000.00', 'Ada Styles', 'https://app.fulcra.online/payments'],
   },
   waiting_customer: {
     name: 'fulcra_alert_waiting_customer_v1',
@@ -70,7 +64,7 @@ export const PLATFORM_TEMPLATES: Record<AlertKind, PlatformTemplate> = {
       'Chioma',
       'Ada Styles',
       'Customer asked for a person',
-      'https://app.yourdomain.com/inbox/1',
+      'https://app.fulcra.online/inbox/1',
     ],
   },
   briefing: {
@@ -86,7 +80,7 @@ export const PLATFORM_TEMPLATES: Record<AlertKind, PlatformTemplate> = {
       '2',
       '4',
       '1',
-      'https://app.yourdomain.com',
+      'https://app.fulcra.online',
     ],
   },
   usage_limit: {
@@ -97,7 +91,7 @@ export const PLATFORM_TEMPLATES: Record<AlertKind, PlatformTemplate> = {
       '400',
       '500',
       'When it reaches the limit, new chats will come to you instead',
-      'https://app.yourdomain.com/settings/billing',
+      'https://app.fulcra.online/settings/billing',
     ],
   },
   payment_claim: {
@@ -109,7 +103,7 @@ export const PLATFORM_TEMPLATES: Record<AlertKind, PlatformTemplate> = {
       '₦17,000.00',
       '3:42 pm',
       'Warning: the same receipt was sent before for another order',
-      'https://app.yourdomain.com/payments?show=checks',
+      'https://app.fulcra.online/payments?show=checks',
     ],
   },
   test: {

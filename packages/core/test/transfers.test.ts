@@ -64,7 +64,7 @@ describe('dedicated accounts', () => {
 
     const [code, dva] = [...paystack.dedicated.entries()][0]!;
     expect(dva).toMatchObject({ subaccount: 'ACCT_1', preferredBank: 'test-bank' });
-    expect(paystack.customers.get(code)!.email).toBe(`dva-${customer.id}@customers.yourdomain.com`);
+    expect(paystack.customers.get(code)!.email).toBe(`dva-${customer.id}@customers.fulcra.online`);
 
     const again = await getOrCreateDedicatedAccount(s.actor, customer.id);
     expect(again.accountNumber).toBe(account.accountNumber);

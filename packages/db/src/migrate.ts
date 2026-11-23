@@ -2,7 +2,7 @@
  * Applies pending migrations, for deploys (Render runs it before the new worker starts).
  * Uses drizzle-orm's migrator, so it needs no dev tools in the production image; it shares
  * drizzle-kit's migrations table, so `pnpm db:migrate` and this see the same history.
- * Connects with DATABASE_URL_MIGRATIONS (direct connection, database owner) or DATABASE_URL.
+ * Connects with DATABASE_URL_MIGRATIONS (Supabase session pooler, database owner) or DATABASE_URL.
  */
 import path from 'node:path';
 import { drizzle } from 'drizzle-orm/postgres-js';

@@ -73,6 +73,6 @@ describe('rewritePath', () => {
 describe('getRootDomain', () => {
   it('uses the env value, falling back to the placeholder domain', () => {
     expect(getRootDomain({ ROOT_DOMAIN: 'localhost:3000' })).toBe('localhost:3000');
-    expect(getRootDomain({})).toBe('yourdomain.com');
+    expect(getRootDomain({})).toBe('fulcra.online');
   });
 });
