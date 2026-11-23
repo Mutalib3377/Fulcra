@@ -19,7 +19,7 @@ services:
       # Baked in at build time too (the landing page is static): set before the first deploy.
       - key: ROOT_DOMAIN
         sync: false
-      - key: ADMIN_EMAILS # your email: opens app.yourdomain.com/admin
+      - key: ADMIN_EMAILS # your email: opens app.fulcra.online/admin
         sync: false
       - key: ADMIN_USD_NGN_RATE
         value: '1600'
@@ -101,7 +101,7 @@ services:
         sync: false
       - key: DATABASE_URL_QUEUE # Supabase session pooler (port 5432 on the pooler host)
         sync: false
-      - key: DATABASE_URL_MIGRATIONS # Supabase direct connection (database owner)
+      - key: DATABASE_URL_MIGRATIONS # Supabase session pooler (port 5432): migrations and backups
         sync: false
       - key: DB_POOL_MAX
         value: '10'

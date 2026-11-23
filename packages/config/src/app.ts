@@ -3,10 +3,10 @@
  */
 export const APP_NAME = 'Fulcra';
 
-/** Production root domain. Placeholder until the domain is decided. */
-export const DEFAULT_ROOT_DOMAIN = 'yourdomain.com';
+/** Production root domain. */
+export const DEFAULT_ROOT_DOMAIN = 'fulcra.online';
 
-/** Subdomain used for the owner dashboard (app.yourdomain.com). */
+/** Subdomain used for the owner dashboard (app.fulcra.online). */
 export const DASHBOARD_SUBDOMAIN = 'app';
 
 /**

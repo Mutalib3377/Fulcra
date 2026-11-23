@@ -55,7 +55,7 @@ export const STARTER_TEMPLATES: Record<TemplatePurpose, StarterTemplate> = {
       '₦17,000.00',
       '#1024',
       'Ada Styles',
-      'https://adastyles.yourdomain.com/receipt/abc123',
+      'https://adastyles.fulcra.online/receipt/abc123',
     ],
   },
   order_update: {

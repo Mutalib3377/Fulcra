@@ -19,7 +19,7 @@ Everything is built around a shared "business brain" (the Core): brand kit, prod
 
 Every module must be switchable on/off per business (see "Entitlements").
 
-The product is called **Fulcra**. The domain is not decided yet: use `yourdomain.com` as a placeholder. Both live in one config file (`packages/config/src/app.ts`) so they are easy to change.
+The product is called **Fulcra**. The domain is `fulcra.online`. Both live in one config file (`packages/config/src/app.ts`) so they are easy to change.
 
 ## Current status
 

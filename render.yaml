@@ -18,7 +18,7 @@ services:
     envVars:
       - key: ROOT_DOMAIN
         sync: false
-      - key: ADMIN_EMAILS # your email: opens app.yourdomain.com/admin
+      - key: ADMIN_EMAILS # your email: opens app.fulcra.online/admin
         sync: false
       - key: ADMIN_USD_NGN_RATE
         value: '1600'
@@ -78,7 +78,7 @@ services:
         sync: false
       - key: NEXT_PUBLIC_POSTHOG_HOST
         value: 'https://eu.i.posthog.com'
-      - key: DATABASE_URL_MIGRATIONS # Supabase direct connection: migrations and backups
+      - key: DATABASE_URL_MIGRATIONS # Supabase session pooler (port 5432): migrations and backups
         sync: false
       - key: FULCRA_WHATSAPP_PHONE_NUMBER_ID
         sync: false

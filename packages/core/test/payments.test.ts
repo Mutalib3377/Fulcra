@@ -121,7 +121,7 @@ describe('payment links', () => {
     expect(paystack.initialized[0]).toMatchObject({
       amount: 1_500_000,
       subaccount: 'ACCT_1',
-      email: '2348035550101@customers.yourdomain.com',
+      email: '2348035550101@customers.fulcra.online',
       callbackUrl: expect.stringMatching(/\/receipt\/[0-9a-f]{32}$/),
     });
     expect((await getOrder(actor, order.id)).order.status).toBe('awaiting_payment');
